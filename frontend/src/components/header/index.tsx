@@ -21,18 +21,14 @@ export function Header() {
         {/* Perfil */}
         <div className="flex items-center">
           <Link href="/profile" className="text-white">
-            Meu Perfil
-          </Link>
           <Image
             src="/profile.jpg" 
             alt="Avatar"
-            width={32}
-            height={32}
+            width={50}
+            height={50}
             className="rounded-full"
           />
-          <button className="bg-darkgreen text-white p-2 rounded-md">
-            →
-          </button>
+          </Link>
         </div>
       </div>
     </header>

@@ -15,11 +15,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Substitua pela URL da sua API de filmes
     fetch("https://api.exemplo.com/movies?limit=4")
       .then((response) => response.json())
       .then((data) => {
-        setMovies(data.slice(0, 4)); // Pegando até 4 filmes da API
+        setMovies(data.slice(0, 4));
         setLoading(false);
       })
       .catch((error) => {
