@@ -19,7 +19,7 @@ export function Header() {
         </nav>
 
         {/* Perfil */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <Link href="/profile" className="text-white">
             Meu Perfil
           </Link>

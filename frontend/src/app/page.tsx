@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatedTestimonials } from "@/utils/aceternity";
+import { Container } from "@/components/container";
 
 type Movie = {
   title: string;
@@ -28,14 +29,18 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
-      {loading ? (
-        <p className="text-gray-400">Carregando filmes...</p>
-      ) : movies.length > 0 ? (
-        <AnimatedTestimonials testimonials={movies} autoplay={true} />
-      ) : (
-        <p className="text-gray-400">Nenhum filme encontrado.</p>
-      )}
+    <main className="w-full">
+      <Container>
+        <div className="flex flex-col items-center justify-center">
+          {loading ? (
+            <p className="text-gray-400">Carregando filmes...</p>
+          ) : movies.length > 0 ? (
+            <AnimatedTestimonials testimonials={movies} autoplay={true} />
+          ) : (
+            <p className="text-gray-400">Nenhum filme encontrado.</p>
+          )}
+        </div>
+      </Container>
     </main>
   );
 }
