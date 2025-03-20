@@ -1,7 +1,41 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { AnimatedTestimonials } from "@/utils/aceternity";
+
+type Movie = {
+  title: string;
+  description: string;
+  poster: string;
+};
 
 export default function Home() {
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Substitua pela URL da sua API de filmes
+    fetch("https://api.exemplo.com/movies?limit=4")
+      .then((response) => response.json())
+      .then((data) => {
+        setMovies(data.slice(0, 4)); // Pegando até 4 filmes da API
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar filmes:", error);
+        setLoading(false);
+      });
+  }, []);
+
   return (
-    <h1>Main</h1>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
+      {loading ? (
+        <p className="text-gray-400">Carregando filmes...</p>
+      ) : movies.length > 0 ? (
+        <AnimatedTestimonials testimonials={movies} autoplay={true} />
+      ) : (
+        <p className="text-gray-400">Nenhum filme encontrado.</p>
+      )}
+    </main>
   );
 }

@@ -1,28 +1,40 @@
-import Link from "next/link"
+import Link from "next/link";
+import Image from "next/image";
 
 export function Header() {
-    return (
-        <header className="w-full h-20 px-2">
-            <div className="max-w-screen-xl mx-auto flex px-8 justify-center sm:justify-between items-center h-20">
-                <nav className="">
-                    <Link href="/">ScoreIt</Link>
-                    
-                    <div>
-                        <Link href="/filmes">Filmes</Link>
-                        <Link href="/musicas">Músicas</Link>
-                    </div>
-                </nav>
+  return (
+    <header className="w-full h-20">
+      <div className="max-w-screen-xl mx-auto flex justify-between items-center h-20 px-6">
+        {/* Logo */}
+        <div className="text-white text-lg font-semibold">ScoreIt</div>
 
-                <div className="">
-                    <Link href="/profile">
-                    <p>Meu perfil</p>
-                    </Link>
+        {/* Navegação */}
+        <nav className="flex gap-4 items-center">
+          <button className="bg-darkgreen text-white px-4 py-2 rounded-md">
+            Filmes
+          </button>
+          <Link href="/filmes" className="text-white">
+            Músicas
+          </Link>
+        </nav>
 
-                    <button>
-                        Logout
-                    </button>
-                </div>
-            </div>
-        </header>
-    )
+        {/* Perfil */}
+        <div className="flex items-center gap-2">
+          <Link href="/profile" className="text-white">
+            Meu Perfil
+          </Link>
+          <Image
+            src="/profile.jpg" 
+            alt="Avatar"
+            width={32}
+            height={32}
+            className="rounded-full"
+          />
+          <button className="bg-darkgreen text-white p-2 rounded-md">
+            →
+          </button>
+        </div>
+      </div>
+    </header>
+  );
 }

@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@theme {
+  --color-darkgreen: #183D3D;
+  --color-mediumgreen: #5C8374;
+  --color-lightgreen: #93B1A6;
+}
+
+
 body {
   background-color: #02070A;
   color: white;
