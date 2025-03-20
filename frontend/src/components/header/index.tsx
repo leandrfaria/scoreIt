@@ -6,14 +6,14 @@ export function Header() {
     <header className="w-full h-20">
       <div className="max-w-screen-xl mx-auto flex justify-between items-center h-20 px-6">
         {/* Logo */}
-        <div className="text-white text-lg font-semibold">ScoreIt</div>
+        <Link href="/" className="text-white text-lg font-semibold">ScoreIt</Link>
 
         {/* Navegação */}
         <nav className="flex gap-4 items-center">
-          <button className="bg-darkgreen text-white px-4 py-2 rounded-md">
+          <Link href="/" className="bg-darkgreen text-white px-4 py-2 rounded-md">
             Filmes
-          </button>
-          <Link href="/filmes" className="text-white">
+          </Link>
+          <Link href="/musicas" className="text-white">
             Músicas
           </Link>
         </nav>
