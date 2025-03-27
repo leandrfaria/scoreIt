@@ -32,7 +32,7 @@ export default function Home() {
       <Container>
         <div className="flex flex-col items-center justify-center">
           {loading ? (
-            <p className="text-gray-400">Carregando filmes...</p>
+            <p className="text-gray-400">Carregando filmes</p>
           ) : movies.length > 0 ? (
             <AnimatedTestimonials testimonials={movies} autoplay={true} />
           ) : (

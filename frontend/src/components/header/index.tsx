@@ -35,7 +35,7 @@ export function Header() {
           <div className="relative flex">
             <div
               className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${
-                activeTab === "/musicas" ? "translate-x-full" : "translate-x-0"
+                activeTab === "/" ? "translate-x-full" : "translate-x-0"
               }`}
             ></div>
 
@@ -53,7 +53,7 @@ export function Header() {
                 activeTab === "/musicas" ? "font-bold" : "text-gray-400"
               }`}
             >
-              Músicas
+              musicas
             </Link>
           </div>
         </nav>
@@ -67,7 +67,7 @@ export function Header() {
                 width={50}
                 height={50}
                 className="rounded-full cursor-pointer"
-              />
+              />  
             </DropdownMenuTrigger>
             <DropdownMenuContent
   align="end"
