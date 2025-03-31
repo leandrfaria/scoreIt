@@ -3,6 +3,8 @@
 import { Container } from "@/components/container";
 import MovieCarousel from "@/components/carousel";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { fetchMembers } from "../services/member.service";
 
 type Movie = {
   title: string;
@@ -10,7 +12,46 @@ type Movie = {
   poster: string;
 };
 
+type Member = {
+  id: number;
+  name: string;
+  email: string;
+  username: string;
+};
+
 export default function Profile() {
+
+  const [member, setMember] = useState<Member | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadMembers = async () => {
+      try {
+        const membersData = await fetchMembers();
+        setMember(membersData[0]); // Pega o primeiro membro
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Um erro desconhecido ocorreu');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    loadMembers();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   return (
     <main className="w-full">
       <Container>
@@ -24,7 +65,7 @@ export default function Profile() {
             height={64}
           />
         </div>
-        <span className="text-lg font-medium">Nome do Usuário</span>
+        <span className="text-lg font-medium">{member?.name || 'Nome do Usuário'}</span>
       </div>
 
       {/* Informações do usuário */}
