@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "../service_login";
+import { loginUser } from "../../services/service_login";
 
 type Movie = {
   Poster: string;
