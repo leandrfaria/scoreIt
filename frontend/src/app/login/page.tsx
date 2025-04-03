@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "../service_login";
+import { loginUser } from "../../services/service_login";
 
 type Movie = {
   Poster: string;
@@ -38,19 +38,19 @@ export default function Login() {
     event.preventDefault();
     setMensagem("");
     setLoading(true); 
-
+  
     const response = await loginUser(email, senha);
-
+  
     if (response.success) {
-      // Se o login for bem-sucedido, redireciona para a página principal
-      console.log("Token JWT gerado:", response.token); // Exibe o token JWT gerado no console
-      router.push("/");
+      console.log("Token JWT gerado:", response.token); 
+      router.push("/"); // <- não salva mais nada aqui!
     } else {
       setMensagem(response.message);
     }
-
+  
     setLoading(false); 
   };
+  
 
   return (
     <main className="w-full h-full flex">

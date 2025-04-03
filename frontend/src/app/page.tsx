@@ -1,44 +1,34 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { AnimatedTestimonials } from "@/utils/aceternity";
-import { Container } from "@/components/container";
-
-type Movie = {
-  title: string;
-  description: string;
-  poster: string;
-};
+import { useEffect, useState } from 'react';
+import { Container } from '@/components/container';
+import { RandomMoviesCarousel } from '@/components/random-movies-carousel/RandomMoviesCarousel';
+import { MovieList } from '@/components/movies-list/MovieList';
 
 export default function Home() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetch("https://api.exemplo.com/movies?limit=4")
-      .then((response) => response.json())
-      .then((data) => {
-        setMovies(data.slice(0, 4));
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Erro ao buscar filmes:", error);
-        setLoading(false);
-      });
+    const token = localStorage.getItem('authToken');
+    setIsLoggedIn(!!token);
   }, []);
 
   return (
     <main className="w-full">
       <Container>
-        <div className="flex flex-col items-center justify-center">
-          {loading ? (
-            <p className="text-gray-400">Carregando filmes</p>
-          ) : movies.length > 0 ? (
-            <AnimatedTestimonials testimonials={movies} autoplay={true} />
-          ) : (
-            <p className="text-gray-400">Nenhum filme encontrado.</p>
-          )}
-        </div>
+        {isLoggedIn === null ? (
+          <p className="text-gray-400 text-center">Verificando login...</p>
+        ) : isLoggedIn ? (
+          <>
+            <RandomMoviesCarousel />
+            <h2 className="text-white text-xl font-bold mt-10 mb-4">Todos os Filmes</h2>
+            <MovieList />
+          </>
+        ) : (
+          <p className="text-gray-400 text-center text-lg mt-12">
+            Você ainda não está logado. Faça login para visualizar os filmes!
+          </p>
+        )}
       </Container>
     </main>
   );

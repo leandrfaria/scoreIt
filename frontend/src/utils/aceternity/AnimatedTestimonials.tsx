@@ -1,77 +1,82 @@
 "use client";
 
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-type Movie = {
+export type CarouselItem = {
+  id?: string | number;
+  image: string;
   title: string;
   description: string;
-  poster: string; // URL da imagem do filme
+  buttonLabel?: string;
+  onClick?: () => void;
 };
 
-export const AnimatedTestimonials = ({
-  testimonials, // Agora serão filmes
+export const AnimatedCarousel = ({
+  items,
   autoplay = false,
+  arrowButtonClass = "bg-gray-700 hover:bg-gray-600 text-white",
+  detailButtonClass = "bg-blue-500 hover:bg-blue-600 text-white",
 }: {
-  testimonials: Movie[];
+  items: CarouselItem[];
   autoplay?: boolean;
+  arrowButtonClass?: string;
+  detailButtonClass?: string;
 }) => {
   const [active, setActive] = useState(0);
 
   const handleNext = () => {
-    setActive((prev) => (prev + 1) % testimonials.length);
+    setActive((prev) => (prev + 1) % items.length);
   };
 
   const handlePrev = () => {
-    setActive((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setActive((prev) => (prev - 1 + items.length) % items.length);
   };
 
   const isActive = (index: number) => index === active;
 
   useEffect(() => {
     if (autoplay) {
-      const interval = setInterval(handleNext, 5000);
+      const interval = setInterval(handleNext, 8000); // ⬅️ tempo aumentado para 8s
       return () => clearInterval(interval);
     }
   }, [autoplay]);
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-20 font-sans antialiased md:max-w-4xl md:px-8 lg:px-12">
-      <div className="relative grid grid-cols-1 gap-20 md:grid-cols-2">
-        <div>
-          <div className="relative h-96 w-full">
-            <AnimatePresence>
-              {testimonials.map((movie, index) => (
-                <motion.div
-                  key={movie.poster}
-                  initial={{ opacity: 0, scale: 0.9, z: -100 }}
-                  animate={{
-                    opacity: isActive(index) ? 1 : 0.7,
-                    scale: isActive(index) ? 1 : 0.95,
-                    z: isActive(index) ? 0 : -100,
-                    zIndex: isActive(index) ? 40 : testimonials.length - index,
-                    y: isActive(index) ? [0, -30, 0] : 0,
-                  }}
-                  exit={{ opacity: 0, scale: 0.9, z: 100 }}
-                  transition={{ duration: 0.4, ease: "easeInOut" }}
-                  className="absolute inset-0 origin-bottom flex flex-col items-center"
-                >
-                  <Image
-                    src={movie.poster}
-                    alt={movie.title}
-                    width={500}
-                    height={700}
-                    draggable={false}
-                    className="h-96 w-auto rounded-lg shadow-lg object-cover"
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+    <div className="mx-auto w-full px-4 py-10 font-sans antialiased max-w-7xl">
+      <div className="relative grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+        {/* LADO DA IMAGEM */}
+        <div className="relative w-full h-[300px]">
+          <AnimatePresence>
+            {items.map((item, index) => (
+              <motion.div
+                key={item.image}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{
+                  opacity: isActive(index) ? 1 : 0,
+                  scale: isActive(index) ? 1 : 0.95,
+                  zIndex: isActive(index) ? 10 : 0,
+                }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  className="rounded-lg object-cover"
+                  priority
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
-        <div className="flex flex-col justify-between py-4">
+
+        {/* LADO DO TEXTO E CONTROLES */}
+        <div className="flex flex-col justify-between h-full">
           <motion.div
             key={active}
             initial={{ y: 20, opacity: 0 }}
@@ -79,25 +84,34 @@ export const AnimatedTestimonials = ({
             exit={{ y: -20, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
           >
-            <h3 className="text-3xl font-bold text-white">{testimonials[active].title}</h3>
-            <p className="text-sm text-gray-400 mt-2">{testimonials[active].description}</p>
-            <button className="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md">
-              Ver Detalhes
-            </button>
+            <h3 className="text-3xl font-bold text-white">{items[active].title}</h3>
+            <p className="text-sm text-gray-400 mt-2">{items[active].description}</p>
           </motion.div>
-          <div className="flex gap-4 pt-12 md:pt-0">
-            <button
-              onClick={handlePrev}
-              className="group/button flex h-8 w-8 items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600"
-            >
-              <IconArrowLeft className="h-5 w-5 text-white group-hover/button:scale-110 transition-transform" />
-            </button>
-            <button
-              onClick={handleNext}
-              className="group/button flex h-8 w-8 items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600"
-            >
-              <IconArrowRight className="h-5 w-5 text-white group-hover/button:scale-110 transition-transform" />
-            </button>
+
+          {/* CONTROLES FIXOS */}
+          <div className="flex justify-between items-center mt-6">
+            {items[active].buttonLabel && (
+              <button
+                onClick={items[active].onClick}
+                className={`px-6 py-2 rounded-md ${detailButtonClass}`}
+              >
+                {items[active].buttonLabel}
+              </button>
+            )}
+            <div className="flex gap-4">
+              <button
+                onClick={handlePrev}
+                className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${arrowButtonClass}`}
+              >
+                <IconArrowLeft className="h-5 w-5 group-hover/button:scale-110 transition-transform" />
+              </button>
+              <button
+                onClick={handleNext}
+                className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${arrowButtonClass}`}
+              >
+                <IconArrowRight className="h-5 w-5 group-hover/button:scale-110 transition-transform" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
