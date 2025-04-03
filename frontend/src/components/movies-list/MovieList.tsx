@@ -2,55 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { MovieCard } from '../film-card/MovieCard';
-
-interface Movie {
-  id: number;
-  title: string;
-  posterUrl: string;
-  vote_average: number;
-  release_date: string;
-}
+import { fetchMovies, Movie } from '@/services/service_movies';
 
 export function MovieList() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMovies = async () => {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        console.error('Token não encontrado. Faça login primeiro.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch('http://localhost:8080/movie/get/page/1', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Erro ao buscar filmes: ${response.status}`);
-        }
-
-        const text = await response.text();
-
-        if (!text) {
-          throw new Error('Resposta da API vazia');
-        }
-
-        const data = JSON.parse(text);
-        setMovies(data.results || []);
-      } catch (error) {
-        console.error('Erro ao buscar filmes:', error);
-      } finally {
-        setLoading(false);
-      }
+    const getMovies = async () => {
+      const moviesData = await fetchMovies();
+      setMovies(moviesData);
+      setLoading(false);
     };
 
-    fetchMovies();
+    getMovies();
   }, []);
 
   if (loading) {

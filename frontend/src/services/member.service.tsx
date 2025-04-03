@@ -1,5 +1,3 @@
-// services/memberService.js
-
 const fetchMembers = async () => {
 
     const token = localStorage.getItem('authToken'); 
