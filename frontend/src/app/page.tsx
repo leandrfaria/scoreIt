@@ -6,6 +6,7 @@ import { RandomMoviesCarousel } from '@/components/random-movies-carousel/Random
 import { MovieList } from '@/components/movies-list/MovieList';
 import { useCheckAuth } from '@/hooks/useCheckAuth';
 import Link from 'next/link';
+import PageTransition from '@/components/page-transition/PageTransition';
 
 export default function Home() {
   const isLoggedIn = useCheckAuth();
@@ -39,31 +40,33 @@ export default function Home() {
             <MovieList />
           </>
         ) : (
-          <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
-            {/* Imagem à esquerda */}
-            <div className="w-full md:w-1/2 mb-10 md:mb-0">
-              {randomImage && (
-                <img
-                  src={randomImage}
-                  alt="Poster aleatório"
-                  className="w-full h-[400px] object-cover rounded-lg shadow-lg"
-                />
-              )}
-            </div>
+          <PageTransition>
+            <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
+              {/* Imagem à esquerda */}
+              <div className="w-full md:w-1/2 mb-10 md:mb-0">
+                {randomImage && (
+                  <img
+                    src={randomImage}
+                    alt="Poster aleatório"
+                    className="w-full h-[400px] object-cover rounded-lg shadow-lg"
+                  />
+                )}
+              </div>
 
-            {/* Texto à direita */}
-            <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-12">
-                Faça login para visualizar nossos filmes e músicas!
-              </h1>
-              <Link
-                href="/login"
-                className="px-6 py-3 bg-darkgreen text-white rounded-md hover:brightness-110 transition"
-              >
-                Fazer Login
-              </Link>
+              {/* Texto à direita */}
+              <div className="w-full md:w-1/2 p-8 text-center md:text-left">
+                <h1 className="text-4xl font-bold text-white mb-12">
+                  Faça login para visualizar nossos filmes e músicas!
+                </h1>
+                <Link
+                  href="/login"
+                  className="px-6 py-3 bg-darkgreen text-white rounded-md hover:brightness-110 transition"
+                >
+                  Fazer Login
+                </Link>
+              </div>
             </div>
-          </div>
+          </PageTransition>
         )}
       </Container>
     </main>

@@ -18,9 +18,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Header />
-        <ProtectedRoute>
-          <PageTransition>{children}</PageTransition>
-        </ProtectedRoute>
+      
+          {children}
+        
       </body>
     </html>
   );
