@@ -23,11 +23,11 @@ export function Header() {
   }, [pathname]);
 
   if (isLoggedIn === null) {
-    return null; // ou <p>Carregando...</p> se preferir
+    return null;
   }
 
   return (
-    <header className="w-full h-20 bg-black">
+    <header className="w-full h-20 bg-black relative">
       <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-6">
         {/* Nome do projeto à esquerda */}
         <div className="flex-1">
@@ -36,80 +36,81 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Navegação ou Login à direita */}
+        {/* Navegação centralizada */}
+        {isLoggedIn && (
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
+            <div className="relative flex">
+              <div
+                className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${
+                  activeTab === "/musicas" ? "translate-x-full" : "translate-x-0"
+                }`}
+              ></div>
+              <Link
+                href="/"
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "/" ? "font-bold" : "text-gray-400"
+                }`}
+              >
+                Filmes
+              </Link>
+              <Link
+                href="/musicas"
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "/musicas" ? "font-bold" : "text-gray-400"
+                }`}
+              >
+                Músicas
+              </Link>
+            </div>
+          </nav>
+        )}
+
+        {/* Lado direito: Avatar ou Botão de Login */}
         <div className="flex-1 flex justify-end items-center">
           {isLoggedIn ? (
-            <>
-              {/* Navegação com animação */}
-              <nav className="relative hidden md:flex">
-                <div
-                  className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${
-                    activeTab === "/musicas" ? "translate-x-full" : "translate-x-0"
-                  }`}
-                ></div>
-                <Link
-                  href="/"
-                  className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                    activeTab === "/" ? "font-bold" : "text-gray-400"
-                  }`}
-                >
-                  Filmes
-                </Link>
-                <Link
-                  href="/musicas"
-                  className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                    activeTab === "/musicas" ? "font-bold" : "text-gray-400"
-                  }`}
-                >
-                  Músicas
-                </Link>
-              </nav>
-
-              {/* Avatar / Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="focus:outline-none ml-4">
-                  <Image
-                    src="/profile.jpg"
-                    alt="Avatar"
-                    width={50}
-                    height={50}
-                    className="rounded-full cursor-pointer"
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={10}
-                  className="w-48 bg-black shadow-lg rounded-md p-2 border border-gray-700 data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut"
-                >
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile"
-                      className="block px-2 py-1 hover:bg-gray-900 rounded"
-                    >
-                      Perfil
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/favoritos"
-                      className="block px-2 py-1 hover:bg-gray-900 rounded"
-                    >
-                      Meus Favoritos
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      localStorage.removeItem("authToken");
-                      window.location.href = "/login";
-                    }}
-                    className="block px-2 py-1 text-red-300 hover:bg-red-900 rounded cursor-pointer"
+            <DropdownMenu>
+              <DropdownMenuTrigger className="focus:outline-none ml-4">
+                <Image
+                  src="/profile.jpg"
+                  alt="Avatar"
+                  width={50}
+                  height={50}
+                  className="rounded-full cursor-pointer"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={10}
+                className="w-48 bg-black shadow-lg rounded-md p-2 border border-gray-700 data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut"
+              >
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/profile"
+                    className="block px-2 py-1 hover:bg-gray-900 rounded"
                   >
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
+                    Perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/favoritos"
+                    className="block px-2 py-1 hover:bg-gray-900 rounded"
+                  >
+                    Meus Favoritos
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    localStorage.removeItem("authToken");
+                    window.location.href = "/login";
+                  }}
+                  className="block px-2 py-1 text-red-300 hover:bg-red-900 rounded cursor-pointer"
+                >
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link
               href="/login"
