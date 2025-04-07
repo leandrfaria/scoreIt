@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { registerUser } from "../../services/service_cad";
+import { registerUser } from "../../services/service_cadastro";
 import { Container } from "@/components/container";
 import { useRouter } from "next/navigation";
 import PageTransition from "@/components/page-transition/PageTransition";

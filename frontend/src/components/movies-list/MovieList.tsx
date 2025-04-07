@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { MovieCard } from '../film-card/MovieCard';
-import { fetchMovies, Movie } from '@/services/service_movies';
-
+import { fetchMovies } from '@/services/service_popular_movies';
+import { Movie } from '@/types/Movie'; 
 export function MovieList() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,14 +29,7 @@ export function MovieList() {
   return (
     <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center">
       {movies.map((movie) => (
-        <MovieCard
-          key={movie.id}
-          id={movie.id}
-          title={movie.title}
-          posterUrl={movie.posterUrl}
-          vote_average={movie.vote_average}
-          release_date={movie.release_date}
-        />
+        <MovieCard key={movie.id} {...movie} />
       ))}
     </section>
   );

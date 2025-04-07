@@ -1,54 +1,27 @@
 "use client";
 
-import { AnimatedCarousel, CarouselItem } from "@/utils/aceternity/AnimatedTestimonials";
+import { AnimatedCarousel } from "@/utils/aceternity/AnimatedTestimonials";
 import { useEffect, useState } from "react";
+import { loadRandomCarouselItems } from "@/services/carousel_utils";
+import { CarouselItem } from "@/utils/aceternity/AnimatedTestimonials";
 
 export const RandomMoviesCarousel = () => {
   const [items, setItems] = useState<CarouselItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMovies = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        console.error("Token não encontrado. Faça login primeiro.");
-        setLoading(false);
-        return;
-      }
-
+    const load = async () => {
       try {
-        const response = await fetch("http://localhost:8080/movie/get/page/1", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Erro ao buscar filmes");
-        }
-
-        const data = await response.json();
-        const allMovies = data.results || [];
-
-        const shuffled = allMovies.sort(() => 0.5 - Math.random()).slice(0, 3);
-
-        const mappedItems: CarouselItem[] = shuffled.map((movie: any) => ({
-          image: movie.backdropUrl,
-          title: movie.title,
-          description: movie.overview || "Sem descrição disponível.",
-          buttonLabel: "Ver Detalhes",
-          onClick: () => console.log("Detalhes de:", movie.title),
-        }));
-
-        setItems(mappedItems);
+        const carouselItems = await loadRandomCarouselItems();
+        setItems(carouselItems);
       } catch (error) {
-        console.error("Erro ao buscar filmes:", error);
+        console.error("Erro ao carregar filmes:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMovies();
+    load();
   }, []);
 
   return loading ? (
