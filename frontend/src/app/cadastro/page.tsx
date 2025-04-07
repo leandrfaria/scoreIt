@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { registerUser } from "../../services/service_cad";
+import { registerUser } from "../../services/service_cadastro";
 import { useRouter } from "next/navigation";
 
 type Movie = {
