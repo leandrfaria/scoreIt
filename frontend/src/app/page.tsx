@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import { Container } from '@/components/container';
@@ -7,6 +7,7 @@ import { MovieList } from '@/components/movies-list/MovieList';
 import { useCheckAuth } from '@/hooks/useCheckAuth';
 import Link from 'next/link';
 import PageTransition from '@/components/page-transition/PageTransition';
+import NowPlayingCarouselSection from '@/components/now-playing-carousel/NowPlayingCarouselSection'; // ✅ IMPORT CORRIGIDA
 
 export default function Home() {
   const isLoggedIn = useCheckAuth();
@@ -36,6 +37,7 @@ export default function Home() {
         {isLoggedIn ? (
           <>
             <RandomMoviesCarousel />
+            <NowPlayingCarouselSection /> {/* ✅ FUNCIONANDO AGORA */}
             <h2 className="text-white text-xl font-bold mt-10 mb-4">Todos os Filmes</h2>
             <MovieList />
           </>
