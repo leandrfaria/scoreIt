@@ -31,11 +31,11 @@ export default function Profile() {
   useEffect(() => {
     const loadMembers = async () => {
       try {
-        const membersData = await fetchMembers();
-        setMember(membersData[0]);
+        const membersData = await fetchMembers(true);
+        setMember(membersData);
         setFormData({
-          name: membersData[0]?.name || "",
-          bio: membersData[0]?.bio || "",
+          name: membersData?.name || "",
+          bio: membersData?.bio || "",
         });
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -99,9 +99,8 @@ export default function Profile() {
         if (!uploadRes.ok) throw new Error("Erro ao enviar imagem de perfil");
       }
 
-      // Atualiza estado com novos dados
-      const updated = await fetchMembers();
-      setMember(updated[0]);
+      const updated = await fetchMembers(true);
+      setMember(updated);
       setIsModalOpen(false);
     } catch (err) {
       console.error("Erro ao atualizar perfil:", err);
