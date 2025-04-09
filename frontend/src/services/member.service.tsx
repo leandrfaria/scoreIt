@@ -10,16 +10,16 @@ const fetchMembers = async (useJwtId = false) => {
 
     // Se useJwtId for true, tenta decodificar o ID do JWT
     if (useJwtId && token) {
-        const decoded = jwtDecode<CustomJwtPayload>(token); // Use a interface CustomJwtPayload
-        const memberId = decoded.id; // Supondo que o ID do membro esteja no payload como 'id'
+        const decoded = jwtDecode<CustomJwtPayload>(token);
+        const memberId = decoded.id;
         url += `/${memberId}`;
-        console.log('ID :::: ', memberId)
+        console.log('ID :::: ', memberId);
     }
 
     const response = await fetch(url, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,  
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         }
     });
@@ -32,4 +32,24 @@ const fetchMembers = async (useJwtId = false) => {
     return data;
 };
 
-export { fetchMembers };
+const updateMember = async (memberId: string, payload: any) => {
+    const token = localStorage.getItem('authToken');
+
+    const response = await fetch(`http://localhost:8080/member/update`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        throw new Error('Erro ao atualizar perfil');
+    }
+
+    const updatedMember = await response.json(); // Retorna o membro atualizado
+    return updatedMember;
+};
+
+export { fetchMembers, updateMember };

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import PageTransition from "@/components/page-transition/PageTransition";
 import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
+import { MemberProvider } from "@/context/MemberContext";
 
 export const metadata: Metadata = {
   title: "ScoreIt",
@@ -15,13 +16,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <Header />
-      
-          {children}
+    <MemberProvider>
+      <html lang="en">
+        <body>
+          <Header />
         
-      </body>
-    </html>
+            {children}
+          
+        </body>
+      </html>
+    </MemberProvider>
   );
 }
