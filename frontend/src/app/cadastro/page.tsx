@@ -41,8 +41,6 @@ useEffect(() => {
 
     if(response.success){
       router.push("/")
-    } else{
-      toast.error(response.message);
     }
   };
 
