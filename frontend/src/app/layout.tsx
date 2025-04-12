@@ -17,11 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-
+   <MemberProvider>
     <html lang="en">
       <body>
         <Header />
-
+      
         <Toaster
           position="top-center"
           toastOptions={{
