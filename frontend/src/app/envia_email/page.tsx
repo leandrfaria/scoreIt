@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Container } from "@/components/container";
 import PageTransition from "@/components/page-transition/PageTransition";
 import { sendResetEmail } from "@/services/service_enviaEmail";
+import toast from "react-hot-toast";
 
 export default function RecupSenha() {
   const [email, setEmail] = useState("");
@@ -37,12 +38,12 @@ export default function RecupSenha() {
     setLoading(false);
 
     if (result.success) {
-      setMensagem("E-mail enviado com sucesso! Redirecionando...");
+      toast.success("E-mail enviado com sucesso! Redirecionando...");
       setTimeout(() => {
         router.push("/login");
       }, 2000);
     } else {
-      setMensagem(result.message);
+      toast.error("Erro ao enviar e-mail de redefinição. Verifique se o email está correto");
     }
   };
 

@@ -11,13 +11,8 @@ export const sendResetEmail = async (email: string) => {
       body: formData.toString(),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Erro ao enviar e-mail de redefinição.");
-    }
-
     return { success: true, message: "E-mail enviado com sucesso!" };
   } catch (error: any) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Erro ao enviar e-mail de redefinição." };
   }
 };

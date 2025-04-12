@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import PageTransition from "@/components/page-transition/PageTransition";
 import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
+import { Toaster } from "react-hot-toast";
 import { MemberProvider } from "@/context/MemberContext";
 
 export const metadata: Metadata = {
@@ -16,12 +17,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <MemberProvider>
-      <html lang="en">
-        <body>
-          <Header />
-        
-            {children}
+
+    <html lang="en">
+      <body>
+        <Header />
+
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: "#333",
+              color: "#fff",
+            },
+          }}
+        />
+          {children}
           
         </body>
       </html>

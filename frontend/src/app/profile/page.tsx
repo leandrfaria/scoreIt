@@ -11,6 +11,7 @@ import ProfileEditModal from "@/components/profile-edit-modal/ProfileEditModal";
 import { useMember } from "@/context/MemberContext"; // Usando o contexto
 import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
 import { Member } from "@/types/Member";
+import toast from "react-hot-toast";
 
 export default function Profile() {
   const { member, setMember } = useMember(); // Obtendo o membro do contexto
@@ -24,7 +25,7 @@ export default function Profile() {
         const membersData = await fetchMembers(true);
         setMember(membersData); // Atualiza o estado do membro no contexto
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Um erro desconhecido ocorreu");
+        toast.error(err instanceof Error ? err.message : "Um erro desconhecido ocorreu");
       } finally {
         setLoading(false);
       }
@@ -67,13 +68,13 @@ export default function Profile() {
           body: formDataImage,
         });
 
-        if (!uploadRes.ok) throw new Error("Erro ao enviar imagem de perfil");
+        if (!uploadRes.ok) throw toast.error("Erro ao enviar imagem de perfil");
       }
 
       setIsModalOpen(false);
     } catch (err) {
       console.error("Erro ao atualizar perfil:", err);
-      alert("Erro ao atualizar perfil. Tente novamente.");
+      toast.error("Erro ao atualizar perfil. Tente novamente.");
     }
   };
 

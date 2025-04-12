@@ -16,7 +16,6 @@ const nextConfig: NextConfig = {
         hostname: "marketup.com",
       },
     ],
-    domains: ['image.tmdb.org'],
   },
 };
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/service_login";
 import PageTransition from "@/components/page-transition/PageTransition";
 import { Container } from "@/components/container";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -39,9 +40,10 @@ export default function Login() {
     if (response.success) {
       // Se o login for bem-sucedido, redireciona para a página principal
       console.log("Token JWT gerado:", response.token); // Exibe o token JWT gerado no console
+      toast.success("Login feito com sucesso!")
       router.push("/");
     } else {
-      setMensagem(response.message);
+      toast.error("Erro ao fazer login! Verifique se preencheu corretamente as informações");
     }
 
     setLoading(false); 
