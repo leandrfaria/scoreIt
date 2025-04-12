@@ -1,3 +1,4 @@
+
 export const resetPassword = async (token: string, newPassword: string) => {
   try {
     const formData = new URLSearchParams();
@@ -12,13 +13,8 @@ export const resetPassword = async (token: string, newPassword: string) => {
       body: formData.toString(),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Erro ao atualizar a senha");
-    }
-
     return { success: true };
   } catch (error: any) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Erro ao atualizar a senha"};
   }
 };

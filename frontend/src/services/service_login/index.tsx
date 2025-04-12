@@ -12,10 +12,6 @@ export const loginUser = async (email: string, password: string) => {
 
     const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || "Erro ao fazer login.");
-    }
-
     // Verificar se o token JWT foi retornado
     if (data.token) {
       localStorage.setItem("authToken", data.token);
@@ -24,6 +20,6 @@ export const loginUser = async (email: string, password: string) => {
       throw new Error("Token JWT não gerado.");
     }
   } catch (error: any) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Erro ao fazer login. Verifique seu email e senha" };
   }
 };

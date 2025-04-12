@@ -11,8 +11,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
       },
+      {
+        protocol: "https",
+        hostname: "marketup.com",
+      },
     ],
-    domains: ['image.tmdb.org'],
   },
 };
 

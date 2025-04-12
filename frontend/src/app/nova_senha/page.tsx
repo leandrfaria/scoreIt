@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Container } from "@/components/container";
 import PageTransition from "@/components/page-transition/PageTransition";
 import { resetPassword } from "@/services/service_refazSenha"
+import toast from 'react-hot-toast';
 
 export default function NovaSenha() {
   const [newSenha, setNewSenha] = useState("");
@@ -46,12 +47,12 @@ export default function NovaSenha() {
     setLoading(false);
 
     if (result.success) {
-      setMensagem("Senha atualizada com sucesso! Redirecionando...");
+      toast.success("Senha atualizada com sucesso! Redirecionando...");
       setTimeout(() => {
         router.push("/");
       }, 2000);
     } else {
-      setMensagem(result.message);
+      toast.error("Erro ao atualizar a senha");
     }
   };
 

@@ -9,6 +9,7 @@ import { RandomMoviesCarousel } from "@/components/random-movies-carousel/Random
 import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
 import { createPortal } from "react-dom";
 import { FiEdit2 } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 type Member = {
   id: number;
@@ -41,7 +42,7 @@ export default function Profile() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Um erro desconhecido ocorreu");
+          toast.error("Um erro desconhecido ocorreu");
         }
       } finally {
         setLoading(false);
@@ -81,7 +82,10 @@ export default function Profile() {
         body: JSON.stringify(payload),
       });
 
-      if (!updateRes.ok) throw new Error("Erro ao atualizar perfil");
+      if (!updateRes.ok) toast.error("Erro ao atualizar perfil");
+      else{
+        toast.success("Perfil atualizado!")
+      }
 
       // Upload da imagem
       if (imageFile) {
@@ -96,7 +100,7 @@ export default function Profile() {
           body: formDataImage,
         });
 
-        if (!uploadRes.ok) throw new Error("Erro ao enviar imagem de perfil");
+        if (!uploadRes.ok) toast.error("Erro ao enviar imagem de perfil");
       }
 
       // Atualiza estado com novos dados
@@ -105,7 +109,7 @@ export default function Profile() {
       setIsModalOpen(false);
     } catch (err) {
       console.error("Erro ao atualizar perfil:", err);
-      alert("Erro ao atualizar perfil. Tente novamente.");
+      toast.error("Erro ao atualizar perfil. Tente novamente.");
     }
   };
 

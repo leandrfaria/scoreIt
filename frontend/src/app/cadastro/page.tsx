@@ -5,6 +5,8 @@ import { registerUser } from "../../services/service_cadastro";
 import { Container } from "@/components/container";
 import { useRouter } from "next/navigation";
 import PageTransition from "@/components/page-transition/PageTransition";
+import toast from 'react-hot-toast';
+
 
 export default function Cadastro() {
 
@@ -35,10 +37,12 @@ useEffect(() => {
     setMensagem("");
 
     const response = await registerUser(name, email, senha);
-    setMensagem(response.message);
+    toast.success(response.message);
 
     if(response.success){
       router.push("/")
+    } else{
+      toast.error(response.message);
     }
   };
 
