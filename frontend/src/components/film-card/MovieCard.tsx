@@ -6,7 +6,7 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import Image from "next/image";
 import { FaStar } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { Movie } from "@/types/Movie"; // ✅ aqui está a interface importada
+import { Movie } from "@/types/Movie"; 
 
 export function MovieCard({
   id,
