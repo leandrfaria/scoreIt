@@ -121,7 +121,7 @@ const ProfileHeader = ({ member, onEditClick }: { member: Member | null; onEditC
             <FiEdit2 size={18} />
           </button>
         </div>
-        <p className="text-gray-400 text-sm max-w-md">{member?.bio || "Não há bio"}</p>
+        <p className="text-gray-400 text-sm max-w-sm break-all">{member?.bio || "Não há bio"}</p>
       </div>
     </div>
     <ProfileStats />
