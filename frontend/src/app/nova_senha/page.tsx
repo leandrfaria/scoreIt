@@ -1,22 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { loginUser } from "@/services/service_login";
-import PageTransition from "@/components/page-transition/PageTransition";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Container } from "@/components/container";
-import toast from "react-hot-toast";
-import { useAuthContext } from "@/context/AuthContext";
+import PageTransition from "@/components/page-transition/PageTransition";
+import { resetPassword } from "@/services/service_refazSenha"
+import toast from 'react-hot-toast';
 
-export default function Login() {
-  const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+export default function NovaSenha() {
+  const [newSenha, setNewSenha] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [loading, setLoading] = useState(false);
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
 
   const router = useRouter();
-  const { setIsLoggedIn } = useAuthContext();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   useEffect(() => {
     const posters = [
@@ -32,27 +31,34 @@ export default function Login() {
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
 
-  const handleLogin = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setMensagem("");
-    setLoading(true);
 
-    const response = await loginUser(email, senha);
-
-    if (response.success) {
-      setIsLoggedIn(true);
-      toast.success("Login feito com sucesso!");
-      router.push("/");
-    } else {
-      toast.error("Erro ao fazer login! Verifique se preencheu corretamente as informações.");
+    if (!token) {
+      setMensagem("Token inválido ou expirado.");
+      return;
     }
 
+    setLoading(true);
+
+    const result = await resetPassword(token, newSenha);
+
     setLoading(false);
+
+    if (result.success) {
+      toast.success("Senha atualizada com sucesso! Redirecionando...");
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+    } else {
+      toast.error("Erro ao atualizar a senha");
+    }
   };
 
   return (
     <PageTransition>
-      <main className="w-full h-full flex">
+      <main className="w-full">
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
             {/* Imagem à esquerda */}
@@ -66,49 +72,33 @@ export default function Login() {
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">Login</h1>
+              <h1 className="text-4xl font-bold text-white mb-8">Crie uma senha forte</h1>
               <form
-                onSubmit={handleLogin}
                 className="space-y-4 max-w-md mx-auto md:mx-0"
+                onSubmit={handleSubmit}
               >
                 <input
-                  type="email"
-                  placeholder="E-mail"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  required
-                />
-                <input
                   type="password"
-                  placeholder="Senha"
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
+                  placeholder="Digite sua nova senha"
+                  value={newSenha}
+                  onChange={(e) => setNewSenha(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   required
                 />
+
                 <button
                   type="submit"
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? "Entrando..." : "Entrar"}
+                  {loading ? "Salvando..." : "Salvar Senha"}
                 </button>
+
                 {mensagem && (
                   <p className="text-red-400 text-sm text-center mt-2">
                     {mensagem}
                   </p>
                 )}
-                <div className="text-center">
-                  <a href="/cadastro" className="text-emerald-400 hover:underline">
-                    Não possui conta? Cadastre-se
-                  </a>
-                </div>
-                <div className="text-center">
-                  <a href="/envia_email" className="text-emerald-400 hover:underline">
-                    Esqueceu sua senha?
-                  </a>
-                </div>
               </form>
             </div>
           </div>

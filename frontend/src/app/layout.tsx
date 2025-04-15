@@ -15,6 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+   <MemberProvider>
     <html lang="en">
       <body>
         <AuthProvider> 

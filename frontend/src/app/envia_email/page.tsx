@@ -1,22 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/services/service_login";
-import PageTransition from "@/components/page-transition/PageTransition";
 import { Container } from "@/components/container";
+import PageTransition from "@/components/page-transition/PageTransition";
+import { sendResetEmail } from "@/services/service_enviaEmail";
 import toast from "react-hot-toast";
-import { useAuthContext } from "@/context/AuthContext";
 
-export default function Login() {
-  const [loading, setLoading] = useState(false);
+export default function RecupSenha() {
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [loading, setLoading] = useState(false);
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
-
   const router = useRouter();
-  const { setIsLoggedIn } = useAuthContext();
 
   useEffect(() => {
     const posters = [
@@ -32,27 +28,28 @@ export default function Login() {
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
 
-  const handleLogin = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setMensagem("");
     setLoading(true);
 
-    const response = await loginUser(email, senha);
-
-    if (response.success) {
-      setIsLoggedIn(true);
-      toast.success("Login feito com sucesso!");
-      router.push("/");
-    } else {
-      toast.error("Erro ao fazer login! Verifique se preencheu corretamente as informações.");
-    }
+    const result = await sendResetEmail(email);
 
     setLoading(false);
+
+    if (result.success) {
+      toast.success("E-mail enviado com sucesso! Redirecionando...");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } else {
+      toast.error("Erro ao enviar e-mail de redefinição. Verifique se o email está correto");
+    }
   };
 
   return (
     <PageTransition>
-      <main className="w-full h-full flex">
+      <main className="w-full">
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
             {/* Imagem à esquerda */}
@@ -66,49 +63,33 @@ export default function Login() {
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">Login</h1>
+              <h1 className="text-4xl font-bold text-white mb-8">Adicione o Email da Sua Conta</h1>
               <form
-                onSubmit={handleLogin}
                 className="space-y-4 max-w-md mx-auto md:mx-0"
+                onSubmit={handleSubmit}
               >
                 <input
                   type="email"
-                  placeholder="E-mail"
+                  placeholder="Digite o Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   required
                 />
-                <input
-                  type="password"
-                  placeholder="Senha"
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  required
-                />
+
                 <button
                   type="submit"
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? "Entrando..." : "Entrar"}
+                  {loading ? "Enviando..." : "Enviar Email"}
                 </button>
+
                 {mensagem && (
                   <p className="text-red-400 text-sm text-center mt-2">
                     {mensagem}
                   </p>
                 )}
-                <div className="text-center">
-                  <a href="/cadastro" className="text-emerald-400 hover:underline">
-                    Não possui conta? Cadastre-se
-                  </a>
-                </div>
-                <div className="text-center">
-                  <a href="/envia_email" className="text-emerald-400 hover:underline">
-                    Esqueceu sua senha?
-                  </a>
-                </div>
               </form>
             </div>
           </div>

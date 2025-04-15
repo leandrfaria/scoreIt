@@ -9,10 +9,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "i.scdn.co", // ✅ adicionado para imagens do Spotify
+        hostname: "i.scdn.co", 
       },
     ],
-    domains: ["image.tmdb.org", "i.scdn.co"], // ✅ ambos os domínios incluídos
+    domains: ["image.tmdb.org", "i.scdn.co"], 
   },
 };
 

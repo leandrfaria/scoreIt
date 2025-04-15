@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/utils/shadcn";
+import LogoLateral from "@/assets/LogoLateral";
 
 export function Header() {
   const pathname = usePathname();
@@ -27,7 +28,7 @@ export function Header() {
       <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-6">
         <div className="flex-1">
           <Link href="/" className="text-white text-lg font-semibold">
-            ScoreIt
+            <LogoLateral/>
           </Link>
         </div>
 
