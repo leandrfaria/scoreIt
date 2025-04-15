@@ -30,10 +30,12 @@ export const RandomMoviesCarousel = () => {
         const data = await response.json();
         const allMovies = data.results || [];
 
+        // Embaralha e seleciona 3
         const shuffled = allMovies.sort(() => 0.5 - Math.random()).slice(0, 3);
 
+        // Monta os itens com imagem em qualidade máxima
         const mappedItems: CarouselItem[] = shuffled.map((movie: any) => ({
-          image: movie.backdropUrl,
+          image: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
           title: movie.title,
           description: movie.overview || "Sem descrição disponível.",
           buttonLabel: "Ver Detalhes",
