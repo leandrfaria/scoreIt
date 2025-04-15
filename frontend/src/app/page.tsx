@@ -1,27 +1,28 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { Container } from '@/components/container';
-import { RandomMoviesCarousel } from '@/components/random-movies-carousel/RandomMoviesCarousel';
-import { MovieList } from '@/components/movies-list/MovieList';
-import { useCheckAuth } from '@/hooks/useCheckAuth';
-import Link from 'next/link';
-import PageTransition from '@/components/page-transition/PageTransition';
-import NowPlayingCarouselSection from '@/components/now-playing-carousel/NowPlayingCarouselSection'; // ✅ IMPORT CORRIGIDA
+import { useEffect, useState } from "react";
+import { Container } from "@/components/container";
+import { RandomMoviesCarousel } from "@/components/random-movies-carousel/RandomMoviesCarousel";
+import { MovieList } from "@/components/movies-list/MovieList";
+import { useCheckAuth } from "@/hooks/useCheckAuth";
+import Link from "next/link";
+import PageTransition from "@/components/page-transition/PageTransition";
+import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
+import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel"; // ✅ IMPORT NOVO
 
 export default function Home() {
   const isLoggedIn = useCheckAuth();
-  const [randomImage, setRandomImage] = useState('');
+  const [randomImage, setRandomImage] = useState("");
 
   useEffect(() => {
     const posters = [
-      'poster1.png',
-      'poster2.png',
-      'poster3.png',
-      'poster4.png',
-      'poster5.png',
-      'poster6.png',
-      'poster7.png',
+      "poster1.png",
+      "poster2.png",
+      "poster3.png",
+      "poster4.png",
+      "poster5.png",
+      "poster6.png",
+      "poster7.png",
     ];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
@@ -37,7 +38,8 @@ export default function Home() {
         {isLoggedIn ? (
           <>
             <RandomMoviesCarousel />
-            <NowPlayingCarouselSection /> {/* ✅ FUNCIONANDO AGORA */}
+            <NowPlayingCarouselSection />
+            <TopArtistsCarouselSection /> {/* ✅ NOVO CARROSSEL DE ARTISTAS */}
             <h2 className="text-white text-xl font-bold mt-10 mb-4">Todos os Filmes</h2>
             <MovieList />
           </>

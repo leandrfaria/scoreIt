@@ -1,11 +1,14 @@
 "use client";
 
 import { Container } from "@/components/container";
-import MovieCarousel from "@/components/carousel";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { fetchMembers } from "../../services/member.service";
 import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
+import { MovieCarousel } from "@/components/movie-carousel/MovieCarousel";
+import { fetchMembers } from "@/services/service_member"
+
+
+
 
 type Member = {
   id: number;

@@ -7,8 +7,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "image.tmdb.org",
       },
+      {
+        protocol: "https",
+        hostname: "i.scdn.co", // ✅ adicionado para imagens do Spotify
+      },
     ],
-    domains: ['image.tmdb.org'],
+    domains: ["image.tmdb.org", "i.scdn.co"], // ✅ ambos os domínios incluídos
   },
 };
 
