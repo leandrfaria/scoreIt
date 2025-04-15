@@ -2,7 +2,7 @@ import { Header } from "@/components/header";
 import type { Metadata } from "next";
 import "./globals.css";
 import PageTransition from "@/components/page-transition/PageTransition";
-import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
+import { AuthProvider } from "@/context/AuthContext"; 
 
 export const metadata: Metadata = {
   title: "ScoreIt",
@@ -17,10 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Header />
-      
+        <AuthProvider> 
+          <Header />
           {children}
-        
+        </AuthProvider>
       </body>
     </html>
   );

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useCheckAuth } from "@/hooks/useCheckAuth";
+import { useAuthContext } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,27 +16,21 @@ import {
 export function Header() {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState("/");
-  const isLoggedIn = useCheckAuth();
+  const { isLoggedIn, setIsLoggedIn } = useAuthContext();
 
   useEffect(() => {
     setActiveTab(pathname);
   }, [pathname]);
 
-  if (isLoggedIn === null) {
-    return null;
-  }
-
   return (
     <header className="w-full h-20 bg-black relative">
       <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-6">
-        {/* Nome do projeto à esquerda */}
         <div className="flex-1">
           <Link href="/" className="text-white text-lg font-semibold">
             ScoreIt
           </Link>
         </div>
 
-        {/* Navegação centralizada */}
         {isLoggedIn && (
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
             <div className="relative flex">
@@ -65,7 +59,6 @@ export function Header() {
           </nav>
         )}
 
-        {/* Lado direito: Avatar ou Botão de Login */}
         <div className="flex-1 flex justify-end items-center">
           {isLoggedIn ? (
             <DropdownMenu>
@@ -81,21 +74,15 @@ export function Header() {
               <DropdownMenuContent
                 align="end"
                 sideOffset={10}
-                className="w-48 bg-black shadow-lg rounded-md p-2 border border-gray-700 data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut"
+                className="w-48 bg-black shadow-lg rounded-md p-2 border border-gray-700"
               >
                 <DropdownMenuItem asChild>
-                  <Link
-                    href="/profile"
-                    className="block px-2 py-1 hover:bg-gray-900 rounded"
-                  >
+                  <Link href="/profile" className="block px-2 py-1 hover:bg-gray-900 rounded">
                     Perfil
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link
-                    href="/favoritos"
-                    className="block px-2 py-1 hover:bg-gray-900 rounded"
-                  >
+                  <Link href="/favoritos" className="block px-2 py-1 hover:bg-gray-900 rounded">
                     Meus Favoritos
                   </Link>
                 </DropdownMenuItem>
@@ -103,6 +90,7 @@ export function Header() {
                 <DropdownMenuItem
                   onClick={() => {
                     localStorage.removeItem("authToken");
+                    setIsLoggedIn(false); // 🔥 Atualiza o header sem reload
                     window.location.href = "/login";
                   }}
                   className="block px-2 py-1 text-red-300 hover:bg-red-900 rounded cursor-pointer"

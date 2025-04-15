@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loginUser } from "../../services/service_login";
 import { Container } from "@/components/container";
 import PageTransition from "@/components/page-transition/PageTransition";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -13,7 +14,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const router = useRouter();
-
+  const { setIsLoggedIn } = useAuthContext(); 
   useEffect(() => {
     const posters = [
       "poster1.png",
@@ -36,6 +37,7 @@ export default function Login() {
     const response = await loginUser(email, senha);
 
     if (response.success) {
+      setIsLoggedIn(true); 
       router.push("/");
     } else {
       setMensagem(response.message);
@@ -49,7 +51,7 @@ export default function Login() {
       <main className="w-full">
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
-            {/* Imagem à esquerda - igual home */}
+
             <div className="w-full md:w-1/2 mb-10 md:mb-0">
               <img
                 src={randomImage}
@@ -58,7 +60,7 @@ export default function Login() {
               />
             </div>
 
-            {/* Formulário à direita */}
+
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
               <h1 className="text-4xl font-bold text-white mb-8">Login</h1>
               <form
