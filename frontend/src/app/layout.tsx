@@ -2,9 +2,7 @@ import { Header } from "@/components/header";
 import type { Metadata } from "next";
 import "./globals.css";
 import PageTransition from "@/components/page-transition/PageTransition";
-import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
-import { Toaster } from "react-hot-toast";
-import { MemberProvider } from "@/context/MemberContext";
+import { AuthProvider } from "@/context/AuthContext"; 
 
 export const metadata: Metadata = {
   title: "ScoreIt",
@@ -20,22 +18,11 @@ export default function RootLayout({
    <MemberProvider>
     <html lang="en">
       <body>
-        <Header />
-      
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: "#333",
-              color: "#fff",
-            },
-          }}
-        />
+        <AuthProvider> 
+          <Header />
           {children}
-          
-        </body>
-      </html>
-    </MemberProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

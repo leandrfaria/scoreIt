@@ -1,4 +1,3 @@
-// src/components/now-playing-carousel/NowPlayingCarouselSection.tsx
 
 "use client";
 

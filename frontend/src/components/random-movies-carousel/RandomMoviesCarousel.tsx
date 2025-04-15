@@ -1,7 +1,7 @@
 "use client";
 
-import { AnimatedCarousel } from "@/utils/aceternity/AnimatedTestimonials";
 import { useEffect, useState } from "react";
+import { AnimatedCarousel } from "@/utils/aceternity/AnimatedTestimonials";
 import { loadRandomCarouselItems } from "@/services/carousel_utils";
 import { CarouselItem } from "@/utils/aceternity/AnimatedTestimonials";
 
@@ -24,16 +24,20 @@ export const RandomMoviesCarousel = () => {
     load();
   }, []);
 
-  return loading ? (
-    <p className="text-gray-400 text-center">Carregando filmes...</p>
-  ) : items.length > 0 ? (
+  if (loading) {
+    return <p className="text-gray-400 text-center">Carregando filmes...</p>;
+  }
+
+  if (items.length === 0) {
+    return <p className="text-gray-400 text-center">Nenhum filme encontrado.</p>;
+  }
+
+  return (
     <AnimatedCarousel
       items={items}
       autoplay={true}
       arrowButtonClass="bg-[var(--color-darkgreen)] hover:brightness-110 text-white"
       detailButtonClass="bg-[var(--color-darkgreen)] hover:brightness-110 text-white"
     />
-  ) : (
-    <p className="text-gray-400 text-center">Nenhum filme encontrado.</p>
   );
 };

@@ -9,13 +9,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-      {
-        protocol: "https",
-        hostname: "marketup.com",
+        hostname: "i.scdn.co", 
       },
     ],
+    domains: ["image.tmdb.org", "i.scdn.co"], 
   },
 };
 
