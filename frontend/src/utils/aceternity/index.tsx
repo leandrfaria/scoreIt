@@ -1,2 +1,2 @@
-export { AnimatedTestimonials } from "./AnimatedTestimonials";
+export { AnimatedCarousel } from "./AnimatedTestimonials";
 export { cn } from "./utils";

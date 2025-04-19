@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react';
 import { MovieCard } from '../film-card/MovieCard';
 import { fetchMovies } from '@/services/service_popular_movies';
-import { Movie } from '@/types/Movie'; 
+import { Movie } from '@/types/Movie';
+import { useTranslations } from 'next-intl';
+
 export function MovieList() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const t = useTranslations('MovieList');
 
   useEffect(() => {
     const getMovies = async () => {
@@ -19,11 +22,11 @@ export function MovieList() {
   }, []);
 
   if (loading) {
-    return <p className="text-center mt-10 text-white">Carregando filmes...</p>;
+    return <p className="text-center mt-10 text-white">{t('loading')}</p>;
   }
 
   if (movies.length === 0) {
-    return <p className="text-center mt-10 text-white">Nenhum filme encontrado.</p>;
+    return <p className="text-center mt-10 text-white">{t('noMoviesFound')}</p>;
   }
 
   return (

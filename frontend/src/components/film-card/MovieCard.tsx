@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import Image from "next/image";
 import { FaStar } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { Movie } from "@/types/Movie"; // ✅ aqui está a interface importada
+import { Movie } from "@/types/Movie";
+import { useTranslations } from "next-intl";
 
 export function MovieCard({
   id,
@@ -15,13 +16,14 @@ export function MovieCard({
   backdropUrl,
   vote_average,
   release_date,
-  overview = "Sem descrição disponível.",
+  overview,
   genre = "Drama",
 }: Movie) {
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const year = new Date(release_date).getFullYear();
   const router = useRouter();
+  const t = useTranslations("MovieCard");
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
@@ -102,9 +104,11 @@ export function MovieCard({
               <div className="space-y-4">
                 <p className="text-xl font-semibold">{title}</p>
                 <p className="text-gray-400 text-sm">
-                  Lançamento: {new Date(release_date).toLocaleDateString("pt-BR")}
+                  {t("releaseDate")}: {new Date(release_date).toLocaleDateString()}
                 </p>
-                <p className="text-gray-300 text-sm">{overview}</p>
+                <p className="text-gray-300 text-sm">
+                  {overview?.trim() ? overview : t("noDescription")}
+                </p>
               </div>
 
               <div className="mt-6 flex justify-end">
@@ -112,7 +116,7 @@ export function MovieCard({
                   onClick={() => router.push(`/movie/${id}`)}
                   className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition"
                 >
-                  Ver detalhes
+                  {t("viewDetails")}
                 </button>
               </div>
             </motion.div>

@@ -1,0 +1,110 @@
+{
+    "cadastro": {
+      "titulo": "Crie sua conta!",
+      "nome": "Nome",
+      "email": "E-mail",
+      "senha": "Senha",
+      "botao": "Cadastrar",
+      "possui_conta": "Já possui conta?",
+      "cadastro_sucesso": "Usuario cadastrado com sucesso!",
+      "cadastro_erro": "Erro ao cadastrar, verifique as informações preenchidas"
+    },
+    "login": {
+      "titulo": "Login",
+      "email": "E-mail",
+      "senha": "Senha",
+      "botao": "Entrar",
+      "carregando": "Entrando...",
+      "login_sucesso": "Login feito com sucesso!",
+      "login_erro": "Erro ao fazer login! Verifique se preencheu corretamente todas as informações.",
+      "cadastro": "Não possui conta? Cadastre-se",
+      "esqueceu_senha": "Esqueceu sua senha?"
+    },
+    "envia_email": {
+      "titulo": "Adicione o Email da Sua Conta",
+      "placeholder_email": "Digite o Email",
+      "botao_enviar": "Enviar Email",
+      "botao_enviando": "Enviando...",
+      "sucesso": "E-mail enviado com sucesso! Redirecionando...",
+      "erro": "Erro ao enviar e-mail de redefinição. Verifique se o email está correto",
+      "Voltar": "Voltar para a pagina de login"
+    },
+    "nova_senha": {
+      "titulo": "Crie uma senha forte",
+      "placeholder": "Digite sua nova senha",
+      "botao": "Salvar Senha",
+      "salvando": "Salvando...",
+      "token_invalido": "Token inválido ou expirado.",
+      "senha_sucesso": "Senha atualizada com sucesso! Redirecionando...",
+      "senha_erro": "Erro ao atualizar a senha",
+      "poster_aleatorio_alt": "Poster aleatório"
+      },
+        "profile": {
+          "title": "Perfil do Usuário",
+          "edit_profile": "Editar Perfil",
+          "no_bio": "Não há bio",
+          "movies": "Filmes",
+          "followers": "Seguidores",
+          "following": "Seguindo",
+          "error_updating_profile": "Erro ao atualizar perfil. Tente novamente.",
+          "success_updating_profile": "Perfil atualizado com sucesso.",
+          "edit_profile_title": "Editar Perfil",
+          "name": "Nome",
+          "bio": "Bio",
+          "save": "Salvar",
+          "cancel": "Cancelar",
+          "error_uploading_image": "Erro ao enviar imagem de perfil",
+          "loading": "Carregando..."
+        },
+    "home": {
+      "verificando_login": "Verificando login...",
+      "todos_filmes": "Todos os Filmes",
+      "mensagem_login": "Faça login para visualizar nossos filmes e músicas!",
+      "botao_login": "Fazer Login"
+    },
+    "header": {
+      "filmes": "Filmes",
+      "musicas": "Músicas",
+      "perfil": "Perfil",
+      "favoritos": "Meus Favoritos",
+      "logout": "Sair",
+      "login": "Login"
+    },
+    "footer": {
+      "direitos": "Todos os direitos reservados.",
+      "sobre": "Sobre",
+      "contato": "Contato"
+    },
+    "RandomMovie": {
+    "loading": "Carregando filmes...",
+    "notFound": "Nenhum filme encontrado.",
+    "detailButton": "Ver Detalhes"
+  },
+  "ProfileEditModal": {
+    "title": "Editar Perfil",
+    "namePlaceholder": "Nome",
+    "bioPlaceholder": "Bio",
+    "cancelButton": "Cancelar",
+    "saveButton": "Salvar"
+  },
+  "NowPlayingCarousel": {
+    "loading": "Carregando filmes em cartaz...",
+    "noMoviesFound": "Nenhum filme em cartaz encontrado.",
+    "carouselTitle": "Filmes em Cartaz",
+    "tokenNotFound": "Token não encontrado. Faça login primeiro.",
+    "emptyListWarning": "🚨 Lista vazia! Adicionando mock...",
+    "mockMovie": {
+      "title": "Mockado",
+      "overview": "Esse é um mock." 
+    }
+  },
+  "MovieList": {
+    "loading": "Carregando filmes...",
+    "noMoviesFound": "Nenhum filme encontrado."
+  },
+  "MovieCard": {
+    "releaseDate": "Lançamento",
+    "noDescription": "Sem descrição disponível.",
+    "viewDetails": "Ver detalhes"
+  }
+}  
