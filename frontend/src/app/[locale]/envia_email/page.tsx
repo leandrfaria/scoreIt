@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Container } from "@/components/container";
 import PageTransition from "@/components/page-transition/PageTransition";
-import { resetPassword } from "@/services/service_refazSenha"
-import toast from 'react-hot-toast';
+import { sendResetEmail } from "@/services/service_enviaEmail";
+import toast from "react-hot-toast";
+import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { Locale } from "@/i18n/routing"; // ou o caminho certo do seu arquivo
 
-export default function NovaSenha() {
-  const [newSenha, setNewSenha] = useState("");
+export default function RecupSenha() {
+  const [email, setEmail] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [loading, setLoading] = useState(false);
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
-
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+
+  const t = useTranslations("envia_email");
+  const locale = useLocale();
 
   useEffect(() => {
     const posters = [
@@ -34,25 +37,19 @@ export default function NovaSenha() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMensagem("");
-
-    if (!token) {
-      setMensagem("Token inválido ou expirado.");
-      return;
-    }
-
     setLoading(true);
 
-    const result = await resetPassword(token, newSenha);
+    const result = await sendResetEmail(email);
 
     setLoading(false);
 
     if (result.success) {
-      toast.success("Senha atualizada com sucesso! Redirecionando...");
+      toast.success(t("sucesso"));
       setTimeout(() => {
-        router.push("/");
+        router.push(`/${locale}/login`);
       }, 2000);
     } else {
-      toast.error("Erro ao atualizar a senha");
+      toast.error(t("erro"));
     }
   };
 
@@ -72,16 +69,18 @@ export default function NovaSenha() {
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">Crie uma senha forte</h1>
+              <h1 className="text-4xl font-bold text-white mb-8">
+                {t("titulo")}
+              </h1>
               <form
                 className="space-y-4 max-w-md mx-auto md:mx-0"
                 onSubmit={handleSubmit}
               >
                 <input
-                  type="password"
-                  placeholder="Digite sua nova senha"
-                  value={newSenha}
-                  onChange={(e) => setNewSenha(e.target.value)}
+                  type="email"
+                  placeholder={t("placeholder_email")}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   required
                 />
@@ -91,7 +90,7 @@ export default function NovaSenha() {
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? "Salvando..." : "Salvar Senha"}
+                  {loading ? t("botao_enviando") : t("botao_enviar")}
                 </button>
 
                 {mensagem && (
@@ -100,6 +99,12 @@ export default function NovaSenha() {
                   </p>
                 )}
               </form>
+
+              <div className="text-center mt-4 mr-28">
+                <Link href="/login" locale={locale as Locale} className="text-emerald-400 hover:underline">
+                {t("Voltar")}
+                </Link>
+              </div>
             </div>
           </div>
         </Container>

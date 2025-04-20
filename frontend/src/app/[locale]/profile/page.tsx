@@ -4,19 +4,22 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Container } from "@/components/container";
 import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
-import { fetchMembers, updateMember } from "@/services/member.service";
-import { createPortal } from "react-dom";
 import { FiEdit2 } from "react-icons/fi";
 import ProfileEditModal from "@/components/profile-edit-modal/ProfileEditModal";
 import { useMember } from "@/context/MemberContext";
 import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
 import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
+import { fetchMembers, updateMember } from "@/services/service_member";
 
 export default function Profile() {
   const { member, setMember } = useMember();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const t = useTranslations("profile");
 
   useEffect(() => {
     const loadMembers = async () => {
@@ -24,7 +27,9 @@ export default function Profile() {
         const membersData = await fetchMembers(true);
         setMember(membersData);
       } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : "Erro ao carregar usuário.");
+        const errorMessage = err instanceof Error ? err.message : "Um erro desconhecido ocorreu";
+        toast.error(errorMessage);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -68,26 +73,29 @@ export default function Profile() {
           }
         );
 
-        if (!uploadRes.ok) {
-          throw new Error("Erro ao enviar imagem de perfil");
-        }
+        if (!uploadRes.ok) throw new Error(t("profile_edit_modal.error_uploading_image"));
       }
 
-      toast.success("Perfil atualizado com sucesso!");
+      toast.success(t("success_updating_profile"));
       setIsModalOpen(false);
     } catch (err) {
-      toast.error("Erro ao atualizar perfil.");
-      console.error(err);
+      console.error("Erro ao atualizar perfil:", err);
+      toast.error(t("error_updating_profile"));
     }
   };
 
-  if (loading) return <div className="text-white p-6">Carregando perfil...</div>;
+  if (loading) return <div>{t("loading")}</div>;
+  if (error) return <div>{t("error")}</div>;
 
   return (
     <ProtectedRoute>
       <main className="w-full">
         <Container>
-          <ProfileHeader member={member} onEditClick={() => setIsModalOpen(true)} />
+          <ProfileHeader
+            member={member}
+            onEditClick={() => setIsModalOpen(true)}
+            t={t}
+          />
         </Container>
         <Container>
           <NowPlayingCarouselSection />
@@ -104,13 +112,13 @@ export default function Profile() {
   );
 }
 
-const ProfileHeader = ({
-  member,
-  onEditClick,
-}: {
+interface ProfileHeaderProps {
   member: Member | null;
   onEditClick: () => void;
-}) => (
+  t: any;
+}
+
+const ProfileHeader = ({ member, onEditClick, t }: ProfileHeaderProps) => (
   <div className="flex justify-between items-center">
     <div className="flex items-center gap-4">
       <div className="w-16 h-16 rounded-full bg-gray-400 overflow-hidden relative">
@@ -130,29 +138,36 @@ const ProfileHeader = ({
           <button
             onClick={onEditClick}
             className="text-gray-400 hover:text-white"
-            title="Editar perfil"
+            title={t("edit_profile")}
           >
             <FiEdit2 size={18} />
           </button>
         </div>
-        <p className="text-gray-400 text-sm max-w-sm break-all">
-          {member?.bio || "Sem biografia."}
-        </p>
+        <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
       </div>
     </div>
-    <ProfileStats />
+    <ProfileStats t={t} />
   </div>
 );
 
-const ProfileStats = () => (
+interface ProfileStatsProps {
+  t: any;
+}
+
+const ProfileStats = ({ t }: ProfileStatsProps) => (
   <div className="flex gap-6 text-center">
-    <Stat label="Filmes" value="7" />
-    <Stat label="Seguidores" value="25" />
-    <Stat label="Seguindo" value="14" />
+    <Stat label={t("movies")} value="7" />
+    <Stat label={t("followers")} value="25" />
+    <Stat label={t("following")} value="14" />
   </div>
 );
 
-const Stat = ({ label, value }: { label: string; value: string }) => (
+interface StatProps {
+  label: string;
+  value: string;
+}
+
+const Stat = ({ label, value }: StatProps) => (
   <div>
     <p className="text-sm text-white">{label}</p>
     <p className="text-lg font-semibold text-white">{value}</p>

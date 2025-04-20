@@ -5,6 +5,7 @@ import { ArrowLeftIcon as IconArrowLeft, ArrowRightIcon as IconArrowRight } from
 import { MovieCard } from "@/components/film-card/MovieCard"
 import type { Movie } from "@/types/Movie"
 
+
 interface MovieCarouselProps {
   title: string
   movies: Movie[]

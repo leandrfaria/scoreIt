@@ -6,17 +6,22 @@ import { loginUser } from "@/services/service_login";
 import PageTransition from "@/components/page-transition/PageTransition";
 import { Container } from "@/components/container";
 import toast from "react-hot-toast";
+import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useAuthContext } from "@/context/AuthContext";
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [mensagem, setMensagem] = useState("");
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
+  const [mensagem, setMensagem] = useState("");
 
   const router = useRouter();
   const { setIsLoggedIn } = useAuthContext();
+
+  const t = useTranslations("login");
+  const locale = useLocale();
 
   useEffect(() => {
     const posters = [
@@ -40,11 +45,11 @@ export default function Login() {
     const response = await loginUser(email, senha);
 
     if (response.success) {
-      setIsLoggedIn(true);
-      toast.success("Login feito com sucesso!");
+      setIsLoggedIn(true); // ✅ ATUALIZA O CONTEXTO DE LOGIN
+      toast.success(t("login_sucesso"));
       router.push("/");
     } else {
-      toast.error("Erro ao fazer login! Verifique se preencheu corretamente as informações.");
+      toast.error(t("login_erro"));
     }
 
     setLoading(false);
@@ -66,14 +71,14 @@ export default function Login() {
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">Login</h1>
+              <h1 className="text-4xl font-bold text-white mb-8">{t("titulo")}</h1>
               <form
                 onSubmit={handleLogin}
                 className="space-y-4 max-w-md mx-auto md:mx-0"
               >
                 <input
                   type="email"
-                  placeholder="E-mail"
+                  placeholder={t("email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -81,7 +86,7 @@ export default function Login() {
                 />
                 <input
                   type="password"
-                  placeholder="Senha"
+                  placeholder={t("senha")}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -92,7 +97,7 @@ export default function Login() {
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? "Entrando..." : "Entrar"}
+                  {loading ? t("carregando") : t("botao")}
                 </button>
                 {mensagem && (
                   <p className="text-red-400 text-sm text-center mt-2">
@@ -100,14 +105,22 @@ export default function Login() {
                   </p>
                 )}
                 <div className="text-center">
-                  <a href="/cadastro" className="text-emerald-400 hover:underline">
-                    Não possui conta? Cadastre-se
-                  </a>
+                  <Link
+                    href="/cadastro"
+                    className="text-emerald-400 hover:underline"
+                    locale={locale as any}
+                  >
+                    {t("cadastro")}
+                  </Link>
                 </div>
                 <div className="text-center">
-                  <a href="/envia_email" className="text-emerald-400 hover:underline">
-                    Esqueceu sua senha?
-                  </a>
+                  <Link
+                    href="/envia_email"
+                    className="text-emerald-400 hover:underline"
+                    locale={locale as any}
+                  >
+                    {t("esqueceu_senha")}
+                  </Link>
                 </div>
               </form>
             </div>

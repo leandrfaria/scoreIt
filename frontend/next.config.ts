@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
+const withNextIntl = createNextIntlPlugin('./src/i18n/routing.ts'); // 👈 precisa bater
 
 const nextConfig: NextConfig = {
   images: {
@@ -11,9 +13,15 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.scdn.co", 
       },
+      {
+        protocol: "https",
+        hostname: "marketup.com"
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com"
+      }
     ],
-    domains: ["image.tmdb.org", "i.scdn.co"], 
   },
-};
-
-export default nextConfig;
+}
+  export default withNextIntl(nextConfig);

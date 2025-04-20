@@ -1,0 +1,116 @@
+{
+    "cadastro": {
+      "titulo": "Create your account!",
+      "nome": "Name",
+      "email": "Email",
+      "senha": "Password",
+      "botao": "Register",
+      "possui_conta": "Already have an account?",
+      "cadastro_sucesso": "User registered successfully!",
+      "cadastro_erro": "Error registering, check the information entered"
+    },
+    "login": {
+      "titulo": "Login",
+      "email": "Email",
+      "senha": "Password",
+      "botao": "Sign in",
+      "carregando": "Signing in...",
+      "login_sucesso": "Login successful!",
+      "login_erro": "Login failed! Please check your credentials.",
+      "cadastro": "Don't have an account? Sign up",
+      "esqueceu_senha": "Forgot your password?"
+    },
+    "envia_email": {
+      "titulo": "Add Your Account Email",
+      "placeholder_email": "Enter your email",
+      "botao_enviar": "Send Email",
+      "botao_enviando": "Sending...",
+      "sucesso": "Email sent successfully! Redirecting...",
+      "erro": "Failed to send reset email. Please check if the email is correct",
+      "Voltar": "Return to the login page"
+    },
+    "nova_senha": {
+      "titulo": "Create a strong password",
+      "placeholder": "Enter your new password",
+      "botao": "Save Password",
+      "salvando": "Saving...",
+      "token_invalido": "Token inválido ou expirado.",
+      "senha_sucesso": "Senha atualizada com sucesso! Redirecionando...",
+      "senha_erro": "Erro ao atualizar a senha",
+      "poster_aleatorio_alt": "Poster aleatório"
+    },
+      "profile": {
+        "title": "User Profile",
+        "edit_profile": "Edit Profile",
+        "no_bio": "No bio available",
+        "movies": "Movies",
+        "followers": "Followers",
+        "following": "Following",
+        "error_updating_profile": "Error updating profile. Please try again.",
+        "success_updating_profile": "Profile updated successfully.",
+        "edit_profile_title": "Edit Profile",
+        "name": "Name",
+        "bio": "Bio",
+        "save": "Save",
+        "cancel": "Cancel",
+        "error_uploading_image": "Error uploading profile image",
+        "loading": "Loading..."
+      },
+    "home": {
+      "verificando_login": "Checking login...",
+      "todos_filmes": "All Movies",
+      "mensagem_login": "Log in to view our movies and music!",
+      "botao_login": "Log In"
+    },
+    "header": {
+      "filmes": "Movies",
+      "musicas": "Musics",
+      "perfil": "Profile",
+      "favoritos": "My Favorites",
+      "logout": "Leave",
+      "login": "Login"
+    },
+
+    "footer": {
+      "direitos": "All rights reserved.",
+      "sobre": "About",
+      "contato": "Contact"
+    },
+    "RandomMovie": {
+    "loading": "Loading movies...",
+    "notFound": "No movies found.",
+    "detailButton": "View Details"
+  },
+  "ProfileEditModal": {
+    "title": "Edit Profile",
+    "namePlaceholder": "Name",
+    "bioPlaceholder": "Bio",
+    "cancelButton": "Cancel",
+    "saveButton": "Save"
+  },
+  "NowPlayingCarousel": {
+    "loading": "Loading now playing movies...",
+    "noMoviesFound": "No movies currently playing found.",
+    "carouselTitle": "Now Playing",
+    "tokenNotFound": "Token not found. Please login first.",
+    "emptyListWarning": "🚨 Empty list! Adding mock...",
+    "mockMovie": {
+      "title": "Mocked",
+      "overview": "This is a mock."
+    }
+  },
+  "MovieList": {
+    "loading": "Loading movies...",
+    "noMoviesFound": "No movies found."
+  },
+  "MovieCard": {
+    "releaseDate": "Release date",
+    "noDescription": "No description available.",
+    "viewDetails": "View details"
+  },
+  "top_artists": {
+    "titulo": "Top Artists",
+    "carregando": "Loading artists...",
+    "nenhum": "No artists found."
+  }
+}   
