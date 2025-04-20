@@ -1,9 +1,8 @@
 "use client";
 
-import { Container } from "@/components/container";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { fetchMembers, updateMember } from "../../../services/member.service";
+import { Container } from "@/components/container";
 import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
 import { createPortal } from "react-dom";
 import { FiEdit2 } from "react-icons/fi";
@@ -13,11 +12,11 @@ import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlay
 import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
+import { fetchMembers, updateMember } from "@/services/service_member";
 
 export default function Profile() {
   const { member, setMember } = useMember();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const t = useTranslations("profile");
@@ -28,21 +27,24 @@ export default function Profile() {
         const membersData = await fetchMembers(true);
         setMember(membersData);
       } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : "Um erro desconhecido ocorreu");
-      } finally {
-        setLoading(false);
+        const errorMessage = err instanceof Error ? err.message : "Um erro desconhecido ocorreu";
+        toast.error(errorMessage);
+        setError(errorMessage); // <-- Aqui seta o estado de erro!
       }
+      
     };
 
     if (!member) {
       loadMembers();
-      console.log("CARREGUEI EM");
     } else {
       setLoading(false);
     }
   }, [member, setMember]);
 
-  const handleUpdateMember = async (formData: { name: string; bio: string }, imageFile: File | null) => {
+  const handleUpdateMember = async (
+    formData: { name: string; bio: string },
+    imageFile: File | null
+  ) => {
     if (!member) return;
 
     try {
@@ -55,23 +57,26 @@ export default function Profile() {
 
       const updated = await updateMember(member.id.toString(), payload);
       setMember(updated);
+      setMember(updated);
 
       if (imageFile) {
         const formDataImage = new FormData();
         formDataImage.append("file", imageFile);
 
         const token = localStorage.getItem("authToken");
-        const uploadRes = await fetch(`http://localhost:8080/api/images/upload/${member.id}`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formDataImage,
-        });
+        const uploadRes = await fetch(
+          `http://localhost:8080/api/images/upload/${member.id}`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formDataImage,
+          }
+        );
 
         if (!uploadRes.ok) throw toast.error(t("profile_edit_modal.error_uploading_image"));
       }
 
+      toast.success("Perfil atualizado com sucesso!");
       setIsModalOpen(false);
       toast.success(t("success_updating_profile"));
     } catch (err) {
@@ -96,8 +101,7 @@ export default function Profile() {
         <Container>
           <NowPlayingCarouselSection />
         </Container>
-        
-        {isModalOpen && (
+        {isModalOpen && member && (
           <ProfileEditModal
             member={member}
             onUpdateMember={handleUpdateMember}
@@ -120,8 +124,11 @@ const ProfileHeader = ({ member, onEditClick, t }: ProfileHeaderProps) => (
     <div className="flex items-center gap-4">
       <div className="w-16 h-16 rounded-full bg-gray-400 overflow-hidden relative">
         <Image
-          src={member?.profileImageUrl || "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"}
-          alt="User Avatar"
+          src={
+            member?.profileImageUrl ||
+            "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
+          }
+          alt="Foto de perfil"
           fill
           className="object-cover"
         />
@@ -159,7 +166,11 @@ interface StatProps {
 
 const Stat = ({ label, value }: StatProps) => (
   <div>
-    <p className="text-sm">{label}</p>
-    <p className="text-lg font-semibold">{value}</p>
+    <p className="text-sm text-white">{label}</p>
+    <p className="text-lg font-semibold text-white">{value}</p>
   </div>
 );
+function setError(errorMessage: string) {
+  throw new Error("Function not implemented.");
+}
+

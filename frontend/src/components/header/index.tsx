@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useCheckAuth } from "@/hooks/useCheckAuth";
+import { useAuthContext } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -18,8 +18,8 @@ import { useLocale, useTranslations } from "next-intl";
 export function Header() {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState("/");
-  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   const isLoggedIn = useCheckAuth();
+  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   const locale = useLocale();
   const t = useTranslations("header");
   const router = useRouter();
@@ -173,6 +173,7 @@ export function Header() {
                 <DropdownMenuItem
                   onClick={() => {
                     localStorage.removeItem("authToken");
+                    setIsLoggedIn(false);
                     window.location.href = `/${locale}/login`;
                   }}
                   className="block px-2 py-1 text-red-300 hover:bg-red-900 rounded cursor-pointer"
