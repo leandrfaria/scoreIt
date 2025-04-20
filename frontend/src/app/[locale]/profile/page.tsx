@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Container } from "@/components/container";
 import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
-import { createPortal } from "react-dom";
 import { FiEdit2 } from "react-icons/fi";
 import ProfileEditModal from "@/components/profile-edit-modal/ProfileEditModal";
 import { useMember } from "@/context/MemberContext";
@@ -17,8 +16,9 @@ import { fetchMembers, updateMember } from "@/services/service_member";
 export default function Profile() {
   const { member, setMember } = useMember();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const t = useTranslations("profile");
 
   useEffect(() => {
@@ -29,9 +29,10 @@ export default function Profile() {
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : "Um erro desconhecido ocorreu";
         toast.error(errorMessage);
-        setError(errorMessage); // <-- Aqui seta o estado de erro!
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
       }
-      
     };
 
     if (!member) {
@@ -57,7 +58,6 @@ export default function Profile() {
 
       const updated = await updateMember(member.id.toString(), payload);
       setMember(updated);
-      setMember(updated);
 
       if (imageFile) {
         const formDataImage = new FormData();
@@ -73,12 +73,11 @@ export default function Profile() {
           }
         );
 
-        if (!uploadRes.ok) throw toast.error(t("profile_edit_modal.error_uploading_image"));
+        if (!uploadRes.ok) throw new Error(t("profile_edit_modal.error_uploading_image"));
       }
 
-      toast.success("Perfil atualizado com sucesso!");
-      setIsModalOpen(false);
       toast.success(t("success_updating_profile"));
+      setIsModalOpen(false);
     } catch (err) {
       console.error("Erro ao atualizar perfil:", err);
       toast.error(t("error_updating_profile"));
@@ -92,10 +91,10 @@ export default function Profile() {
     <ProtectedRoute>
       <main className="w-full">
         <Container>
-          <ProfileHeader 
-            member={member} 
-            onEditClick={() => setIsModalOpen(true)} 
-            t={t} 
+          <ProfileHeader
+            member={member}
+            onEditClick={() => setIsModalOpen(true)}
+            t={t}
           />
         </Container>
         <Container>
@@ -116,7 +115,7 @@ export default function Profile() {
 interface ProfileHeaderProps {
   member: Member | null;
   onEditClick: () => void;
-  t: any; // Ou defina um tipo mais específico para a função de tradução
+  t: any;
 }
 
 const ProfileHeader = ({ member, onEditClick, t }: ProfileHeaderProps) => (
@@ -136,7 +135,11 @@ const ProfileHeader = ({ member, onEditClick, t }: ProfileHeaderProps) => (
       <div className="flex flex-col text-white space-y-1">
         <div className="flex items-center gap-2">
           <span className="text-lg font-medium">{member?.name}</span>
-          <button onClick={onEditClick} className="text-gray-400 hover:text-white" title={t("edit_profile")}>
+          <button
+            onClick={onEditClick}
+            className="text-gray-400 hover:text-white"
+            title={t("edit_profile")}
+          >
             <FiEdit2 size={18} />
           </button>
         </div>
@@ -170,7 +173,3 @@ const Stat = ({ label, value }: StatProps) => (
     <p className="text-lg font-semibold text-white">{value}</p>
   </div>
 );
-function setError(errorMessage: string) {
-  throw new Error("Function not implemented.");
-}
-

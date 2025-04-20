@@ -8,6 +8,7 @@ import { Container } from "@/components/container";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -17,6 +18,8 @@ export default function Login() {
   const [mensagem, setMensagem] = useState("");
 
   const router = useRouter();
+  const { setIsLoggedIn } = useAuthContext();
+
   const t = useTranslations("login");
   const locale = useLocale();
 
@@ -42,6 +45,7 @@ export default function Login() {
     const response = await loginUser(email, senha);
 
     if (response.success) {
+      setIsLoggedIn(true); // ✅ ATUALIZA O CONTEXTO DE LOGIN
       toast.success(t("login_sucesso"));
       router.push("/");
     } else {
@@ -56,13 +60,16 @@ export default function Login() {
       <main className="w-full h-full flex">
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
-            <div className="w-1/2 h-1/2 flex items-center justify-center">
+            {/* Imagem à esquerda */}
+            <div className="w-full md:w-1/2 mb-10 md:mb-0">
               <img
                 src={randomImage}
                 alt="Poster aleatório"
-                className="w-full object-cover rounded-lg shadow-lg"
+                className="w-full h-[400px] object-cover rounded-lg shadow-lg"
               />
             </div>
+
+            {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
               <h1 className="text-4xl font-bold text-white mb-8">{t("titulo")}</h1>
               <form
@@ -107,7 +114,8 @@ export default function Login() {
                   </Link>
                 </div>
                 <div className="text-center">
-                  <Link href="/envia_email"
+                  <Link
+                    href="/envia_email"
                     className="text-emerald-400 hover:underline"
                     locale={locale as any}
                   >

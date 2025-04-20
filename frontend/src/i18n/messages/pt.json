@@ -106,5 +106,10 @@
     "releaseDate": "Lançamento",
     "noDescription": "Sem descrição disponível.",
     "viewDetails": "Ver detalhes"
+  },
+  "top_artists": {
+    "titulo": "Top Artistas",
+    "carregando": "Carregando artistas...",
+    "nenhum": "Nenhum artista encontrado."
   }
 }  

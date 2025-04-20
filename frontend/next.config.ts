@@ -13,8 +13,15 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.scdn.co", 
       },
+      {
+        protocol: "https",
+        hostname: "marketup.com"
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com"
+      }
     ],
-    domains: ["image.tmdb.org", "i.scdn.co"], 
   },
 }
   export default withNextIntl(nextConfig);

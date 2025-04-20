@@ -18,11 +18,11 @@ import { useLocale, useTranslations } from "next-intl";
 export function Header() {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState("/");
-  const isLoggedIn = useCheckAuth();
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   const locale = useLocale();
   const t = useTranslations("header");
   const router = useRouter();
+  const { isLoggedIn, setIsLoggedIn } = useAuthContext(); // ✅ substitui useCheckAuth
 
   useEffect(() => {
     setActiveTab(pathname);
@@ -31,30 +31,26 @@ export function Header() {
   const changeLanguage = async (newLocale: string) => {
     setIsChangingLanguage(true);
     try {
-      // Captura o token da URL atual se existir
       const url = new URL(window.location.href);
-      const token = url.searchParams.get('token');
-      
-      // Remove o locale atual do pathname
+      const token = url.searchParams.get("token");
+
       let newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
-      
-      // Se estivermos na raiz sem locale explícito
+
       if (pathname === "/") {
         newPath = `/${newLocale}`;
       }
-      
-      // Adiciona o token de volta à URL se existir
+
       if (token) {
         newPath += `?token=${encodeURIComponent(token)}`;
       }
-      
-      // Força recarregamento completo mantendo o token
+
       window.location.href = newPath;
     } catch (error) {
       console.error("Language change error:", error);
-      // Fallback mantendo o token se possível
-      const token = new URL(window.location.href).searchParams.get('token');
-      window.location.href = token ? `/${newLocale}?token=${encodeURIComponent(token)}` : `/${newLocale}`;
+      const token = new URL(window.location.href).searchParams.get("token");
+      window.location.href = token
+        ? `/${newLocale}?token=${encodeURIComponent(token)}`
+        : `/${newLocale}`;
     } finally {
       setIsChangingLanguage(false);
     }
@@ -67,14 +63,12 @@ export function Header() {
   return (
     <header className="w-full h-20 bg-black relative">
       <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-6">
-        {/* Logo à esquerda */}
         <div className="flex-1">
           <Link href={`/${locale}`} className="text-white text-lg font-semibold">
             <LogoLateral />
           </Link>
         </div>
 
-        {/* Navegação central */}
         {isLoggedIn && (
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
             <div className="relative flex">
@@ -103,11 +97,10 @@ export function Header() {
           </nav>
         )}
 
-        {/* Lado direito: Seletor de idioma e perfil */}
         <div className="flex-1 flex justify-end items-center gap-4">
-          {/* Seletor de Idioma */}
+          {/* Seletor de idioma */}
           <DropdownMenu>
-            <DropdownMenuTrigger 
+            <DropdownMenuTrigger
               className="focus:outline-none text-white bg-gray-800 px-3 py-1 rounded-md hover:bg-gray-700 transition-all flex items-center gap-2 min-w-[50px] justify-center"
               disabled={isChangingLanguage}
             >
@@ -173,7 +166,7 @@ export function Header() {
                 <DropdownMenuItem
                   onClick={() => {
                     localStorage.removeItem("authToken");
-                    setIsLoggedIn(false);
+                    setIsLoggedIn(false); // 🔥 atualiza sem recarregar o header
                     window.location.href = `/${locale}/login`;
                   }}
                   className="block px-2 py-1 text-red-300 hover:bg-red-900 rounded cursor-pointer"

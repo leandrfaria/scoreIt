@@ -8,6 +8,7 @@ import { sendResetEmail } from "@/services/service_enviaEmail";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { Locale } from "@/i18n/routing"; // ou o caminho certo do seu arquivo
 
 export default function RecupSenha() {
   const [email, setEmail] = useState("");
@@ -45,7 +46,7 @@ export default function RecupSenha() {
     if (result.success) {
       toast.success(t("sucesso"));
       setTimeout(() => {
-        router.push("/login");
+        router.push(`/${locale}/login`);
       }, 2000);
     } else {
       toast.error(t("erro"));
@@ -100,7 +101,7 @@ export default function RecupSenha() {
               </form>
 
               <div className="text-center mt-4 mr-28">
-                <Link href="/login" locale={locale as any} className="text-emerald-400 hover:underline">
+                <Link href="/login" locale={locale as Locale} className="text-emerald-400 hover:underline">
                 {t("Voltar")}
                 </Link>
               </div>

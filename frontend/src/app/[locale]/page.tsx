@@ -6,7 +6,7 @@ import { RandomMoviesCarousel } from '@/components/random-movies-carousel/Random
 import { MovieList } from '@/components/movies-list/MovieList';
 import Link from 'next/link';
 import PageTransition from '@/components/page-transition/PageTransition';
-import NowPlayingCarouselSection from '@/components/now-playing-carousel/NowPlayingCarouselSection'; // ✅ IMPORT CORRIGIDA
+import NowPlayingCarouselSection from '@/components/now-playing-carousel/NowPlayingCarouselSection';
 import { useLocale, useTranslations } from "next-intl"; // 🌍 Tradução
 import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
 import { useAuthContext } from "@/context/AuthContext";
