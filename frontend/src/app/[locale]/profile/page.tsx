@@ -56,9 +56,6 @@ export default function Profile() {
         bio: formData.bio,
       };
 
-      const updated = await updateMember(member.id.toString(), payload);
-      setMember(updated);
-
       if (imageFile) {
         const formDataImage = new FormData();
         formDataImage.append("file", imageFile);
@@ -75,6 +72,9 @@ export default function Profile() {
 
         if (!uploadRes.ok) throw new Error(t("profile_edit_modal.error_uploading_image"));
       }
+
+      const updated = await updateMember(member.id.toString(), payload);
+      setMember(updated);
 
       toast.success(t("success_updating_profile"));
       setIsModalOpen(false);
