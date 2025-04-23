@@ -26,6 +26,14 @@ export const routing = {
       en: '/profile',
       pt: '/profile',
     },
+    '/novo_email': {
+      en: '/novo_email',
+      pt: '/novo_email',
+    },
+    "/envia_novoEmail": {
+      en: '/envia_novoEmail',
+      pt: '/envia_novoEmail',
+    }
     // adicione mais rotas aqui conforme precisar
   }
 };

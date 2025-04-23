@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
-import { routing, isValidLocale } from "@/i18n/routing";
+import { isValidLocale } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { Header } from "@/components/header";
 import { MemberProvider } from "@/context/MemberContext";
 import { Toaster } from "react-hot-toast";
 import type { Metadata } from "next";
-import { AuthProvider } from "@/context/AuthContext"; 
+import { AuthProvider } from "@/context/AuthContext";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
@@ -15,40 +15,48 @@ export const metadata: Metadata = {
 
 export default async function LocaleLayout({
   children,
-  params,
+  params: { locale },
 }: {
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  const locale = params?.locale;
-
-
+  // Verificação de locale segura
   if (!isValidLocale(locale)) {
     notFound();
   }
 
-  const messages = (await import(`@/i18n/messages/${locale}.json`)).default;
+  // Carrega as mensagens com tratamento de erro
+  let messages;
+  try {
+    messages = (await import(`@/i18n/messages/${locale}.json`)).default;
+  } catch (error) {
+    console.error(`Failed to load messages for locale ${locale}`, error);
+    notFound();
+  }
 
   return (
     <MemberProvider>
       <html lang={locale}>
         <body>
-        <AuthProvider> 
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            <Header />
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: "#333",
-                  color: "#fff",
-                },
-              }}
-            />
-            {children}
-          </NextIntlClientProvider>
-        </AuthProvider>  
+          <AuthProvider>
+            <NextIntlClientProvider 
+              locale={locale}
+              messages={messages}
+            >
+              <Header />
+              <Toaster
+                position="top-center"
+                toastOptions={{
+                  duration: 3000,
+                  style: {
+                    background: "#333",
+                    color: "#fff",
+                  },
+                }}
+              />
+              {children}
+            </NextIntlClientProvider>
+          </AuthProvider>
         </body>
       </html>
     </MemberProvider>
