@@ -16,9 +16,9 @@ export default function Login() {
   const [senha, setSenha] = useState("");
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const [mensagem, setMensagem] = useState("");
+  const { setIsLoggedIn, loadMemberData } = useAuthContext(); // Desestruturar loadMemberData
 
   const router = useRouter();
-  const { setIsLoggedIn } = useAuthContext();
 
   const t = useTranslations("login");
   const locale = useLocale();
@@ -41,17 +41,22 @@ export default function Login() {
     event.preventDefault();
     setMensagem("");
     setLoading(true);
-
+  
     const response = await loginUser(email, senha);
-
+  
     if (response.success) {
-      setIsLoggedIn(true); // ✅ ATUALIZA O CONTEXTO DE LOGIN
+      // Armazenar o token no localStorage
+      localStorage.setItem("authToken", response.token);
+      
+      // Chamar a função para carregar os dados do membro
+      await loadMemberData(); // Chame a função do contexto
+  
       toast.success(t("login_sucesso"));
       router.push("/");
     } else {
       toast.error(t("login_erro"));
     }
-
+  
     setLoading(false);
   };
 

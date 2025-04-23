@@ -14,6 +14,7 @@ import {
 } from "@/utils/shadcn";
 import LogoLateral from "@/assets/LogoLateral";
 import { useLocale, useTranslations } from "next-intl";
+import { useMember } from "@/context/MemberContext";
 
 export function Header() {
   const pathname = usePathname();
@@ -23,6 +24,8 @@ export function Header() {
   const t = useTranslations("header");
   const router = useRouter();
   const { isLoggedIn, setIsLoggedIn } = useAuthContext(); // ✅ substitui useCheckAuth
+  const { member } = useMember();
+
 
   useEffect(() => {
     setActiveTab(pathname);
@@ -73,23 +76,20 @@ export function Header() {
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
             <div className="relative flex">
               <div
-                className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${
-                  activeTab === `/${locale}/musicas` ? "translate-x-full" : "translate-x-0"
-                }`}
+                className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${activeTab === `/${locale}/musicas` ? "translate-x-full" : "translate-x-0"
+                  }`}
               ></div>
               <Link
                 href={`/${locale}`}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                  activeTab === `/${locale}` ? "font-bold" : "text-gray-400"
-                }`}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${activeTab === `/${locale}` ? "font-bold" : "text-gray-400"
+                  }`}
               >
                 {t("filmes")}
               </Link>
               <Link
                 href={`/${locale}/musicas`}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                  activeTab === `/${locale}/musicas` ? "font-bold" : "text-gray-400"
-                }`}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${activeTab === `/${locale}/musicas` ? "font-bold" : "text-gray-400"
+                  }`}
               >
                 {t("musicas")}
               </Link>
@@ -133,13 +133,17 @@ export function Header() {
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="focus:outline-none ml-4">
-                <Image
-                  src="/profile.jpg"
-                  alt="Avatar"
-                  width={50}
-                  height={50}
-                  className="rounded-full cursor-pointer"
-                />
+                <div className="w-12 h-12 rounded-full bg-gray-400 overflow-hidden relative">
+                  <Image
+                    src={
+                      member?.profileImageUrl ||
+                      "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
+                    }
+                    alt="Avatar"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"

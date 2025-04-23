@@ -1,8 +1,9 @@
 export interface Member {
     id: number;
     name: string;
+    birthDate: string;
     email: string;
-    username: string;
+    gender: string,
     bio: string;
-    profileImageUrl: string;
+    profileImageUrl: string;    
   }
