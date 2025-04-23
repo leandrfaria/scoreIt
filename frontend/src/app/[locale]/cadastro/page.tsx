@@ -69,7 +69,7 @@ export default function Cadastro() {
                 />
                 <input
                   className="text-gray-400 border border-emerald-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 w-90"
-                  type="text"
+                  type="email"
                   placeholder={t("email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

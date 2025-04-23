@@ -15,35 +15,12 @@ import { fetchMembers, updateMember } from "@/services/service_member";
 
 export default function Profile() {
   const { member, setMember } = useMember();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const t = useTranslations("profile");
 
-  useEffect(() => {
-    const loadMembers = async () => {
-      try {
-        const membersData = await fetchMembers(true);
-        setMember(membersData);
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "Um erro desconhecido ocorreu";
-        toast.error(errorMessage);
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!member) {
-      loadMembers();
-    } else {
-      setLoading(false);
-    }
-  }, [member, setMember]);
-
   const handleUpdateMember = async (
-    formData: { name: string; bio: string },
+    formData: { name: string; bio: string, birthDate: string, gender: string },
     imageFile: File | null
   ) => {
     if (!member) return;
@@ -54,6 +31,8 @@ export default function Profile() {
         name: formData.name,
         email: member.email,
         bio: formData.bio,
+        birthDate: formData.birthDate,
+        gender: formData.gender
       };
 
       if (imageFile) {
@@ -83,9 +62,6 @@ export default function Profile() {
       toast.error(t("error_updating_profile"));
     }
   };
-
-  if (loading) return <div>{t("loading")}</div>;
-  if (error) return <div>{t("error")}</div>;
 
   return (
     <ProtectedRoute>

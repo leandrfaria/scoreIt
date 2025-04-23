@@ -3,15 +3,20 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 
-const ProfileEditModal = ({ member, onUpdateMember, onClose }: { member: Member | null; onUpdateMember: (formData: { name: string; bio: string }, imageFile: File | null) => void; onClose: () => void; }) => {
-  const [formData, setFormData] = useState({ name: member?.name || "", bio: member?.bio || "" });
+const ProfileEditModal = ({ member, onUpdateMember, onClose }: { member: Member | null; onUpdateMember: (formData: { name: string; bio: string; birthDate: string; gender: string }, imageFile: File | null) => void; onClose: () => void; }) => {
+  const [formData, setFormData] = useState({
+    name: member?.name || "",
+    bio: member?.bio || "",
+    birthDate: member?.birthDate || "",
+    gender: member?.gender || "",
+  });
   const [imageFile, setImageFile] = useState<File | null>(null);
-    const t = useTranslations("ProfileEditModal");
+  const t = useTranslations("ProfileEditModal");
 
   const MAX_NAME_LENGTH = 50;
   const MAX_BIO_LENGTH = 200;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -23,7 +28,6 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: { member: Member 
 
   const isNameTooLong = formData.name.length > MAX_NAME_LENGTH;
   const isBioTooLong = formData.bio.length > MAX_BIO_LENGTH;
-
   const isSaveDisabled = isNameTooLong || isBioTooLong;
 
   return createPortal(
@@ -31,35 +35,61 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: { member: Member 
       <div className="bg-zinc-900 p-6 rounded-lg w-full max-w-md shadow-lg">
         <h2 className="text-lg font-semibold text-white mb-4">{t("title")}</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder={t("namePlaceholder")}
-              className={`p-2 rounded bg-zinc-800 text-white ${isNameTooLong ? 'border-red-500' : ''}`}
-              required
-            />
-            <div className={`text-gray-400 text-xs -mt-3 ${isNameTooLong ? 'text-red-500' : ''}`}>
-              Máximo de {MAX_NAME_LENGTH} caracteres
-            </div>
-            <textarea
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              placeholder={t("bioPlaceholder")}
-              className={`p-2 rounded bg-zinc-800 text-white resize-none ${isBioTooLong ? 'border-red-500' : ''}`}
-              rows={3}
-            />
-            <div className={`text-gray-400 text-xs -mt-3 ${isBioTooLong ? 'text-red-500' : ''}`}>
-              Máximo de {MAX_BIO_LENGTH} caracteres
-            </div>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder={t("namePlaceholder")}
+            className={`p-2 rounded bg-zinc-800 text-white ${isNameTooLong ? 'border-red-500' : ''}`}
+            required
+          />
+          <div className={`text-gray-400 text-xs -mt-3 ${isNameTooLong ? 'text-red-500' : ''}`}>
+            Máximo de {MAX_NAME_LENGTH} caracteres
+          </div>
+
+          <textarea
+            name="bio"
+            value={formData.bio}
+            onChange={handleChange}
+            placeholder={t("bioPlaceholder")}
+            className={`p-2 rounded bg-zinc-800 text-white resize-none ${isBioTooLong ? 'border-red-500' : ''}`}
+            rows={3}
+          />
+          <div className={`text-gray-400 text-xs -mt-3 ${isBioTooLong ? 'text-red-500' : ''}`}>
+            Máximo de {MAX_BIO_LENGTH} caracteres
+          </div>
+
+          <input
+            type="date"
+            name="birthDate"
+            value={formData.birthDate}
+            onChange={handleChange}
+            className="p-2 rounded bg-zinc-800 text-white"
+            placeholder={member?.birthDate ? member.birthDate : "Indefinido"}
+            required
+          />
+
+          <select
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
+            className="p-2 rounded bg-zinc-800 text-white"
+            required
+          >
+            <option value="" disabled>{member?.gender ? member.gender : "Indefinido"}</option>
+            <option value="MASC">Masculino</option>
+            <option value="FEM">Feminino</option>
+            <option value="OTHER">Outro</option>
+          </select>
+
           <input
             type="file"
             accept="image/*"
             onChange={(e) => setImageFile(e.target.files?.[0] || null)}
             className="text-white bg-darkgreen px-6 py-2 rounded-md hover:brightness-110 transition-all cursor-pointer"
           />
+          
           <div className="flex justify-end gap-2">
             <button
               type="button"
