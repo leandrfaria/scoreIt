@@ -7,8 +7,9 @@ import { MovieList } from "@/components/movies-list/MovieList";
 import Link from "next/link";
 import PageTransition from "@/components/page-transition/PageTransition";
 import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
-import { useLocale, useTranslations } from "next-intl";
 import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
+import RecentsAlbumCarousel from "@/components/recents-album-carousel/RecentsAlbumCarousel";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
 
@@ -53,6 +54,7 @@ export default function Home() {
             {activeTab === "musicas" ? (
               <>
                 <TopArtistsCarouselSection />
+                <RecentsAlbumCarousel />
               </>
             ) : (
               <>
