@@ -1,6 +1,9 @@
 export interface Artist {
-    name: string
-    profileUrl: string
-    imageUrl: string
-  }
-  
+  id: string,
+  name: string,
+  imageUrl: string,
+  profileUrl?: string,
+  listeners: string,
+  playcount: string,
+  mbid: string
+}

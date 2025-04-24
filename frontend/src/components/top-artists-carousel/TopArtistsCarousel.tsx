@@ -29,9 +29,9 @@ export default function TopArtistsCarouselSection() {
   const handleScroll = (direction: "left" | "right") => {
     if (!carouselRef.current) return;
 
-    const cardWidth = 160;
-    const gap = 24;
-    const cardsToScroll = 2;
+    const cardWidth = 160; // largura do card
+    const gap = 24; // gap entre os cards
+    const cardsToScroll = 3; // agora pula 3 artistas por clique
     const scrollAmount = (cardWidth + gap) * cardsToScroll;
 
     const newScrollLeft =

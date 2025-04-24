@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Container } from "@/components/container";
 import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
@@ -11,7 +11,7 @@ import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlay
 import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
-import { fetchMembers, updateMember } from "@/services/service_member";
+import { updateMember } from "@/services/service_member";
 
 export default function Profile() {
   const { member, setMember } = useMember();
@@ -20,7 +20,7 @@ export default function Profile() {
   const t = useTranslations("profile");
 
   const handleUpdateMember = async (
-    formData: { name: string; bio: string, birthDate: string, gender: string },
+    formData: { name: string; bio: string; birthDate: string; gender: string },
     imageFile: File | null
   ) => {
     if (!member) return;
@@ -32,7 +32,7 @@ export default function Profile() {
         email: member.email,
         bio: formData.bio,
         birthDate: formData.birthDate,
-        gender: formData.gender
+        gender: formData.gender,
       };
 
       if (imageFile) {
@@ -49,7 +49,7 @@ export default function Profile() {
           }
         );
 
-        if (!uploadRes.ok) throw new Error(t("profile_edit_modal.error_uploading_image"));
+        if (!uploadRes.ok) throw new Error(t("error_uploading_image"));
       }
 
       const updated = await updateMember(member.id.toString(), payload);
@@ -119,7 +119,9 @@ const ProfileHeader = ({ member, onEditClick, t }: ProfileHeaderProps) => (
             <FiEdit2 size={18} />
           </button>
         </div>
-        <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
+        <p className="text-gray-400 text-sm max-w-md">
+          {member?.bio || t("no_bio")}
+        </p>
       </div>
     </div>
     <ProfileStats t={t} />
