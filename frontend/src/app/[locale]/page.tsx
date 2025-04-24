@@ -1,23 +1,25 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { Container } from '@/components/container';
-import { RandomMoviesCarousel } from '@/components/random-movies-carousel/RandomMoviesCarousel';
-import { MovieList } from '@/components/movies-list/MovieList';
-import Link from 'next/link';
-import PageTransition from '@/components/page-transition/PageTransition';
-import NowPlayingCarouselSection from '@/components/now-playing-carousel/NowPlayingCarouselSection';
-import { useLocale, useTranslations } from "next-intl"; // 🌍 Tradução
+import { useEffect, useState } from "react";
+import { Container } from "@/components/container";
+import { RandomMoviesCarousel } from "@/components/random-movies-carousel/RandomMoviesCarousel";
+import { MovieList } from "@/components/movies-list/MovieList";
+import Link from "next/link";
+import PageTransition from "@/components/page-transition/PageTransition";
+import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
+import { useLocale, useTranslations } from "next-intl";
 import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
 import { useAuthContext } from "@/context/AuthContext";
+import { useTabContext } from "@/context/TabContext";
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
-  const [randomImage, setRandomImage] = useState(""); 
+  const { activeTab } = useTabContext();
+  const [randomImage, setRandomImage] = useState("");
   const [hasMounted, setHasMounted] = useState(false);
 
-  const locale = useLocale(); // ✅ Move para o topo
-  const t = useTranslations("home"); // 🌍 Chave de tradução
+  const locale = useLocale();
+  const t = useTranslations("home");
 
   useEffect(() => {
     setHasMounted(true);
@@ -38,7 +40,7 @@ export default function Home() {
   if (isLoggedIn === null) {
     return (
       <p className="text-gray-400 text-center mt-10">
-        {t("verificando_login")} {/* 🌍 */}
+        {t("verificando_login")}
       </p>
     );
   }
@@ -48,13 +50,20 @@ export default function Home() {
       <Container>
         {isLoggedIn ? (
           <>
-            <RandomMoviesCarousel />
-            <NowPlayingCarouselSection />
-            <TopArtistsCarouselSection />
-            <h2 className="text-white text-xl font-bold mt-10 mb-4">
-              {t("todos_filmes")} {/* 🌍 */}
-            </h2>
-            <MovieList />
+            {activeTab === "musicas" ? (
+              <>
+                <TopArtistsCarouselSection />
+              </>
+            ) : (
+              <>
+                <RandomMoviesCarousel />
+                <NowPlayingCarouselSection />
+                <h2 className="text-white text-xl font-bold mt-10 mb-4">
+                  {t("todos_filmes")}
+                </h2>
+                <MovieList />
+              </>
+            )}
           </>
         ) : (
           <PageTransition>
@@ -71,13 +80,13 @@ export default function Home() {
 
               <div className="w-full md:w-1/2 p-8 text-center md:text-left">
                 <h1 className="text-4xl font-bold text-white mb-12">
-                  {t("mensagem_login")} {/* 🌍 */}
+                  {t("mensagem_login")}
                 </h1>
                 <Link
-                  href={`/${locale}/login`} // ✅ Correto
+                  href={`/${locale}/login`}
                   className="px-6 py-3 bg-darkgreen text-white rounded-md hover:brightness-110 transition"
                 >
-                  {t("botao_login")} {/* 🌍 */}
+                  {t("botao_login")}
                 </Link>
               </div>
             </div>
