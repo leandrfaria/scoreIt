@@ -29,9 +29,9 @@ export default function TopArtistsCarouselSection() {
   const handleScroll = (direction: "left" | "right") => {
     if (!carouselRef.current) return;
 
-    const cardWidth = 160; // largura do card
-    const gap = 24; // gap entre os cards
-    const cardsToScroll = 3; // agora pula 3 artistas por clique
+    const cardWidth = 160;
+    const gap = 24;
+    const cardsToScroll = 3;
     const scrollAmount = (cardWidth + gap) * cardsToScroll;
 
     const newScrollLeft =
@@ -56,7 +56,7 @@ export default function TopArtistsCarouselSection() {
 
   return (
     <div className="w-full py-6">
-      <h2 className="text-xl font-bold text-white mb-4">{t("titulo")}</h2>
+      <h2 className="text-xl font-bold text-white mb-4">Artistas mais escutados</h2>
 
       <div className="relative">
         <div

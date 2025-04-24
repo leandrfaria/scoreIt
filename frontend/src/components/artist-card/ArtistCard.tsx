@@ -32,15 +32,15 @@ export function ArtistCard({ artist, index }: ArtistCardProps) {
     <>
       <div
         onClick={handleOpen}
-        className="flex flex-col items-center justify-center text-center w-[200px] cursor-pointer hover:scale-105 transition"
+        className="flex flex-col items-center justify-center text-center w-[170px] cursor-pointer hover:scale-105 transition"
       >
-        <div className="relative w-[180px] h-[180px] rounded-full overflow-hidden shadow-md">
+        <div className="relative w-[150px] h-[150px] rounded-full overflow-hidden shadow-md">
           <Image
             src={artist.imageUrl}
             alt={artist.name}
             fill
             className="object-cover"
-            sizes="180px"
+            sizes="150px"
           />
         </div>
         <p className="mt-2 text-sm font-semibold text-white leading-tight">
