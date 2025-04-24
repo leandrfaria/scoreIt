@@ -49,7 +49,7 @@ export default function Profile() {
           }
         );
 
-        if (!uploadRes.ok) throw new Error(t("profile_edit_modal.error_uploading_image"));
+        if (!uploadRes.ok) throw new Error(t("error_uploading_image"));
       }
 
       const updated = await updateMember(member.id.toString(), payload);

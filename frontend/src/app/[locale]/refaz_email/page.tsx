@@ -4,18 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Container } from "@/components/container";
 import PageTransition from "@/components/page-transition/PageTransition";
-import { sendResetEmail } from "@/services/service_enviaEmail";
+import { sendResetNovoEmail } from "@/services/service_refazEmail";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
 
-export default function RecupSenha() {
+export default function RecupEmail() {
   const [email, setEmail] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [loading, setLoading] = useState(false);
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const router = useRouter();
-    const t = useTranslations("envia_email");
-    const locale = useLocale();
+
+  const t = useTranslations("envia_email");
+  const locale = useLocale();
 
   useEffect(() => {
     const posters = [
@@ -33,20 +34,21 @@ export default function RecupSenha() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Enviando e-mail para:", email)
     setMensagem("");
     setLoading(true);
 
-    const result = await sendResetEmail(email);
+    const result = await sendResetNovoEmail(email);
 
     setLoading(false);
 
     if (result.success) {
-      toast.success("E-mail enviado com sucesso! Redirecionando...");
+      toast.success(t("sucesso"));
       setTimeout(() => {
-        router.push("/login");
+        router.push(`/${locale}/login`);
       }, 2000);
     } else {
-      toast.error("Erro ao enviar e-mail de redefinição. Verifique se o email está correto");
+      toast.error(t("erro"));
     }
   };
 
@@ -66,14 +68,16 @@ export default function RecupSenha() {
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">Adicione o Email da Sua Conta</h1>
+              <h1 className="text-4xl font-bold text-white mb-8">
+                {t("titulo")}
+              </h1>
               <form
                 className="space-y-4 max-w-md mx-auto md:mx-0"
                 onSubmit={handleSubmit}
               >
                 <input
                   type="email"
-                  placeholder="Digite o Email"
+                  placeholder={t("placeholder_email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -85,7 +89,7 @@ export default function RecupSenha() {
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? "Enviando..." : "Enviar Email"}
+                  {loading ? t("botao_enviando") : t("botao_enviar")}
                 </button>
 
                 {mensagem && (
@@ -97,11 +101,11 @@ export default function RecupSenha() {
 
               <div className="text-center mt-4 mr-28">
                 <span
-                onClick={() => router.push(`/${locale}/login`)}
-                className="text-emerald-400 hover:underline mt-4 cursor-pointer"
-              >
-                {t("Voltar")}
-              </span>
+                    onClick={() => router.push(`/${locale}/login`)}
+                    className="text-emerald-400 hover:underline mt-4 cursor-pointer"
+                    >
+                    {t("Voltar")}
+                </span>
               </div>
             </div>
           </div>
