@@ -1,12 +1,4 @@
-import {createLocalizedPathnamesNavigation} from 'next-intl/navigation';
-import {routing} from './routing';
+// src/i18n/navigation.ts
 
-// Lightweight wrappers around Next.js' navigation
-// APIs that consider the routing configuration
-export const {
-  Link,
-  redirect,
-  usePathname,
-  useRouter,
-  getPathname
-} = createLocalizedPathnamesNavigation(routing);
+export { useRouter, usePathname, redirect } from 'next/navigation';
+export { useLocale } from 'next-intl';

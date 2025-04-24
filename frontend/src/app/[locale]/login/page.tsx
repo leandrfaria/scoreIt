@@ -7,7 +7,7 @@ import PageTransition from "@/components/page-transition/PageTransition";
 import { Container } from "@/components/container";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import Link from "next/link"; // ✅ atualizado
 import { useAuthContext } from "@/context/AuthContext";
 
 export default function Login() {
@@ -16,10 +16,9 @@ export default function Login() {
   const [senha, setSenha] = useState("");
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const [mensagem, setMensagem] = useState("");
-  const { setIsLoggedIn, loadMemberData } = useAuthContext(); // Desestruturar loadMemberData
+  const { setIsLoggedIn, loadMemberData } = useAuthContext();
 
   const router = useRouter();
-
   const t = useTranslations("login");
   const locale = useLocale();
 
@@ -41,22 +40,18 @@ export default function Login() {
     event.preventDefault();
     setMensagem("");
     setLoading(true);
-  
+
     const response = await loginUser(email, senha);
-  
+
     if (response.success) {
-      // Armazenar o token no localStorage
       localStorage.setItem("authToken", response.token);
-      
-      // Chamar a função para carregar os dados do membro
-      await loadMemberData(); // Chame a função do contexto
-  
+      await loadMemberData();
       toast.success(t("login_sucesso"));
       router.push("/");
     } else {
       toast.error(t("login_erro"));
     }
-  
+
     setLoading(false);
   };
 
@@ -65,7 +60,6 @@ export default function Login() {
       <main className="w-full h-full flex">
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
-            {/* Imagem à esquerda */}
             <div className="w-full md:w-1/2 mb-10 md:mb-0">
               <img
                 src={randomImage}
@@ -74,13 +68,9 @@ export default function Login() {
               />
             </div>
 
-            {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
               <h1 className="text-4xl font-bold text-white mb-8">{t("titulo")}</h1>
-              <form
-                onSubmit={handleLogin}
-                className="space-y-4 max-w-md mx-auto md:mx-0"
-              >
+              <form onSubmit={handleLogin} className="space-y-4 max-w-md mx-auto md:mx-0">
                 <input
                   type="email"
                   placeholder={t("email")}
@@ -104,26 +94,18 @@ export default function Login() {
                 >
                   {loading ? t("carregando") : t("botao")}
                 </button>
+
                 {mensagem && (
-                  <p className="text-red-400 text-sm text-center mt-2">
-                    {mensagem}
-                  </p>
+                  <p className="text-red-400 text-sm text-center mt-2">{mensagem}</p>
                 )}
+
                 <div className="text-center">
-                  <Link
-                    href="/cadastro"
-                    className="text-emerald-400 hover:underline"
-                    locale={locale as any}
-                  >
+                  <Link href="/cadastro" className="text-emerald-400 hover:underline">
                     {t("cadastro")}
                   </Link>
                 </div>
                 <div className="text-center">
-                  <Link
-                    href="/envia_email"
-                    className="text-emerald-400 hover:underline"
-                    locale={locale as any}
-                  >
+                  <Link href="/envia_email" className="text-emerald-400 hover:underline">
                     {t("esqueceu_senha")}
                   </Link>
                 </div>

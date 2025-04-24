@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
-import createNextIntlPlugin from 'next-intl/plugin';
-const withNextIntl = createNextIntlPlugin('./src/i18n/routing.ts'); // 👈 precisa bater
+import createNextIntlPlugin from "next-intl/plugin";
+
+// Corrigido: aponto para o arquivo de configuração real
+const withNextIntl = createNextIntlPlugin('./next-intl.config.ts');
 
 const nextConfig: NextConfig = {
   images: {
@@ -11,7 +13,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "i.scdn.co", 
+        hostname: "i.scdn.co",
       },
       {
         protocol: "https",
@@ -23,5 +25,6 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-}
-  export default withNextIntl(nextConfig);
+};
+
+export default withNextIntl(nextConfig);
