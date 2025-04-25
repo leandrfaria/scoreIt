@@ -7,7 +7,6 @@ import PageTransition from "@/components/page-transition/PageTransition";
 import { Container } from "@/components/container";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
-import Link from "next/link"; // ✅ atualizado
 import { useAuthContext } from "@/context/AuthContext";
 
 export default function Login() {
@@ -100,14 +99,28 @@ export default function Login() {
                 )}
 
                 <div className="text-center">
-                  <Link href="/cadastro" className="text-emerald-400 hover:underline">
-                    {t("cadastro")}
-                  </Link>
+                <span
+                  onClick={() => router.push(`/${locale}/cadastro`)}
+                  className="text-emerald-400 hover:underline mt-4 cursor-pointer"
+                >
+                  {t("cadastro")}
+                </span>
                 </div>
                 <div className="text-center">
-                  <Link href="/envia_email" className="text-emerald-400 hover:underline">
-                    {t("esqueceu_senha")}
-                  </Link>
+                <span
+                  onClick={() => router.push(`/${locale}/envia_email`)}
+                  className="text-emerald-400 hover:underline mt-4 cursor-pointer"
+                >
+                  {t("esqueceu_senha")}
+                </span>
+                </div>
+                <div className="text-center">
+                  <span
+                    onClick={() => router.push(`/${locale}/refaz_email`)}
+                    className="text-emerald-400 hover:underline mt-4 cursor-pointer"
+                  >
+                    {t("mudar_email")}
+                  </span>  
                 </div>
               </form>
             </div>
@@ -117,3 +130,4 @@ export default function Login() {
     </PageTransition>
   );
 }
+

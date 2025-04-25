@@ -1,10 +1,9 @@
 "use client";
 
 import { useAuthContext } from "@/context/AuthContext";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { useEffect } from "react";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -17,17 +16,17 @@ export const ProtectedRoute = ({
   redirectTo = "/login",
   fallback = <p className="text-white text-center mt-10">Carregando...</p>,
 }: ProtectedRouteProps) => {
-  const { isLoggedIn } = useAuthContext();
+  const { isLoggedIn, isLoading } = useAuthContext();
   const router = useRouter();
   const locale = useLocale();
 
   useEffect(() => {
-    if (isLoggedIn === false) {
+    if (!isLoading && isLoggedIn === false) {
       router.push(`/${locale}${redirectTo}`);
     }
-  }, [isLoggedIn, locale, redirectTo]);
+  }, [isLoggedIn, isLoading, locale, redirectTo]);
 
-  if (isLoggedIn === null) {
+  if (isLoading || isLoggedIn === null) {
     return fallback;
   }
 
