@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ArrowLeftIcon as IconArrowLeft, ArrowRightIcon as IconArrowRight } from "lucide-react"
-import { MovieCard } from "@/components/film-card/MovieCard"
+import { MovieCard } from "@/components/movie-card/MovieCard"
 import type { Movie } from "@/types/Movie"
 
 
