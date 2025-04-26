@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
-type Tab = "filmes" | "musicas";
+type Tab = "filmes" | "musicas" | "series";
 
 interface TabContextType {
   activeTab: Tab;
@@ -13,16 +13,7 @@ interface TabContextType {
 const TabContext = createContext<TabContextType | undefined>(undefined);
 
 export const TabProvider = ({ children }: { children: ReactNode }) => {
-  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<Tab>("filmes");
-
-  useEffect(() => {
-    if (pathname.includes("musicas")) {
-      setActiveTab("musicas");
-    } else {
-      setActiveTab("filmes");
-    }
-  }, [pathname]);
 
   return (
     <TabContext.Provider value={{ activeTab, setActiveTab }}>

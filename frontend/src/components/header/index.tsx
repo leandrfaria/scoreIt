@@ -16,6 +16,7 @@ import LogoLateral from "@/assets/LogoLateral";
 import { useLocale, useTranslations } from "next-intl";
 import { useMember } from "@/context/MemberContext";
 import { useTabContext } from "@/context/TabContext";
+import { TabSwitcherMediaType } from "../tab-switcher/TabSwitcherMediaType";
 
 export function Header() {
   const pathname = usePathname();
@@ -60,39 +61,7 @@ export function Header() {
           </Link>
         </div>
 
-        {isLoggedIn && (
-          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
-            <div className="relative flex">
-              <div
-                className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${
-                  activeTab === "musicas" ? "translate-x-full" : "translate-x-0"
-                }`}
-              ></div>
-              <button
-                onClick={() => {
-                  setActiveTab("filmes");
-                  router.replace(`/${locale}`);
-                }}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                  activeTab === "filmes" ? "font-bold" : "text-gray-400"
-                }`}
-              >
-                {t("filmes")}
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("musicas");
-                  router.replace(`/${locale}`);
-                }}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                  activeTab === "musicas" ? "font-bold" : "text-gray-400"
-                }`}
-              >
-                {t("musicas")}
-              </button>
-            </div>
-          </nav>
-        )}
+        {isLoggedIn && <TabSwitcherMediaType/>}
 
         <div className="flex-1 flex justify-end items-center gap-4">
           <DropdownMenu>
