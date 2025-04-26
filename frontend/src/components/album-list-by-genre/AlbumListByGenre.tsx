@@ -20,44 +20,60 @@ const genres = [
   { label: "Reggae", value: "reggae" },
   { label: "Rock", value: "rock" },
   { label: "Samba", value: "samba" },
-  { label: "Sertanejo", value: "sertanejo" }
+  { label: "Sertanejo", value: "sertanejo" },
 ];
+
+const limitOptions = [10, 20, 30, 40, 50];
 
 export function AlbumListByGenre() {
   const [selectedGenre, setSelectedGenre] = useState("rap");
-  const [albums, setAlbums] = useState<Album[]>([]);
+  const [allAlbums, setAllAlbums] = useState<Album[]>([]);
+  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("AlbumListByGenre");
 
   useEffect(() => {
-    const getAlbums = async () => {
+    const fetchAlbums = async () => {
       setLoading(true);
-      const albumsData = await fetchAlbumsByGenre(selectedGenre);
-      setAlbums(albumsData);
+      const data = await fetchAlbumsByGenre(selectedGenre, 0, 100);
+      setAllAlbums(data);
       setLoading(false);
     };
-    getAlbums();
+    fetchAlbums();
   }, [selectedGenre]);
+
+  const handleGenreChange = (value: string) => {
+    setSelectedGenre(value);
+    setLimit(10);
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+  };
 
   if (loading) {
     return <p className="text-center mt-10 text-white">{t("loading")}</p>;
   }
 
-  if (albums.length === 0) {
+  if (allAlbums.length === 0) {
     return <p className="text-center mt-10 text-white">{t("noAlbumsFound")}</p>;
   }
 
+  const albumsToShow = allAlbums.slice(0, limit);
+
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
         <h2 className="text-white text-xl font-bold">
           {selectedGenre.charAt(0).toUpperCase() + selectedGenre.slice(1)} Albums
         </h2>
+
         <div className="relative w-fit">
           <select
             value={selectedGenre}
-            onChange={(e) => setSelectedGenre(e.target.value)}
-            className="appearance-none bg-neutral-800 text-white px-4 py-2 pr-8 rounded-md shadow-sm border border-neutral-700 focus:outline-none focus:ring-0 active:bg-neutral-800 transition custom-scroll styled-select"
+            onChange={(e) => handleGenreChange(e.target.value)}
+            className="bg-[#1a1a1a] text-white px-4 py-2 rounded-md shadow-sm border border-neutral-700 focus:outline-none focus:ring-0 transition custom-scroll styled-select"
+            style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
           >
             {genres.map((genre) => (
               <option key={genre.value} value={genre.value}>
@@ -65,16 +81,32 @@ export function AlbumListByGenre() {
               </option>
             ))}
           </select>
-          <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-white text-xs">
-            ▼
-          </div>
         </div>
       </div>
-      <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center">
-        {albums.map((album, index) => (
+
+      <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center transition-all duration-500">
+        {albumsToShow.map((album, index) => (
           <AlbumCard key={`${album.id}-${index}`} {...album} />
         ))}
       </section>
+
+      <div className="flex justify-center mt-10 mb-20">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-white">Álbuns aparecendo:</span>
+          <select
+            value={limit}
+            onChange={(e) => handleLimitChange(Number(e.target.value))}
+            className="appearance-none bg-[#1a1a1a] text-white px-3 py-2 rounded-md shadow-sm border border-neutral-700 focus:outline-none focus:ring-0 transition text-center custom-scroll styled-select"
+            style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+          >
+            {limitOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
     </>
   );
 }
