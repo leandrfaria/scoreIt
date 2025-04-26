@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Container } from "@/components/container";
 import PageTransition from "@/components/page-transition/PageTransition";
-import { resetPassword } from "@/services/service_refazSenha";
-import toast from "react-hot-toast";
-import { useTranslations } from "next-intl"; // 🌍 Tradução
+import { resetPassword } from "@/services/service_refazSenha"
+import toast from 'react-hot-toast';
+import { useTranslations } from "next-intl";
 
 export default function NovaSenha() {
   const [newSenha, setNewSenha] = useState("");
@@ -15,10 +15,11 @@ export default function NovaSenha() {
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
 
   const router = useRouter();
+  const t = useTranslations("nova_senha");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const passwordRegex = /^(?=.*\d).{5,}$/;
 
-  const t = useTranslations("nova_senha"); // 🌍 Chave de tradução
 
   useEffect(() => {
     const posters = [
@@ -39,9 +40,14 @@ export default function NovaSenha() {
     setMensagem("");
 
     if (!token) {
-      setMensagem(t("token_invalido")); // 🌍
+      setMensagem("Token inválido ou expirado.");
       return;
     }
+
+        if (!passwordRegex.test(newSenha)) {
+          toast.error(t("senha_erro"));
+          return;
+        }  
 
     setLoading(true);
 
@@ -50,12 +56,12 @@ export default function NovaSenha() {
     setLoading(false);
 
     if (result.success) {
-      toast.success(t("senha_sucesso")); // 🌍
+      toast.success("Senha atualizada com sucesso! Redirecionando...");
       setTimeout(() => {
         router.push("/");
       }, 2000);
     } else {
-      toast.error(t("senha_erro")); // 🌍
+      toast.error("Erro ao atualizar a senha");
     }
   };
 
@@ -68,23 +74,21 @@ export default function NovaSenha() {
             <div className="w-full md:w-1/2 mb-10 md:mb-0">
               <img
                 src={randomImage}
-                alt={t("poster_aleatorio_alt")} // 🌍
+                alt="Poster aleatório"
                 className="w-full h-[400px] object-cover rounded-lg shadow-lg"
               />
             </div>
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">
-                {t("titulo")} {/* 🌍 */}
-              </h1>
+              <h1 className="text-4xl font-bold text-white mb-8">Crie uma senha forte</h1>
               <form
                 className="space-y-4 max-w-md mx-auto md:mx-0"
                 onSubmit={handleSubmit}
               >
                 <input
                   type="password"
-                  placeholder={t("placeholder")} // 🌍
+                  placeholder="Digite sua nova senha"
                   value={newSenha}
                   onChange={(e) => setNewSenha(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -96,7 +100,7 @@ export default function NovaSenha() {
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? t("salvando") : t("botao")} {/* 🌍 */}
+                  {loading ? "Salvando..." : "Salvar Senha"}
                 </button>
 
                 {mensagem && (

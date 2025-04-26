@@ -8,16 +8,19 @@ interface AuthContextType {
   isLoggedIn: boolean | null;
   setIsLoggedIn: (loggedIn: boolean) => void;
   loadMemberData: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   isLoggedIn: null,
   setIsLoggedIn: () => {},
   loadMemberData: async () => {},
+  isLoading: true,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { setMember } = useMember();
 
   const loadMemberData = async () => {
@@ -40,6 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const token = localStorage.getItem("authToken");
       if (!token) {
         setIsLoggedIn(false);
+        setIsLoading(false);
         return;
       }
 
@@ -60,6 +64,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error("Erro ao validar token:", error);
         localStorage.removeItem("authToken");
         setIsLoggedIn(false);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -67,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, loadMemberData }}>
+    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, loadMemberData, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
