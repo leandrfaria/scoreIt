@@ -54,7 +54,7 @@ const FavouriteMoviesCarouselSection = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-10 text-white">{t("loading")}</div>
+      <div className="text-center py-10 text-white">Carregando filmes favoritos...</div>
     );
   }
 
