@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
-// Corrigido: aponto para o arquivo de configuração real
 const withNextIntl = createNextIntlPlugin('./next-intl.config.ts');
 
 const nextConfig: NextConfig = {
@@ -17,12 +16,16 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "marketup.com"
+        hostname: "marketup.com",
       },
       {
         protocol: "https",
-        hostname: "res.cloudinary.com"
-      }
+        hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lastfm.freetls.fastly.net", 
+      },
     ],
   },
 };

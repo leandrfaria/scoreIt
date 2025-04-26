@@ -15,21 +15,17 @@ import {
 import LogoLateral from "@/assets/LogoLateral";
 import { useLocale, useTranslations } from "next-intl";
 import { useMember } from "@/context/MemberContext";
+import { useTabContext } from "@/context/TabContext";
 
 export function Header() {
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState("/");
-  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   const locale = useLocale();
   const t = useTranslations("header");
   const router = useRouter();
-  const { isLoggedIn, setIsLoggedIn } = useAuthContext(); // ✅ substitui useCheckAuth
+  const { isLoggedIn, setIsLoggedIn } = useAuthContext();
   const { member } = useMember();
-
-
-  useEffect(() => {
-    setActiveTab(pathname);
-  }, [pathname]);
+  const { activeTab, setActiveTab } = useTabContext();
+  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
 
   const changeLanguage = async (newLocale: string) => {
     setIsChangingLanguage(true);
@@ -38,14 +34,8 @@ export function Header() {
       const token = url.searchParams.get("token");
 
       let newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
-
-      if (pathname === "/") {
-        newPath = `/${newLocale}`;
-      }
-
-      if (token) {
-        newPath += `?token=${encodeURIComponent(token)}`;
-      }
+      if (pathname === "/") newPath = `/${newLocale}`;
+      if (token) newPath += `?token=${encodeURIComponent(token)}`;
 
       window.location.href = newPath;
     } catch (error) {
@@ -59,9 +49,7 @@ export function Header() {
     }
   };
 
-  if (isLoggedIn === null) {
-    return null;
-  }
+  if (isLoggedIn === null) return null;
 
   return (
     <header className="w-full h-20 bg-black relative">
@@ -76,29 +64,37 @@ export function Header() {
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
             <div className="relative flex">
               <div
-                className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${activeTab === `/${locale}/musicas` ? "translate-x-full" : "translate-x-0"
-                  }`}
+                className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${
+                  activeTab === "musicas" ? "translate-x-full" : "translate-x-0"
+                }`}
               ></div>
-              <Link
-                href={`/${locale}`}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${activeTab === `/${locale}` ? "font-bold" : "text-gray-400"
-                  }`}
+              <button
+                onClick={() => {
+                  setActiveTab("filmes");
+                  router.replace(`/${locale}`);
+                }}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "filmes" ? "font-bold" : "text-gray-400"
+                }`}
               >
                 {t("filmes")}
-              </Link>
-              <Link
-                href={`/${locale}/musicas`}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${activeTab === `/${locale}/musicas` ? "font-bold" : "text-gray-400"
-                  }`}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("musicas");
+                  router.replace(`/${locale}`);
+                }}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "musicas" ? "font-bold" : "text-gray-400"
+                }`}
               >
                 {t("musicas")}
-              </Link>
+              </button>
             </div>
           </nav>
         )}
 
         <div className="flex-1 flex justify-end items-center gap-4">
-          {/* Seletor de idioma */}
           <DropdownMenu>
             <DropdownMenuTrigger
               className="focus:outline-none text-white bg-gray-800 px-3 py-1 rounded-md hover:bg-gray-700 transition-all flex items-center gap-2 min-w-[50px] justify-center"
@@ -170,7 +166,7 @@ export function Header() {
                 <DropdownMenuItem
                   onClick={() => {
                     localStorage.removeItem("authToken");
-                    setIsLoggedIn(false); // 🔥 atualiza sem recarregar o header
+                    setIsLoggedIn(false);
                     window.location.href = `/${locale}/login`;
                   }}
                   className="block px-2 py-1 text-red-300 hover:bg-red-900 rounded cursor-pointer"

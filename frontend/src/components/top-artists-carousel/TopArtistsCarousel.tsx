@@ -31,7 +31,7 @@ export default function TopArtistsCarouselSection() {
 
     const cardWidth = 160;
     const gap = 24;
-    const cardsToScroll = 2;
+    const cardsToScroll = 3;
     const scrollAmount = (cardWidth + gap) * cardsToScroll;
 
     const newScrollLeft =
@@ -56,7 +56,7 @@ export default function TopArtistsCarouselSection() {
 
   return (
     <div className="w-full py-6">
-      <h2 className="text-xl font-bold text-white mb-4">{t("titulo")}</h2>
+      <h2 className="text-xl font-bold text-white mb-4">Artistas mais escutados</h2>
 
       <div className="relative">
         <div
