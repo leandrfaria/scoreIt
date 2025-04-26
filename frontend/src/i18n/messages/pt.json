@@ -132,5 +132,9 @@
   "email_sucesso": "Email atualizada com sucesso! Redirecionando...",
   "email_erro": "Email invalido! Seu email deve conter @ e um dominio valido",
   "poster_aleatorio_alt": "Poster aleatório"
+},
+"AlbumListByGenre": {
+  "loading": "Carregando álbuns...",
+  "noAlbumsFound": "Nenhum álbum encontrado."
 }
 }  

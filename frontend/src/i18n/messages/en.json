@@ -134,6 +134,9 @@
   "email_sucesso": "Email updated successfully! Redirecting...",
   "email_erro": "Invalid email! Your email must contain @ and a valid domain",
   "poster_aleatorio_alt": "Random poster"
-
+},
+"AlbumListByGenre": {
+  "loading": "Loading albums...",
+  "noAlbumsFound": "No albums found."
 }
 }   
