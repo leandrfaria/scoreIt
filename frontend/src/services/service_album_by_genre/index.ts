@@ -1,6 +1,6 @@
 import { Album } from "@/types/Album";
 
-export const fetchAlbumsByGenre = async (genre: string, page = 1, limit = 20): Promise<Album[]> => {
+export const fetchAlbumsByGenre = async (genre: string = "rap", page = 1, limit = 20): Promise<Album[]> => {
   try {
     const token = localStorage.getItem("authToken");
 
@@ -22,10 +22,10 @@ export const fetchAlbumsByGenre = async (genre: string, page = 1, limit = 20): P
     const raw = await res.json();
 
     return raw.map((item: any, index: number) => ({
-      id: item.artist?.mbid || `album-${genre}-${page}-${index}`, // gera id caso não tenha
+      id: item.artist?.mbid || `album-${genre}-${page}-${index}`,
       name: item.name,
-      release_date: "", // não vem data da API, deixar vazio
-      imageUrl: item.image?.[3]?.["#text"] || "", // pega imagem 300x300
+      release_date: "",
+      imageUrl: item.image?.[3]?.["#text"] || "",
       artistName: item.artist?.name || "Desconhecido",
     }));
   } catch (err) {

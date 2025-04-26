@@ -9,7 +9,7 @@ import PageTransition from "@/components/page-transition/PageTransition";
 import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
 import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
 import RecentsAlbumCarousel from "@/components/recents-album-carousel/RecentsAlbumCarousel";
-import { AlbumListByGenre } from "@/components/album-list-by-genre/AlbumListByGenre"; // ✅ importei aqui
+import { AlbumListByGenre } from "@/components/album-list-by-genre/AlbumListByGenre";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
@@ -56,9 +56,7 @@ export default function Home() {
               <>
                 <TopArtistsCarouselSection />
                 <RecentsAlbumCarousel />
-                {/* Aqui entra a lista de álbuns por gênero */}
-                <h2 className="text-white text-xl font-bold mt-10 mb-4">Rap Albums</h2>
-                <AlbumListByGenre genre="rap" />
+                <AlbumListByGenre />
               </>
             ) : (
               <>
