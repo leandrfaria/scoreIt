@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Container } from "@/components/container";
 import { RandomMoviesCarousel } from "@/components/random-movies-carousel/RandomMoviesCarousel";
 import { MovieList } from "@/components/movies-list/MovieList";
+import { RandomSeriesCarousel } from "@/components/random-series-carousel/RandomSeriesCarousel";
 import Link from "next/link";
 import PageTransition from "@/components/page-transition/PageTransition";
 import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
@@ -60,10 +61,11 @@ export default function Home() {
               </>
             ) : activeTab === "series" ? (
               <>
+              <RandomSeriesCarousel />
                 <h2 className="text-white text-xl font-bold mt-10 mb-4">
                   {t("todas_series")}
                 </h2>
-                <p className="text-white">[Aqui você pode renderizar sua lista de séries futuramente]</p>
+                
               </>
             ) : (
               <>

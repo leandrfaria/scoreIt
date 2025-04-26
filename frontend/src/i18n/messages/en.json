@@ -91,7 +91,8 @@
   "RandomMovie": {
     "loading": "Loading movies...",
     "notFound": "No movies found.",
-    "detailButton": "View Details"
+    "detailButton": "View details",
+    "noDescription": "No description available."
   },
   "ProfileEditModal": {
     "title": "Edit Profile",
