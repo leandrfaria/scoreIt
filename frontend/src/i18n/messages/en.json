@@ -17,7 +17,6 @@
     "invalid_email": "Invalid email! Your email must contain @ and a valid domain",
     "invalid_senha": "Invalid password! It must have at least 5 characters and 1 number",
     "invalid_date": "Invalid date! Please enter a valid date"
-
   },
   "login": {
     "titulo": "Login",
@@ -50,30 +49,32 @@
     "senha_erro": "Error updating the password, your password must contain at least 5 characters and 1 number",
     "poster_aleatorio_alt": "Random poster"
   },
-    "profile": {
-      "title": "User Profile",
-      "edit_profile": "Edit Profile",
-      "no_bio": "No bio available",
-      "movies": "Movies",
-      "followers": "Followers",
-      "following": "Following",
-      "error_updating_profile": "Error updating profile. Please try again.",
-      "success_updating_profile": "Profile updated successfully.",
-      "edit_profile_title": "Edit Profile",
-      "name": "Name",
-      "bio": "Bio",
-      "save": "Save",
-      "cancel": "Cancel",
-      "error_uploading_image": "Error uploading profile image",
-      "loading": "Loading..."
-    },
+  "profile": {
+    "title": "User Profile",
+    "edit_profile": "Edit Profile",
+    "no_bio": "No bio available",
+    "movies": "Movies",
+    "followers": "Followers",
+    "following": "Following",
+    "error_updating_profile": "Error updating profile. Please try again.",
+    "success_updating_profile": "Profile updated successfully.",
+    "edit_profile_title": "Edit Profile",
+    "name": "Name",
+    "bio": "Bio",
+    "save": "Save",
+    "cancel": "Cancel",
+    "error_uploading_image": "Error uploading profile image",
+    "loading": "Loading..."
+  },
   "home": {
     "verificando_login": "Checking login...",
     "todos_filmes": "All Movies",
+    "todas_series": "All Series",
     "mensagem_login": "Log in to view our movies and music!",
     "botao_login": "Log In"
   },
   "header": {
+    "series": "Series",
     "filmes": "Movies",
     "musicas": "Musics",
     "perfil": "Profile",
@@ -82,61 +83,60 @@
     "login": "Login",
     "Alterar_email": "Change Email"
   },
-
   "footer": {
     "direitos": "All rights reserved.",
     "sobre": "About",
     "contato": "Contact"
   },
   "RandomMovie": {
-  "loading": "Loading movies...",
-  "notFound": "No movies found.",
-  "detailButton": "View Details"
-},
-"ProfileEditModal": {
-  "title": "Edit Profile",
-  "namePlaceholder": "Name",
-  "bioPlaceholder": "Bio",
-  "cancelButton": "Cancel",
-  "saveButton": "Save"
-},
-"NowPlayingCarousel": {
-  "loading": "Loading now playing movies...",
-  "noMoviesFound": "No movies currently playing found.",
-  "carouselTitle": "Now Playing",
-  "tokenNotFound": "Token not found. Please login first.",
-  "emptyListWarning": "🚨 Empty list! Adding mock...",
-  "mockMovie": {
-    "title": "Mocked",
-    "overview": "This is a mock."
+    "loading": "Loading movies...",
+    "notFound": "No movies found.",
+    "detailButton": "View Details"
+  },
+  "ProfileEditModal": {
+    "title": "Edit Profile",
+    "namePlaceholder": "Name",
+    "bioPlaceholder": "Bio",
+    "cancelButton": "Cancel",
+    "saveButton": "Save"
+  },
+  "NowPlayingCarousel": {
+    "loading": "Loading now playing movies...",
+    "noMoviesFound": "No movies currently playing found.",
+    "carouselTitle": "Now Playing",
+    "tokenNotFound": "Token not found. Please login first.",
+    "emptyListWarning": "🚨 Empty list! Adding mock...",
+    "mockMovie": {
+      "title": "Mocked",
+      "overview": "This is a mock."
+    }
+  },
+  "MovieList": {
+    "loading": "Loading movies...",
+    "noMoviesFound": "No movies found."
+  },
+  "MovieCard": {
+    "releaseDate": "Release date",
+    "noDescription": "No description available.",
+    "viewDetails": "View details"
+  },
+  "top_artists": {
+    "titulo": "Top Artists",
+    "carregando": "Loading artists...",
+    "nenhum": "No artists found."
+  },
+  "novo_email": {
+    "titulo": "Add your new email",
+    "placeholder": "Email",
+    "botao": "Save Email",
+    "salvando": "Saving...",
+    "token_invalido": "Invalid or expired token.",
+    "email_sucesso": "Email updated successfully! Redirecting...",
+    "email_erro": "Invalid email! Your email must contain @ and a valid domain",
+    "poster_aleatorio_alt": "Random poster"
+  },
+  "AlbumListByGenre": {
+    "loading": "Loading albums...",
+    "noAlbumsFound": "No albums found."
   }
-},
-"MovieList": {
-  "loading": "Loading movies...",
-  "noMoviesFound": "No movies found."
-},
-"MovieCard": {
-  "releaseDate": "Release date",
-  "noDescription": "No description available.",
-  "viewDetails": "View details"
-},
-"top_artists": {
-  "titulo": "Top Artists",
-  "carregando": "Loading artists...",
-  "nenhum": "No artists found."
-},
-"novo_email": {
-  "titulo": "Add your new email",
-  "placeholder": "Email",
-  "botao": "Save Email",
-  "salvando": "Saving...",
-  "token_invalido": "Invalid or expired token.",
-  "email_sucesso": "Email updated successfully! Redirecting...",
-  "email_erro": "Invalid email! Your email must contain @ and a valid domain",
-  "poster_aleatorio_alt": "Random poster"
-},
-"AlbumListByGenre": {
-  "loading": "Loading albums...",
-  "noAlbumsFound": "No albums found."
 }
-}   

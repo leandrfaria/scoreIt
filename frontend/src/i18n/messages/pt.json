@@ -48,31 +48,33 @@
     "senha_sucesso": "Senha atualizada com sucesso! Redirecionando...",
     "senha_erro": "Erro ao atualizar a senha, sua senha deve conter pelo menos 5 digitos e 1 numero",
     "poster_aleatorio_alt": "Poster aleatório"
-    },
-      "profile": {
-        "title": "Perfil do Usuário",
-        "edit_profile": "Editar Perfil",
-        "no_bio": "Não há bio",
-        "movies": "Filmes",
-        "followers": "Seguidores",
-        "following": "Seguindo",
-        "error_updating_profile": "Erro ao atualizar perfil. Tente novamente.",
-        "success_updating_profile": "Perfil atualizado com sucesso.",
-        "edit_profile_title": "Editar Perfil",
-        "name": "Nome",
-        "bio": "Bio",
-        "save": "Salvar",
-        "cancel": "Cancelar",
-        "error_uploading_image": "Erro ao enviar imagem de perfil",
-        "loading": "Carregando..."
-      },
+  },
+  "profile": {
+    "title": "Perfil do Usuário",
+    "edit_profile": "Editar Perfil",
+    "no_bio": "Não há bio",
+    "movies": "Filmes",
+    "followers": "Seguidores",
+    "following": "Seguindo",
+    "error_updating_profile": "Erro ao atualizar perfil. Tente novamente.",
+    "success_updating_profile": "Perfil atualizado com sucesso.",
+    "edit_profile_title": "Editar Perfil",
+    "name": "Nome",
+    "bio": "Bio",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "error_uploading_image": "Erro ao enviar imagem de perfil",
+    "loading": "Carregando..."
+  },
   "home": {
     "verificando_login": "Verificando login...",
     "todos_filmes": "Todos os Filmes",
+    "todas_series": "Todas as Séries",
     "mensagem_login": "Faça login para visualizar nossos filmes e músicas!",
     "botao_login": "Fazer Login"
   },
   "header": {
+    "series": "Séries",
     "filmes": "Filmes",
     "musicas": "Músicas",
     "perfil": "Perfil",
@@ -87,54 +89,54 @@
     "contato": "Contato"
   },
   "RandomMovie": {
-  "loading": "Carregando filmes...",
-  "notFound": "Nenhum filme encontrado.",
-  "detailButton": "Ver Detalhes"
-},
-"ProfileEditModal": {
-  "title": "Editar Perfil",
-  "namePlaceholder": "Nome",
-  "bioPlaceholder": "Bio",
-  "cancelButton": "Cancelar",
-  "saveButton": "Salvar"
-},
-"NowPlayingCarousel": {
-  "loading": "Carregando filmes em cartaz...",
-  "noMoviesFound": "Nenhum filme em cartaz encontrado.",
-  "carouselTitle": "Filmes em Cartaz",
-  "tokenNotFound": "Token não encontrado. Faça login primeiro.",
-  "emptyListWarning": "🚨 Lista vazia! Adicionando mock...",
-  "mockMovie": {
-    "title": "Mockado",
-    "overview": "Esse é um mock." 
+    "loading": "Carregando filmes...",
+    "notFound": "Nenhum filme encontrado.",
+    "detailButton": "Ver Detalhes"
+  },
+  "ProfileEditModal": {
+    "title": "Editar Perfil",
+    "namePlaceholder": "Nome",
+    "bioPlaceholder": "Bio",
+    "cancelButton": "Cancelar",
+    "saveButton": "Salvar"
+  },
+  "NowPlayingCarousel": {
+    "loading": "Carregando filmes em cartaz...",
+    "noMoviesFound": "Nenhum filme em cartaz encontrado.",
+    "carouselTitle": "Filmes em Cartaz",
+    "tokenNotFound": "Token não encontrado. Faça login primeiro.",
+    "emptyListWarning": "🚨 Lista vazia! Adicionando mock...",
+    "mockMovie": {
+      "title": "Mockado",
+      "overview": "Esse é um mock."
+    }
+  },
+  "MovieList": {
+    "loading": "Carregando filmes...",
+    "noMoviesFound": "Nenhum filme encontrado."
+  },
+  "MovieCard": {
+    "releaseDate": "Lançamento",
+    "noDescription": "Sem descrição disponível.",
+    "viewDetails": "Ver detalhes"
+  },
+  "top_artists": {
+    "titulo": "Top Artistas",
+    "carregando": "Carregando artistas...",
+    "nenhum": "Nenhum artista encontrado."
+  },
+  "novo_email": {
+    "titulo": "Adicione seu novo Email",
+    "placeholder": "Email",
+    "botao": "Salvar Email",
+    "salvando": "Salvando...",
+    "token_invalido": "Token inválido ou expirado.",
+    "email_sucesso": "Email atualizada com sucesso! Redirecionando...",
+    "email_erro": "Email invalido! Seu email deve conter @ e um dominio valido",
+    "poster_aleatorio_alt": "Poster aleatório"
+  },
+  "AlbumListByGenre": {
+    "loading": "Carregando álbuns...",
+    "noAlbumsFound": "Nenhum álbum encontrado."
   }
-},
-"MovieList": {
-  "loading": "Carregando filmes...",
-  "noMoviesFound": "Nenhum filme encontrado."
-},
-"MovieCard": {
-  "releaseDate": "Lançamento",
-  "noDescription": "Sem descrição disponível.",
-  "viewDetails": "Ver detalhes"
-},
-"top_artists": {
-  "titulo": "Top Artistas",
-  "carregando": "Carregando artistas...",
-  "nenhum": "Nenhum artista encontrado."
-},
-"novo_email": {
-  "titulo": "Adicione seu novo Email",
-  "placeholder": "Email",
-  "botao": "Salvar Email",
-  "salvando": "Salvando...",
-  "token_invalido": "Token inválido ou expirado.",
-  "email_sucesso": "Email atualizada com sucesso! Redirecionando...",
-  "email_erro": "Email invalido! Seu email deve conter @ e um dominio valido",
-  "poster_aleatorio_alt": "Poster aleatório"
-},
-"AlbumListByGenre": {
-  "loading": "Carregando álbuns...",
-  "noAlbumsFound": "Nenhum álbum encontrado."
 }
-}  

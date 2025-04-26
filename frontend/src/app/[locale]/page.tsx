@@ -58,6 +58,13 @@ export default function Home() {
                 <RecentsAlbumCarousel />
                 <AlbumListByGenre />
               </>
+            ) : activeTab === "series" ? (
+              <>
+                <h2 className="text-white text-xl font-bold mt-10 mb-4">
+                  {t("todas_series")}
+                </h2>
+                <p className="text-white">[Aqui você pode renderizar sua lista de séries futuramente]</p>
+              </>
             ) : (
               <>
                 <RandomMoviesCarousel />

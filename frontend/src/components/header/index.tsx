@@ -64,10 +64,26 @@ export function Header() {
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
             <div className="relative flex">
               <div
-                className={`absolute inset-0 h-full w-1/2 bg-darkgreen rounded-md transition-all duration-300 ${
-                  activeTab === "musicas" ? "translate-x-full" : "translate-x-0"
+                className={`absolute inset-0 h-full w-1/3 bg-darkgreen rounded-md transition-all duration-300 ${
+                  activeTab === "series"
+                    ? "translate-x-0"
+                    : activeTab === "filmes"
+                    ? "translate-x-full"
+                    : "translate-x-[200%]"
                 }`}
               ></div>
+
+              <button
+                onClick={() => {
+                  setActiveTab("series");
+                  router.replace(`/${locale}`);
+                }}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "series" ? "font-bold" : "text-gray-400"
+                }`}
+              >
+                {t("series")}
+              </button>
               <button
                 onClick={() => {
                   setActiveTab("filmes");
