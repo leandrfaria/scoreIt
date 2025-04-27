@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { usePathname } from "next/navigation";
 
 type Tab = "filmes" | "musicas" | "series";
 
@@ -14,17 +13,6 @@ const TabContext = createContext<TabContextType | undefined>(undefined);
 
 export const TabProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState<Tab>("filmes");
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (pathname.includes("musicas")) {
-      setActiveTab("musicas");
-    } else if (pathname.includes("series")) {
-      setActiveTab("series");
-    } else {
-      setActiveTab("filmes");
-    }
-  }, [pathname]);
 
   return (
     <TabContext.Provider value={{ activeTab, setActiveTab }}>

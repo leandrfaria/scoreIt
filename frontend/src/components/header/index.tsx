@@ -63,55 +63,8 @@ export function Header() {
         </div>
 
         {/* MENU DE TROCA DE ABA (DESKTOP) */}
-        {isLoggedIn && (
-          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
-            <div className="relative flex">
-              <div
-                className={`absolute inset-0 h-full w-1/3 bg-darkgreen rounded-md transition-all duration-300 ${
-                  activeTab === "series"
-                    ? "translate-x-0"
-                    : activeTab === "filmes"
-                    ? "translate-x-full"
-                    : "translate-x-[200%]"
-                }`}
-              ></div>
-
-              <button
-                onClick={() => {
-                  setActiveTab("series");
-                  router.replace(`/${locale}`);
-                }}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                  activeTab === "series" ? "font-bold" : "text-gray-400"
-                }`}
-              >
-                {t("series")}
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("filmes");
-                  router.replace(`/${locale}`);
-                }}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                  activeTab === "filmes" ? "font-bold" : "text-gray-400"
-                }`}
-              >
-                {t("filmes")}
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("musicas");
-                  router.replace(`/${locale}`);
-                }}
-                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
-                  activeTab === "musicas" ? "font-bold" : "text-gray-400"
-                }`}
-              >
-                {t("musicas")}
-              </button>
-            </div>
-          </nav>
-        )}
+        {isLoggedIn && <TabSwitcherMediaType />
+        }
 
         {/* MENU DE TROCA DE ABA (MOBILE) */}
         {isLoggedIn && (
