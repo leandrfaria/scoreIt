@@ -40,7 +40,7 @@ export default function NovaSenha() {
     setMensagem("");
 
     if (!token) {
-      setMensagem("Token inválido ou expirado.");
+      setMensagem(t("token_invalido"));
       return;
     }
 
@@ -56,12 +56,12 @@ export default function NovaSenha() {
     setLoading(false);
 
     if (result.success) {
-      toast.success("Senha atualizada com sucesso! Redirecionando...");
+      toast.success(t("senha_sucesso"));
       setTimeout(() => {
         router.push("/");
       }, 2000);
     } else {
-      toast.error("Erro ao atualizar a senha");
+      toast.error(t("senha_erro"));
     }
   };
 
@@ -81,14 +81,14 @@ export default function NovaSenha() {
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">Crie uma senha forte</h1>
+              <h1 className="text-4xl font-bold text-white mb-8">{t("titulo")}</h1>
               <form
                 className="space-y-4 max-w-md mx-auto md:mx-0"
                 onSubmit={handleSubmit}
               >
                 <input
                   type="password"
-                  placeholder="Digite sua nova senha"
+                  placeholder={t("placeholder")}
                   value={newSenha}
                   onChange={(e) => setNewSenha(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -100,7 +100,7 @@ export default function NovaSenha() {
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? "Salvando..." : "Salvar Senha"}
+                  {loading ? (t("botao")) : (t("salvando"))}
                 </button>
 
                 {mensagem && (

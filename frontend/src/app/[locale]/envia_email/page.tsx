@@ -41,12 +41,12 @@ export default function RecupSenha() {
     setLoading(false);
 
     if (result.success) {
-      toast.success("E-mail enviado com sucesso! Redirecionando...");
+      toast.success(t("sucesso"));
       setTimeout(() => {
-        router.push("/login");
+        router.push(`/${locale}/login`);
       }, 2000);
     } else {
-      toast.error("Erro ao enviar e-mail de redefinição. Verifique se o email está correto");
+      toast.error(t("erro"));
     }
   };
 
@@ -66,14 +66,14 @@ export default function RecupSenha() {
 
             {/* Formulário à direita */}
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-white mb-8">Adicione o Email da Sua Conta</h1>
+              <h1 className="text-4xl font-bold text-white mb-8">{t("titulo")}</h1>
               <form
                 className="space-y-4 max-w-md mx-auto md:mx-0"
                 onSubmit={handleSubmit}
               >
                 <input
                   type="email"
-                  placeholder="Digite o Email"
+                  placeholder={t("placeholder_email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -85,7 +85,7 @@ export default function RecupSenha() {
                   className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md"
                   disabled={loading}
                 >
-                  {loading ? "Enviando..." : "Enviar Email"}
+                  {loading ? (t("botao_enviando")) : (t("botao_enviar"))}
                 </button>
 
                 {mensagem && (
