@@ -3,17 +3,18 @@
 import { useEffect, useState } from "react";
 import { Container } from "@/components/container";
 import { RandomMoviesCarousel } from "@/components/random-movies-carousel/RandomMoviesCarousel";
-import { MovieList } from "@/components/movies-list/MovieList";
 import { RandomSeriesCarousel } from "@/components/random-series-carousel/RandomSeriesCarousel";
-import Link from "next/link";
-import PageTransition from "@/components/page-transition/PageTransition";
-import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
-import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
-import RecentsAlbumCarousel from "@/components/recents-album-carousel/RecentsAlbumCarousel";
+import { MovieList } from "@/components/movies-list/MovieList";
 import { AlbumListByGenre } from "@/components/album-list-by-genre/AlbumListByGenre";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
+import Link from "next/link";
+import PageTransition from "@/components/page-transition/PageTransition";
+import RecentsAlbumCarousel from "@/components/recents-album-carousel/RecentsAlbumCarousel";
+import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
+import OnAirSeriesCarouselSection from "@/components/series-on-air-carousel/OnAirSeriesCarouselSection";
+import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
@@ -61,11 +62,11 @@ export default function Home() {
               </>
             ) : activeTab === "series" ? (
               <>
-              <RandomSeriesCarousel />
+                <RandomSeriesCarousel />
+                <OnAirSeriesCarouselSection />
                 <h2 className="text-white text-xl font-bold mt-10 mb-4">
                   {t("todas_series")}
                 </h2>
-                
               </>
             ) : (
               <>
