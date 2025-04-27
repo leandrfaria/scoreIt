@@ -4,10 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import Image from "next/image";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaHeart } from "react-icons/fa";
+import { FiHeart } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { Movie } from "@/types/Movie";
 import { useTranslations } from "next-intl";
+import { useMember } from "@/context/MemberContext";
+import toast from "react-hot-toast";
+import { addFavouriteMovie } from "@/services/service_add_favourite_movie";
 
 export function MovieCard({
   id,
@@ -20,10 +24,12 @@ export function MovieCard({
   genre = "Drama",
 }: Movie) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const year = new Date(release_date).getFullYear();
   const router = useRouter();
   const t = useTranslations("MovieCard");
+  const { member } = useMember();
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
@@ -37,6 +43,29 @@ export function MovieCard({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const handleFavorite = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+
+      if (!token || !member) {
+        toast.error("Usuário não autenticado.");
+        return;
+      }
+
+      const success = await addFavouriteMovie(token, member.id, id);
+
+      if (success) {
+        setIsFavorited(true);
+        toast.success("Filme adicionado aos favoritos!");
+      } else {
+        toast.error("Erro ao adicionar filme aos favoritos.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao adicionar filme aos favoritos.");
+    }
+  };
 
   return (
     <>
@@ -91,13 +120,25 @@ export function MovieCard({
               </div>
 
               {backdropUrl && (
-                <div className="w-full h-[250px] relative rounded-md overflow-hidden mb-6">
+                <div className="relative w-full h-[250px] rounded-md overflow-hidden mb-6">
                   <Image
                     src={backdropUrl}
                     alt={title}
                     fill
-                    className="object-cover"
+                    className="object-cover rounded-md"
                   />
+
+                  {/* Botão de favoritar no modal */}
+                  <button
+                    onClick={handleFavorite}
+                    className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full"
+                  >
+                    {isFavorited ? (
+                      <FaHeart className="text-red-500 w-6 h-6" />
+                    ) : (
+                      <FiHeart className="text-white w-6 h-6" />
+                    )}
+                  </button>
                 </div>
               )}
 
