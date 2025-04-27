@@ -55,15 +55,74 @@ export function Header() {
   return (
     <header className="w-full h-20 bg-black relative">
       <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-6">
+        {/* LOGO */}
         <div className="flex-1">
           <Link href={`/${locale}`} className="text-white text-lg font-semibold">
             <LogoLateral />
           </Link>
         </div>
 
-        {isLoggedIn && <TabSwitcherMediaType/>}
+        {/* MENU DE TROCA DE ABA (DESKTOP) */}
+        {isLoggedIn && (
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2">
+            <div className="relative flex">
+              <div
+                className={`absolute inset-0 h-full w-1/3 bg-darkgreen rounded-md transition-all duration-300 ${
+                  activeTab === "series"
+                    ? "translate-x-0"
+                    : activeTab === "filmes"
+                    ? "translate-x-full"
+                    : "translate-x-[200%]"
+                }`}
+              ></div>
 
+              <button
+                onClick={() => {
+                  setActiveTab("series");
+                  router.replace(`/${locale}`);
+                }}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "series" ? "font-bold" : "text-gray-400"
+                }`}
+              >
+                {t("series")}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("filmes");
+                  router.replace(`/${locale}`);
+                }}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "filmes" ? "font-bold" : "text-gray-400"
+                }`}
+              >
+                {t("filmes")}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("musicas");
+                  router.replace(`/${locale}`);
+                }}
+                className={`w-32 text-center py-2 text-white relative z-10 transition-all ${
+                  activeTab === "musicas" ? "font-bold" : "text-gray-400"
+                }`}
+              >
+                {t("musicas")}
+              </button>
+            </div>
+          </nav>
+        )}
+
+        {/* MENU DE TROCA DE ABA (MOBILE) */}
+        {isLoggedIn && (
+          <div className="flex md:hidden">
+            <TabSwitcherMediaType />
+          </div>
+        )}
+
+        {/* LADO DIREITO (IDIOMA + AVATAR OU LOGIN) */}
         <div className="flex-1 flex justify-end items-center gap-4">
+          {/* Trocar idioma */}
           <DropdownMenu>
             <DropdownMenuTrigger
               className="focus:outline-none text-white bg-gray-800 px-3 py-1 rounded-md hover:bg-gray-700 transition-all flex items-center gap-2 min-w-[50px] justify-center"
@@ -95,6 +154,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Avatar ou botão de login */}
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="focus:outline-none ml-4">
