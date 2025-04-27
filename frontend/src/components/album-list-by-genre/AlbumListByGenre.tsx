@@ -35,12 +35,12 @@ export function AlbumListByGenre() {
   useEffect(() => {
     const fetchAlbums = async () => {
       setLoading(true);
-      const data = await fetchAlbumsByGenre(selectedGenre, 1, 100);
+      const data = await fetchAlbumsByGenre(selectedGenre, 0, limit);
       setAllAlbums(data);
       setLoading(false);
     };
     fetchAlbums();
-  }, [selectedGenre]);
+  }, [selectedGenre, limit]);
 
   const handleGenreChange = (value: string) => {
     setSelectedGenre(value);

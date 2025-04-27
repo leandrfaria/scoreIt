@@ -41,7 +41,7 @@ const FavouriteMoviesCarouselSection = () => {
   if (movies.length === 0) {
     return (
       <div className="text-center py-10 text-white">
-        {t("noMoviesFound")}
+        Nenhum filme encontrado
       </div>
     );
   }

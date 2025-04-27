@@ -41,8 +41,8 @@ const FavouriteSeriesCarouselSection = () => {
   if (series.length === 0) {
     return (
       <div className="text-center py-10 text-white">
-        {t("noMoviesFound")}
-      </div>
+        Nenhuma série encontrada
+        </div>
     );
   }
 
