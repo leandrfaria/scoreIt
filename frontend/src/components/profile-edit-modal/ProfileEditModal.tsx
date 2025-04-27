@@ -2,6 +2,7 @@ import { Member } from "@/types/Member";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
+import toast from "react-hot-toast";
 
 const ProfileEditModal = ({
   member,
@@ -31,12 +32,38 @@ const ProfileEditModal = ({
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
+  ) => {    
     const { name, value } = e.target;
+
+    if(name == "birthDate"){
+      const birthDate = new Date(value);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const isValidDate = birthDate instanceof Date && !isNaN(birthDate.getTime());
+      const isAdult = age > 18 || (age === 18 && today.getMonth() > birthDate.getMonth()) || (age === 18 && today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+      const isUnder120 = age < 120;
+
+      if (!isValidDate || !isAdult || !isUnder120) {
+        toast.error(t("invalidBirthDate"));
+        return;
+      }
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+    const birthDate = new Date(formData.birthDate);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const isValidDate = birthDate instanceof Date && !isNaN(birthDate.getTime());
+      const isAdult = age > 18 || (age === 18 && today.getMonth() > birthDate.getMonth()) || (age === 18 && today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+      const isUnder120 = age < 120;
+
+      if (!isValidDate || !isAdult || !isUnder120) {
+        toast.error(t("invalidBirthDate"));
+        return;
+      }
     e.preventDefault();
     onUpdateMember(formData, imageFile);
   };

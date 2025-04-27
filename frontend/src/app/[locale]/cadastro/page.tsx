@@ -46,10 +46,19 @@ export default function Cadastro() {
     if (!dateRegex.test(date)) return false;
 
     const [day, month, year] = date.split("/").map(Number);
+      const parsedDate = new Date(`${year}-${month}-${day}`);
 
-    if (year < 1900 || year > 2025) return false;
+      const birthDate = parsedDate
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const isValidDate = birthDate instanceof Date && !isNaN(birthDate.getTime());
+      const isAdult = age > 18 || (age === 18 && today.getMonth() > birthDate.getMonth()) || (age === 18 && today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+      const isUnder120 = age < 120;
 
-    const parsedDate = new Date(`${year}-${month}-${day}`);
+      if (!isValidDate || !isAdult || !isUnder120) {
+        return false;
+      }
+
     return (
       parsedDate.getFullYear() === year &&
       parsedDate.getMonth() + 1 === month &&

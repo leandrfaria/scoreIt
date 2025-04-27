@@ -110,7 +110,8 @@
     "female": "Female",
     "other": "Other",
     "cancelButton": "Cancel",
-    "saveButton": "Save"
+    "saveButton": "Save",
+    "invalidBirthDate": "Invalid date of birth"
   },
   "NowPlayingCarousel": {
     "loading": "Loading now playing movies...",
