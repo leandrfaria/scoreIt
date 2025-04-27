@@ -13,8 +13,8 @@ interface TabContextType {
 const TabContext = createContext<TabContextType | undefined>(undefined);
 
 export const TabProvider = ({ children }: { children: ReactNode }) => {
-  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<Tab>("filmes");
+  const pathname = usePathname();
 
   useEffect(() => {
     if (pathname.includes("musicas")) {

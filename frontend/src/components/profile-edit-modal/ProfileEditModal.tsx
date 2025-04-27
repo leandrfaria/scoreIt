@@ -21,6 +21,9 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: { member: Member 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const [selectOpen, setSelectOpen] = useState(false); // Controle explícito para a rotação da seta
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateMember(formData, imageFile);
@@ -65,23 +68,43 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: { member: Member 
             name="birthDate"
             value={formData.birthDate}
             onChange={handleChange}
-            className="p-2 rounded bg-zinc-800 text-white"
+            className="p-2 rounded bg-zinc-800 text-white appearance-none [&::-webkit-calendar-picker-indicator]:invert"
             placeholder={member?.birthDate ? member.birthDate : "Indefinido"}
             required
           />
 
-          <select
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            className="p-2 rounded bg-zinc-800 text-white"
-            required
-          >
-            <option value="" disabled>{member?.gender ? member.gender : "Indefinido"}</option>
-            <option value="MASC">Masculino</option>
-            <option value="FEM">Feminino</option>
-            <option value="OTHER">Outro</option>
-          </select>
+          <div className="relative">
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              onClick={() => setSelectOpen((prev) => !prev)}
+              onBlur={() => setSelectOpen(false)}
+              className="p-2 rounded bg-zinc-800 text-white appearance-none pr-8 w-full"
+              required
+            >
+              {member?.gender === "" && (
+                <option value="" disabled>Indefinido</option>
+              )}
+              <option value="MASC">Masculino</option>
+              <option value="FEM">Feminino</option>
+              <option value="OTHER">Outro</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center transition-transform duration-300"
+              style={{
+                transform: selectOpen ? 'rotate(180deg)' : 'rotate(0deg)' // Gira a seta quando o select está aberto
+              }}
+            >
+              <svg
+                className="h-4 w-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
 
           <input
             type="file"
@@ -89,7 +112,7 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: { member: Member 
             onChange={(e) => setImageFile(e.target.files?.[0] || null)}
             className="text-white bg-darkgreen px-6 py-2 rounded-md hover:brightness-110 transition-all cursor-pointer"
           />
-          
+
           <div className="flex justify-end gap-2">
             <button
               type="button"

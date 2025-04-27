@@ -7,16 +7,19 @@ import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
 import { FiEdit2 } from "react-icons/fi";
 import ProfileEditModal from "@/components/profile-edit-modal/ProfileEditModal";
 import { useMember } from "@/context/MemberContext";
-import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
 import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
-import { updateMember } from "@/services/service_member";
+import { fetchMembers, updateMember } from "@/services/service_member";
+import FavouriteMoviesCarouselSection from "@/components/favorite-movies-carousel/FavouriteMoviesCarouselSection";
+import FavouriteSeriesCarouselSection from "@/components/favourite-series-carousel/FavouriteSeriesCarouselSection";
+import FavouriteAlbumCarouselSection from "@/components/favourite_album_carousel/FavouriteAlbumCarouselSection";
+import { useTabContext } from "@/context/TabContext";
 
 export default function Profile() {
   const { member, setMember } = useMember();
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const { activeTab } = useTabContext(); 
   const t = useTranslations("profile");
 
   const handleUpdateMember = async (
@@ -67,14 +70,18 @@ export default function Profile() {
     <ProtectedRoute>
       <main className="w-full">
         <Container>
+        <div className="mt-5">
           <ProfileHeader
             member={member}
             onEditClick={() => setIsModalOpen(true)}
             t={t}
           />
+        </div>
         </Container>
         <Container>
-          <NowPlayingCarouselSection />
+          {activeTab == "filmes" && <FavouriteMoviesCarouselSection/>}
+          {activeTab == "musicas" && <FavouriteAlbumCarouselSection/>}
+          {activeTab == "series" && <FavouriteSeriesCarouselSection/>}
         </Container>
         {isModalOpen && member && (
           <ProfileEditModal
