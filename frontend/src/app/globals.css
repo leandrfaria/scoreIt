@@ -32,3 +32,7 @@ body {
 .styled-select option:last-child {
   border-bottom: none;
 }
+
+.opacidade{
+  background-color: rgba(2,7,10,0.8);
+}
