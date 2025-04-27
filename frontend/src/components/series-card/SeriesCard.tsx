@@ -12,7 +12,12 @@ import { useTranslations } from "next-intl";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
 import { addFavouriteSeries } from "@/services/service_add_favourite_series";
-import { useFavoriteContext } from "@/context/FavoriteContext";
+import { isFavoritedMedia } from "@/services/service_is_favorited";
+import { removeFavouriteMedia } from "@/services/service_remove_favourite";
+
+interface SeriesCardProps extends Series {
+  onRemoveSerie?: (id: number) => void; 
+}
 
 export function SeriesCard({
   id,
@@ -22,9 +27,9 @@ export function SeriesCard({
   vote_average,
   release_date,
   overview,
-}: Series) {
+  onRemoveSerie,
+}: SeriesCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { favoriteSeries, addFavoriteSeries } = useFavoriteContext();
   const [isFavorited, setIsFavorited] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -39,15 +44,27 @@ export function SeriesCard({
   useOutsideClick(modalRef, handleClose);
 
   useEffect(() => {
-    setIsFavorited(favoriteSeries.has(id));
-  }, [favoriteSeries, id]);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const checkIfFavorited = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token || !member) return;
+
+        const favorited = await isFavoritedMedia(member.id, id);
+        setIsFavorited(favorited);
+      } catch (error) {
+        console.error("Erro ao verificar favorito:", error);
+      }
+    };
+
+    checkIfFavorited();
   }, []);
 
   const handleFavorite = async () => {
@@ -57,16 +74,31 @@ export function SeriesCard({
         toast.error("Usuário não autenticado.");
         return;
       }
-      const success = await addFavouriteSeries(token, member.id, id);
-      if (success) {
-        addFavoriteSeries(id);
-        toast.success("Série adicionada aos favoritos!");
+
+      if (isFavorited) {
+        const success = await removeFavouriteMedia(member.id, id, 'series');
+        if (success) {
+          toast.success("Removido dos favoritos!");
+          setIsFavorited(false);
+
+          if (onRemoveSerie) {
+            onRemoveSerie(id); // 👈 chama aqui se foi removido
+          }
+        } else {
+          toast.error("Erro ao remover dos favoritos.");
+        }
       } else {
-        toast.error("Erro ao adicionar série aos favoritos.");
+        const success = await addFavouriteSeries(token, member.id, id);
+        if (success) {
+          toast.success("Série adicionada aos favoritos!");
+          setIsFavorited(true);
+        } else {
+          toast.error("Erro ao adicionar série aos favoritos.");
+        }
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao adicionar série aos favoritos.");
+      toast.error("Erro ao atualizar favoritos.");
     }
   };
 

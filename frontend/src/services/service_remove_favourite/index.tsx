@@ -1,4 +1,4 @@
-export const addFavouriteAlbum = async (userId: number, albumId: string): Promise<boolean> => {
+export const removeFavouriteMedia = async (userId: number, mediaId: string | number, mediaType: string): Promise<boolean> => {
     try {
       const token = localStorage.getItem("authToken");
 
@@ -7,8 +7,8 @@ export const addFavouriteAlbum = async (userId: number, albumId: string): Promis
         return false;
       } 
 
-      const response = await fetch(`http://localhost:8080/member/favorites/${userId}/${albumId}/album`, {
-        method: "POST",
+      const response = await fetch(`http://localhost:8080/member/favoritesDelete/${userId}/${mediaId}/${mediaType}`, {
+        method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },

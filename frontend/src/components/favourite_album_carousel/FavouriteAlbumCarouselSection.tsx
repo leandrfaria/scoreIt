@@ -40,7 +40,11 @@ const FavouriteAlbumCarouselSection = () => {
     return <div className="text-center py-10 text-white">Nenhum álbum encontrado.</div>;
   }
 
-  return <AlbumCarousel title="Álbuns favoritos" albums={albums} />;
+  const handleRemoveAlbum = (id: string) => {
+    setAlbums((prevAlbums) => prevAlbums.filter((album) => album.id !== id));
+  };
+
+  return <AlbumCarousel title="Álbuns favoritos" albums={albums} onRemoveAlbum={handleRemoveAlbum}/>;
 };
 
 export default FavouriteAlbumCarouselSection;

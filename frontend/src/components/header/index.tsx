@@ -136,14 +136,14 @@ export function Header() {
                     {t("perfil")}
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
+                {/* <DropdownMenuItem asChild>
                   <Link
                     href={`/${locale}/favoritos`}
                     className="block px-2 py-1 hover:bg-gray-900 rounded"
                   >
                     {t("favoritos")}
                   </Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {

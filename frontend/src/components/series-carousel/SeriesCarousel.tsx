@@ -10,6 +10,7 @@ interface SeriesCarouselProps {
   series: Series[];
   autoScroll?: boolean;
   autoScrollInterval?: number;
+  onRemoveSerie?: (id: number) => void;
 }
 
 export function SeriesCarousel({
@@ -17,6 +18,7 @@ export function SeriesCarousel({
   series,
   autoScroll = false,
   autoScrollInterval = 5000,
+  onRemoveSerie
 }: SeriesCarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [showLeftButton, setShowLeftButton] = useState(false);
@@ -134,7 +136,7 @@ export function SeriesCarousel({
             className="flex-shrink-0"
             style={{ width: "190px", maxWidth: "190px" }}
           >
-            <SeriesCard {...serie} />
+            <SeriesCard {...serie} onRemoveSerie={onRemoveSerie} />
           </div>
         ))}
       </div>
@@ -143,9 +145,8 @@ export function SeriesCarousel({
         <div className="flex gap-4">
           <button
             onClick={() => scroll("left")}
-            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${
-              !showLeftButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
-            }`}
+            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${!showLeftButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
+              }`}
             disabled={!showLeftButton}
             aria-label="Scroll left"
           >
@@ -153,9 +154,8 @@ export function SeriesCarousel({
           </button>
           <button
             onClick={() => scroll("right")}
-            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${
-              !showRightButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
-            }`}
+            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${!showRightButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
+              }`}
             disabled={!showRightButton}
             aria-label="Scroll right"
           >

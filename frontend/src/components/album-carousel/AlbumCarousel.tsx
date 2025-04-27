@@ -11,9 +11,10 @@ import {
 interface AlbumCarouselProps {
   title: string;
   albums: Album[];
+  onRemoveAlbum?: (id: string) => void;
 }
 
-export function AlbumCarousel({ title, albums }: AlbumCarouselProps) {
+export function AlbumCarousel({ title, albums, onRemoveAlbum }: AlbumCarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(true);
@@ -64,7 +65,7 @@ export function AlbumCarousel({ title, albums }: AlbumCarouselProps) {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {albums.map((album) => (
-          <AlbumCard key={album.id} {...album} />
+          <AlbumCard key={album.id} {...album} onRemoveAlbum={onRemoveAlbum}/>
         ))}
       </div>
 

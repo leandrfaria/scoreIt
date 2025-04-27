@@ -1,6 +1,6 @@
-import { Movie } from "@/types/Movie";
+import { Series } from "@/types/Series";
 
-export const fetchFavouriteSeries = async (token: string, id: string): Promise<Movie[]> => {
+export const fetchFavouriteSeries = async (token: string, id: string): Promise<Series[]> => {
   try {
     const response = await fetch(`http://localhost:8080/series/favorites/${id}`, {
       headers: {
@@ -13,7 +13,6 @@ export const fetchFavouriteSeries = async (token: string, id: string): Promise<M
     }
 
     const text = await response.text();
-    console.log("🔍 RAW RESPONSE:", text);
 
     if (!text) {
       throw new Error("Resposta da API vazia");
@@ -29,19 +28,19 @@ export const fetchFavouriteSeries = async (token: string, id: string): Promise<M
       return [];
     }
 
-    const transformed: Movie[] = results.map((movie: any) => ({
-      id: movie.id,
-      title: movie.name,
-      posterUrl: movie.poster_path
-        ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+    const transformed: Series[] = results.map((serie: any) => ({
+      id: serie.id,
+      name: serie.name,
+      posterUrl: serie.poster_path
+        ? `https://image.tmdb.org/t/p/w300${serie.poster_path}`
         : "/fallback.jpg",
-      backdropUrl: movie.backdrop_path
-        ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
+      backdropUrl: serie.backdrop_path
+        ? `https://image.tmdb.org/t/p/original${serie.backdrop_path}`
         : "/fallback.jpg",
-      vote_average: movie.vote_average,
-      release_date: movie.release_date,
-      overview: movie.overview || "Sem descrição disponível.",
-      genre: movie.genre || "Desconhecido",
+      vote_average: serie.vote_average,
+      release_date: serie.release_date,
+      overview: serie.overview || "Sem descrição disponível.",
+      genre: serie.genre || "Desconhecido",
     }));
 
     return transformed;

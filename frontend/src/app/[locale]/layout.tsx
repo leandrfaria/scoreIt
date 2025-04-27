@@ -3,7 +3,6 @@ import { Header } from "@/components/header";
 import { MemberProvider } from "@/context/MemberContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { TabProvider } from "@/context/TabContext";
-import { FavoriteProvider } from "@/context/FavoriteContext"; // 🆕 IMPORTAMOS O FAVORITE CONTEXT
 import { Toaster } from "react-hot-toast";
 import { IntlProvider } from "./intl-provider";
 
@@ -19,7 +18,6 @@ export default function LocaleLayout({
       <AuthProvider>
         <IntlProvider locale={params.locale}>
           <TabProvider>
-            <FavoriteProvider> {/* 🆕 Envolvendo aqui */}
               <Header />
               <Toaster
                 position="top-center"
@@ -32,7 +30,6 @@ export default function LocaleLayout({
                 }}
               />
               {children}
-            </FavoriteProvider>
           </TabProvider>
         </IntlProvider>
       </AuthProvider>

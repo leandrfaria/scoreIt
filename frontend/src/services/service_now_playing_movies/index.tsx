@@ -15,7 +15,6 @@ export const fetchNowPlayingMovies = async (token: string): Promise<Movie[]> => 
     }
 
     const text = await response.text();
-    console.log("🔍 RAW RESPONSE:", text);
 
     if (!text) {
       throw new Error("Resposta da API vazia");

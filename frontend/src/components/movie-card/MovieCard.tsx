@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,7 +12,12 @@ import { useTranslations } from "next-intl";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
 import { addFavouriteMovie } from "@/services/service_add_favourite_movie";
-import { useFavoriteContext } from "@/context/FavoriteContext";
+import { isFavoritedMedia } from "@/services/service_is_favorited";
+import { removeFavouriteMedia } from "@/services/service_remove_favourite";
+
+interface MovieCardProps extends Movie {
+  onRemoveMovie?: (id: number) => void; 
+}
 
 export function MovieCard({
   id,
@@ -23,10 +28,10 @@ export function MovieCard({
   release_date,
   overview,
   genre = "Drama",
-}: Movie) {
+  onRemoveMovie
+}: MovieCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { favoriteMovies, addFavoriteMovie } = useFavoriteContext();
-  const [isFavorited, setIsFavorited] = useState(false); // ⬅️ virou estado
+  const [isFavorited, setIsFavorited] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const year = new Date(release_date).getFullYear();
   const router = useRouter();
@@ -39,15 +44,27 @@ export function MovieCard({
   useOutsideClick(modalRef, handleClose);
 
   useEffect(() => {
-    setIsFavorited(favoriteMovies.has(id)); // ⬅️ toda vez que o contexto mudar, atualiza
-  }, [favoriteMovies, id]);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const checkIfFavorited = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token || !member) return;
+
+        const favorited = await isFavoritedMedia(member.id, id);
+        setIsFavorited(favorited);
+      } catch (error) {
+        console.error("Erro ao verificar favorito:", error);
+      }
+    };
+
+    checkIfFavorited();
   }, []);
 
   const handleFavorite = async () => {
@@ -57,16 +74,30 @@ export function MovieCard({
         toast.error("Usuário não autenticado.");
         return;
       }
-      const success = await addFavouriteMovie(token, member.id, id);
-      if (success) {
-        addFavoriteMovie(id);
-        toast.success("Filme adicionado aos favoritos!");
+
+      if (isFavorited) {
+        const success = await removeFavouriteMedia(member.id, id, 'movie');
+        if (success) {
+          toast.success("Removido dos favoritos!");
+          setIsFavorited(false);
+          if (onRemoveMovie) {
+            onRemoveMovie(id); // 👈 chama aqui se foi removido
+          }
+        } else {
+          toast.error("Erro ao remover dos favoritos.");
+        }
       } else {
-        toast.error("Erro ao adicionar filme aos favoritos.");
+        const success = await addFavouriteMovie(token, member.id, id);
+        if (success) {
+          toast.success("Filme adicionado aos favoritos!");
+          setIsFavorited(true);
+        } else {
+          toast.error("Erro ao adicionar filme aos favoritos.");
+        }
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao adicionar filme aos favoritos.");
+      toast.error("Erro ao atualizar favoritos.");
     }
   };
 

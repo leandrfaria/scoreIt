@@ -6,11 +6,16 @@ import Image from "next/image";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { Album } from "@/types/Album";
 import { useMember } from "@/context/MemberContext";
-import { useFavoriteContext } from "@/context/FavoriteContext";
 import toast from "react-hot-toast";
 import { addFavouriteAlbum } from "@/services/service_add_favourite_album";
 import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
+import { isFavoritedMedia } from "@/services/service_is_favorited";
+import { removeFavouriteMedia } from "@/services/service_remove_favourite";
+
+interface AlbumCardProps extends Album {
+  onRemoveAlbum?: (id: string) => void; 
+}
 
 export function AlbumCard({
   id,
@@ -18,21 +23,16 @@ export function AlbumCard({
   release_date,
   imageUrl,
   artistName,
-}: Album) {
+  onRemoveAlbum
+}: AlbumCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
-  const { favoriteAlbums, addFavoriteAlbum } = useFavoriteContext();
   const [isFavorited, setIsFavorited] = useState(false);
-
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
 
   useOutsideClick(modalRef, handleClose);
-
-  useEffect(() => {
-    setIsFavorited(favoriteAlbums.has(id));
-  }, [favoriteAlbums, id]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -42,6 +42,22 @@ export function AlbumCard({
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
+  useEffect(() => {
+    const checkIfFavorited = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token || !member) return;
+  
+        const favorited = await isFavoritedMedia(member.id, id);
+        setIsFavorited(favorited);
+      } catch (error) {
+        console.error("Erro ao verificar favorito:", error);
+      }
+    };
+  
+    checkIfFavorited();
+  }, []);
+
   const handleFavorite = async () => {
     try {
       const token = localStorage.getItem("authToken");
@@ -49,15 +65,28 @@ export function AlbumCard({
         toast.error("Usuário não autenticado.");
         return;
       }
-      const payloadId = isNaN(Number(id)) ? id : Number(id);
 
-      const success = await addFavouriteAlbum(token, member.id, payloadId);
-      if (success) {
-        addFavoriteAlbum(id);
-        toast.success("Álbum adicionado aos favoritos!");
-      } else {
-        toast.error("Erro ao adicionar álbum aos favoritos.");
+      if (isFavorited) {
+        const success = await removeFavouriteMedia(member.id, id, 'album');
+        if (success) {
+          toast.success("Removido dos favoritos!");
+          setIsFavorited(false);
+          if (onRemoveAlbum) {
+            onRemoveAlbum(id); // 👈 chama aqui se foi removido
+          }
+        } else {
+          toast.error("Erro ao remover dos favoritos.");
+        }
       }
+      else{
+        const success = await addFavouriteAlbum(member.id, id);
+        if (success) {
+          toast.success("Álbum adicionado aos favoritos!");
+          setIsFavorited(true)
+        } else {
+          toast.error("Erro ao adicionar álbum aos favoritos.");
+        }
+      }   
     } catch (error) {
       console.error(error);
       toast.error("Erro ao adicionar álbum aos favoritos.");

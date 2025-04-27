@@ -11,13 +11,15 @@ interface MovieCarouselProps {
   movies: Movie[]
   autoScroll?: boolean
   autoScrollInterval?: number
+  onRemoveMovie?: (id: number) => void;
 }
 
 export function MovieCarousel({
   title,
   movies,
   autoScroll = false,
-  autoScrollInterval = 5000
+  autoScrollInterval = 5000,
+  onRemoveMovie
 }: MovieCarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null)
   const [showLeftButton, setShowLeftButton] = useState(false)
@@ -142,7 +144,7 @@ export function MovieCarousel({
             className="flex-shrink-0"
             style={{ width: "190px", maxWidth: "190px" }}
           >
-            <MovieCard {...movie} />
+            <MovieCard {...movie} onRemoveMovie={onRemoveMovie}/>
           </div>
         ))}
       </div>
