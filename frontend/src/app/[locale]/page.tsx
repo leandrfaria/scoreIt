@@ -15,6 +15,7 @@ import RecentsAlbumCarousel from "@/components/recents-album-carousel/RecentsAlb
 import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
 import OnAirSeriesCarouselSection from "@/components/series-on-air-carousel/OnAirSeriesCarouselSection";
 import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
+import { SeriesList } from "@/components/series-list/SeriesList"; // 👈 Importei a SeriesList certinho
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
@@ -67,6 +68,7 @@ export default function Home() {
                 <h2 className="text-white text-xl font-bold mt-10 mb-4">
                   {t("todas_series")}
                 </h2>
+                <SeriesList /> {/* 👈 AGORA CHAMANDO A LISTA DE SÉRIES! */}
               </>
             ) : (
               <>
