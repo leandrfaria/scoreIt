@@ -71,34 +71,34 @@ export function SeriesCard({
     try {
       const token = localStorage.getItem("authToken");
       if (!token || !member) {
-        toast.error("Usuário não autenticado.");
+        toast.error((t("userNotAuthenticated")));
         return;
       }
 
       if (isFavorited) {
         const success = await removeFavouriteMedia(member.id, id, 'series');
         if (success) {
-          toast.success("Removido dos favoritos!");
+          toast.success(t("removedFromFavorites"));
           setIsFavorited(false);
 
           if (onRemoveSerie) {
             onRemoveSerie(id); // 👈 chama aqui se foi removido
           }
         } else {
-          toast.error("Erro ao remover dos favoritos.");
+          toast.error(t("errorRemovingFavorite"));
         }
       } else {
         const success = await addFavouriteSeries(token, member.id, id);
         if (success) {
-          toast.success("Série adicionada aos favoritos!");
+          toast.success(t("SerieaddFavorite"));
           setIsFavorited(true);
         } else {
-          toast.error("Erro ao adicionar série aos favoritos.");
+          toast.error((t("SerieserrorAddingFavorite")))
         }
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao atualizar favoritos.");
+      toast.error((t("errorUpdatingFavorites")));
     }
   };
 

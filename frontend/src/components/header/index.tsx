@@ -185,7 +185,7 @@ export function Header() {
                   onClick={() => setIsModalOpen(true)}
                   className="block px-2 py-1 text-red-300 hover:bg-red-900 rounded cursor-pointer"
                 >
-                  Deletar Usuário
+                  {t("deleteUser")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -202,14 +202,14 @@ export function Header() {
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
             <div className="bg-zinc-900 p-6 rounded-lg w-full max-w-md shadow-lg">
-              <h2 className="font-bold">Tem certeza que deseja deletar o usuário?</h2>
-              <p>Essa ação é irreversível.</p>
+              <h2 className="font-bold">{t("deleteModal.title")}</h2>
+              <p>{t("deleteModal.description")}</p>
               <div className="flex justify-end mt-4">
                 <button
                   onClick={() => setIsModalOpen(false)}
                   className="mr-2 border border-gray-500 text-gray-300 px-4 py-1 rounded"
                 >
-                  Cancelar
+                  {t("deleteModal.cancel")}
                 </button>
                 <button
                   onClick={() => {
@@ -218,7 +218,7 @@ export function Header() {
                   }}
                   className="px-4 py-2 bg-red-500 text-white rounded"
                 >
-                  Confirmar
+                  {t("deleteModal.confirm")}
                 </button>
               </div>
             </div>

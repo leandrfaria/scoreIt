@@ -33,18 +33,18 @@ const FavouriteAlbumCarouselSection = () => {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-10 text-white">Carregando álbuns...</div>;
+    return <div className="text-center py-10 text-white">{t("loadingFavAlbum")}</div>;
   }
 
   if (albums.length === 0) {
-    return <div className="text-center py-10 text-white">Nenhum álbum encontrado.</div>;
+    return <div className="text-center py-10 text-white">{t("noFavAlbum")}</div>;
   }
 
   const handleRemoveAlbum = (id: string) => {
     setAlbums((prevAlbums) => prevAlbums.filter((album) => album.id !== id));
   };
 
-  return <AlbumCarousel title="Álbuns favoritos" albums={albums} onRemoveAlbum={handleRemoveAlbum}/>;
+  return <AlbumCarousel title={t("AlbunsFavoritos")} albums={albums} onRemoveAlbum={handleRemoveAlbum}/>;
 };
 
 export default FavouriteAlbumCarouselSection;

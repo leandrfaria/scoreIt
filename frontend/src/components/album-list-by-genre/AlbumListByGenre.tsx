@@ -6,6 +6,7 @@ import { fetchAlbumsByGenre } from "@/services/service_album_by_genre";
 import { AlbumCard } from "@/components/album-card/AlbumCard";
 import { useTranslations } from "next-intl";
 
+
 const genres = [
   { label: "Blues", value: "blues" },
   { label: "Country", value: "country" },
@@ -92,7 +93,7 @@ export function AlbumListByGenre() {
 
       <div className="flex justify-center mt-10 mb-20">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-white">Álbuns aparecendo:</span>
+          <span className="text-sm text-white">{t("albunsAparecendo")}</span>
           <select
             value={limit}
             onChange={(e) => handleLimitChange(Number(e.target.value))}

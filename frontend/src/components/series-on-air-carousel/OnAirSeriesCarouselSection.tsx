@@ -62,7 +62,7 @@ const OnAirSeriesCarouselSection = () => {
     );
   }
 
-  return <SeriesCarousel title="Séries no Ar" series={series} />;
+  return <SeriesCarousel title={t("seriesTitle")} series={series} />;
 };
 
 export default OnAirSeriesCarouselSection;

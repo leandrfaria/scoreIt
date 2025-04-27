@@ -12,9 +12,10 @@ import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
 import { isFavoritedMedia } from "@/services/service_is_favorited";
 import { removeFavouriteMedia } from "@/services/service_remove_favourite";
+import { useTranslations } from "next-intl";
 
 interface AlbumCardProps extends Album {
-  onRemoveAlbum?: (id: string) => void; 
+  onRemoveAlbum?: (id: string) => void;
 }
 
 export function AlbumCard({
@@ -29,6 +30,8 @@ export function AlbumCard({
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
   const [isFavorited, setIsFavorited] = useState(false);
+  const t = useTranslations("AlbumCard");
+
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
 
@@ -62,34 +65,33 @@ export function AlbumCard({
     try {
       const token = localStorage.getItem("authToken");
       if (!token || !member) {
-        toast.error("Usuário não autenticado.");
+        toast.error(t("notAuthenticated"));
         return;
       }
 
       if (isFavorited) {
         const success = await removeFavouriteMedia(member.id, id, 'album');
         if (success) {
-          toast.success("Removido dos favoritos!");
+          toast.success(t("removedFromFavorites"));
           setIsFavorited(false);
           if (onRemoveAlbum) {
-            onRemoveAlbum(id); // 👈 chama aqui se foi removido
+            onRemoveAlbum(id);
           }
         } else {
-          toast.error("Erro ao remover dos favoritos.");
+          toast.error(t("errorRemovingFavorite"));
         }
-      }
-      else{
+      } else {
         const success = await addFavouriteAlbum(member.id, id);
         if (success) {
-          toast.success("Álbum adicionado aos favoritos!");
-          setIsFavorited(true)
+          toast.success(t("addedToFavorites"));
+          setIsFavorited(true);
         } else {
-          toast.error("Erro ao adicionar álbum aos favoritos.");
+          toast.error(t("errorAddingFavorite"));
         }
       }   
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao adicionar álbum aos favoritos.");
+      toast.error(t("errorAddingFavorite"));
     }
   };
 
@@ -157,11 +159,11 @@ export function AlbumCard({
 
               <div className="space-y-2">
                 <p className="text-sm">
-                  <span className="text-gray-400">Artista:</span> {artistName}
+                  <span className="text-gray-400">{t("artist")}</span> {artistName}
                 </p>
                 <p className="text-sm">
-                  <span className="text-gray-400">Lançamento:</span>{" "}
-                  {release_date ? new Date(release_date).toLocaleDateString("pt-BR") : "N/A"}
+                  <span className="text-gray-400">{t("releaseDate")}</span>{" "}
+                  {release_date ? new Date(release_date).toLocaleDateString() : "N/A"}
                 </p>
               </div>
             </motion.div>

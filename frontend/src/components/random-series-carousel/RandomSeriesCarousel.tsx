@@ -26,8 +26,7 @@ export const RandomSeriesCarousel = () => {
           image: serie.backdropUrl,
           poster: serie.posterUrl,
           rating: serie.vote_average,
-          buttonLabel: t("detailButton"),
-          onClick: () => router.push(`/series/${serie.id}`),
+          buttonLabel: t("detailButton")
         }));
 
         setItems(formattedItems);

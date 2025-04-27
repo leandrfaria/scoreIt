@@ -81,7 +81,13 @@
     "favoritos": "My Favorites",
     "logout": "Leave",
     "login": "Login",
-    "Alterar_email": "Change Email"
+    "deleteUser": "Delete User",
+    "deleteModal": {
+      "title": "Are you sure you want to delete your account?",
+      "description": "This action is irreversible.",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
   },
   "footer": {
     "direitos": "All rights reserved.",
@@ -96,8 +102,13 @@
   },
   "ProfileEditModal": {
     "title": "Edit Profile",
-    "namePlaceholder": "Name",
-    "bioPlaceholder": "Bio",
+    "namePlaceholder": "Enter your name",
+    "bioPlaceholder": "Enter your biography",
+    "maxCharacters": "Maximum of {max} characters",
+    "undefined": "Undefined",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
     "cancelButton": "Cancel",
     "saveButton": "Save"
   },
@@ -107,6 +118,16 @@
     "carouselTitle": "Now Playing",
     "tokenNotFound": "Token not found. Please login first.",
     "emptyListWarning": "🚨 Empty list! Adding mock...",
+    "loadingFav": "Loading favorites movies...",
+    "noFavMovie": "No Movie found",
+    "loadingFavAlbum": "Loading Albums...",
+    "noFavAlbum": "No albums found",
+    "loadingFavSeries": "Loading Series...",
+    "noFavSeries": "No Serie found.",
+    "seriesTitle": "Series on Air",
+    "FilmeFavoritos": "Favorite Movies",
+    "AlbunsFavoritos": "Favorite Albums",
+    "SeriesFavoritos": "Favorite Series",
     "mockMovie": {
       "title": "Mocked",
       "overview": "This is a mock."
@@ -114,17 +135,43 @@
   },
   "MovieList": {
     "loading": "Loading movies...",
-    "noMoviesFound": "No movies found."
+    "noMoviesFound": "No movies found.",
+    "ChoosePage": "Choose the page:"
   },
   "MovieCard": {
-    "releaseDate": "Release date",
+    "releaseDate": "Release Date",
     "noDescription": "No description available.",
-    "viewDetails": "View details"
+    "viewDetails": "View details",
+    "errorMovieFav": "Error checking favorite:",
+    "userNotAuthenticated": "User not authenticated.",
+    "removedFromFavorites": "Removed from favorites!",
+    "SerieaddFavorite": "Series added to favorites!",
+    "SerieserrorAddingFavorite": "Error adding series to favorites.",
+    "errorRemovingFavorite": "Error removing from favorites.",
+    "addedToFavorites": "Movie added to favorites!",
+    "errorAddingFavorite": "Error adding movie to favorites.",
+    "errorUpdatingFavorites": "Error updating favorites."
+  },
+  "ArtistCard": {
+    "playcount": "Plays:",
+    "listeners": "Unique listeners:",
+    "playcountTitle": "How many times the artist's songs were played",
+    "listenersTitle": "Number of different people who listened to the artist"
+  },
+  "AlbumCard": {
+    "notAuthenticated": "User not authenticated.",
+    "removedFromFavorites": "Removed from favorites!",
+    "errorRemovingFavorite": "Error removing from favorites.",
+    "addedToFavorites": "Album added to favorites!",
+    "errorAddingFavorite": "Error adding album to favorites.",
+    "artist": "Artist:",
+    "releaseDate": "Release date:"
   },
   "top_artists": {
     "titulo": "Top Artists",
     "carregando": "Loading artists...",
-    "nenhum": "No artists found."
+    "nenhum": "No artists found.",
+    "Most_listened": "Most Listened Artists"
   },
   "novo_email": {
     "titulo": "Add your new email",
@@ -138,6 +185,15 @@
   },
   "AlbumListByGenre": {
     "loading": "Loading albums...",
-    "noAlbumsFound": "No albums found."
+    "noAlbumsFound": "No albums found.",
+    "albunsAparecendo": "Albums appearing:"
+  },
+  "RecentAlbumListByGenre": {
+    "loading": "Loading albums...",
+    "noAlbumsFound": "No albums found.",
+    "albunsAparecendo": "Albums appearing:"
+  },
+  "ProtecLoading":{
+    "loading": "Loading..."
   }
 }

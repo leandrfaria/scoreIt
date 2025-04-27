@@ -59,7 +59,7 @@ export function SeriesList() {
       </section>
 
       <div className="flex justify-center items-center gap-2 mt-10 mb-20 text-white">
-        <span className="text-white text-base">Escolha a página:</span>
+        <span className="text-white text-base">{t("ChoosePage")}</span>
 
         <button
           onClick={() => handleArrowClick('prev')}

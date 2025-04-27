@@ -56,7 +56,7 @@ export default function TopArtistsCarouselSection() {
 
   return (
     <div className="w-full py-6">
-      <h2 className="text-xl font-bold text-white mb-4">Artistas mais escutados</h2>
+      <h2 className="text-xl font-bold text-white mb-4">{t("Most_listened")}</h2>
 
       <div className="relative">
         <div

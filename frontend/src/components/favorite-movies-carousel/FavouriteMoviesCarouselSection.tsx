@@ -34,14 +34,14 @@ const FavouriteMoviesCarouselSection = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-10 text-white">Carregando filmes favoritos...</div>
+      <div className="text-center py-10 text-white">{t("loadingFav")}</div>
     );
   }
 
   if (movies.length === 0) {
     return (
       <div className="text-center py-10 text-white">
-        Nenhum filme encontrado
+        {t("noFavMovie")}
       </div>
     );
   }
@@ -50,7 +50,7 @@ const FavouriteMoviesCarouselSection = () => {
     setMovies((prevMovies) => prevMovies.filter((movie) => movie.id !== id));
   };
 
-  return <MovieCarousel title="Filmes favoritos" movies={movies}  onRemoveMovie={handleRemoveMovie}/>;
+  return <MovieCarousel title={t("FilmeFavoritos")} movies={movies}  onRemoveMovie={handleRemoveMovie}/>;
 };
 
 export default FavouriteMoviesCarouselSection;

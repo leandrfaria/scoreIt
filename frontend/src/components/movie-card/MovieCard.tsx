@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { addFavouriteMovie } from "@/services/service_add_favourite_movie";
 import { isFavoritedMedia } from "@/services/service_is_favorited";
 import { removeFavouriteMedia } from "@/services/service_remove_favourite";
+import PageTransition from "@/components/page-transition/PageTransition";
 
 interface MovieCardProps extends Movie {
   onRemoveMovie?: (id: number) => void; 
@@ -40,7 +41,6 @@ export function MovieCard({
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
-
   useOutsideClick(modalRef, handleClose);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function MovieCard({
         const favorited = await isFavoritedMedia(member.id, id);
         setIsFavorited(favorited);
       } catch (error) {
-        console.error("Erro ao verificar favorito:", error);
+        console.error(t("errorMovieFav"), error);
       }
     };
 
@@ -71,33 +71,33 @@ export function MovieCard({
     try {
       const token = localStorage.getItem("authToken");
       if (!token || !member) {
-        toast.error("Usuário não autenticado.");
+        toast.error(t("userNotAuthenticated"));
         return;
       }
 
       if (isFavorited) {
         const success = await removeFavouriteMedia(member.id, id, 'movie');
         if (success) {
-          toast.success("Removido dos favoritos!");
+          toast.success(t("removedFromFavorites"));
           setIsFavorited(false);
           if (onRemoveMovie) {
-            onRemoveMovie(id); // 👈 chama aqui se foi removido
+            onRemoveMovie(id);
           }
         } else {
-          toast.error("Erro ao remover dos favoritos.");
+          toast.error(t("errorRemovingFavorite"));
         }
       } else {
         const success = await addFavouriteMovie(token, member.id, id);
         if (success) {
-          toast.success("Filme adicionado aos favoritos!");
+          toast.success(t("addedToFavorites"));
           setIsFavorited(true);
         } else {
-          toast.error("Erro ao adicionar filme aos favoritos.");
+          toast.error(t("errorAddingFavorite"));
         }
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao atualizar favoritos.");
+      toast.error(t("errorUpdatingFavorites"));
     }
   };
 
@@ -143,7 +143,7 @@ export function MovieCard({
               </div>
 
               <div className="mt-6 flex justify-end">
-                <button onClick={() => router.push(`/movie/${id}`)} className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition">
+                <button className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition">
                   {t("viewDetails")}
                 </button>
               </div>

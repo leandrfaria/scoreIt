@@ -81,7 +81,13 @@
     "favoritos": "Meus Favoritos",
     "logout": "Sair",
     "login": "Login",
-    "Alterar_email": "Alterar Email"
+    "deleteUser": "Deletar Usuário",
+    "deleteModal": {
+      "title": "Tem certeza que deseja deletar o usuário?",
+      "description": "Essa ação é irreversível.",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar"
+    }
   },
   "footer": {
     "direitos": "Todos os direitos reservados.",
@@ -96,17 +102,32 @@
   },
   "ProfileEditModal": {
     "title": "Editar Perfil",
-    "namePlaceholder": "Nome",
-    "bioPlaceholder": "Bio",
+    "namePlaceholder": "Digite seu nome",
+    "bioPlaceholder": "Digite sua biografia",
+    "maxCharacters": "Máximo de {max} caracteres",
+    "undefined": "Indefinido",
+    "male": "Masculino",
+    "female": "Feminino",
+    "other": "Outro",
     "cancelButton": "Cancelar",
     "saveButton": "Salvar"
   },
   "NowPlayingCarousel": {
     "loading": "Carregando filmes em cartaz...",
     "noMoviesFound": "Nenhum filme em cartaz encontrado.",
-    "carouselTitle": "Filmes em Cartaz",
+    "carouselTitle": "Filmes em Cartaz",  
     "tokenNotFound": "Token não encontrado. Faça login primeiro.",
     "emptyListWarning": "🚨 Lista vazia! Adicionando mock...",
+    "loadingFav": "Carregando filmes favoritos...",
+    "noFavMovie": "Nenhum Filme encontrado.",
+    "loadingFavAlbum": "Carregando álbuns...",
+    "noFavAlbum": "Nenhum álbum encontrado.",
+    "loadingFavSeries": "Carregando Séries...",
+    "noFavSeries": "Nenhuma série encontrada.",
+    "seriesTitle": "Séries no Ar",
+    "FilmeFavoritos": "Filmes favoritos",
+    "AlbunsFavoritos": "Albuns favoritos",
+    "SeriesFavoritos": "Series favoritas",
     "mockMovie": {
       "title": "Mockado",
       "overview": "Esse é um mock."
@@ -114,17 +135,43 @@
   },
   "MovieList": {
     "loading": "Carregando filmes...",
-    "noMoviesFound": "Nenhum filme encontrado."
+    "noMoviesFound": "Nenhum filme encontrado.",
+    "ChoosePage": "Escolha a página:"
   },
   "MovieCard": {
     "releaseDate": "Lançamento",
     "noDescription": "Sem descrição disponível.",
-    "viewDetails": "Ver detalhes"
+    "viewDetails": "Ver detalhes",
+    "errorMovieFav": "Erro ao verificar favorito:",
+    "userNotAuthenticated": "Usuário não autenticado.",
+    "removedFromFavorites": "Removido dos favoritos!",
+    "errorRemovingFavorite": "Erro ao remover dos favoritos.",
+    "SerieaddFavorite": "Serie adicionada aos favoritos!",
+    "SerieserrorAddingFavorite": "Erro ao adicionar serie aos favoritos.",
+    "addedToFavorites": "Filme adicionado aos favoritos!",
+    "errorAddingFavorite": "Erro ao adicionar filme aos favoritos.",
+    "errorUpdatingFavorites": "Erro ao atualizar favoritos."
   },
   "top_artists": {
     "titulo": "Top Artistas",
     "carregando": "Carregando artistas...",
-    "nenhum": "Nenhum artista encontrado."
+    "nenhum": "Nenhum artista encontrado.",
+    "Most_listened": "Artistas mais escutados"
+  },
+  "ArtistCard": {
+    "playcount": "Execuções:",
+    "listeners": "Ouvintes únicos:",
+    "playcountTitle": "Quantas vezes as músicas do artista foram tocadas",
+    "listenersTitle": "Quantidade de pessoas diferentes que escutaram o artista"
+  },
+  "AlbumCard": {
+    "notAuthenticated": "Usuário não autenticado.",
+    "removedFromFavorites": "Removido dos favoritos!",
+    "errorRemovingFavorite": "Erro ao remover dos favoritos.",
+    "addedToFavorites": "Álbum adicionado aos favoritos!",
+    "errorAddingFavorite": "Erro ao adicionar álbum aos favoritos.",
+    "artist": "Artista:",
+    "releaseDate": "Lançamento:"
   },
   "novo_email": {
     "titulo": "Adicione seu novo Email",
@@ -138,6 +185,15 @@
   },
   "AlbumListByGenre": {
     "loading": "Carregando álbuns...",
-    "noAlbumsFound": "Nenhum álbum encontrado."
+    "noAlbumsFound": "Nenhum álbum encontrado.",
+    "albunsAparecendo": "Álbuns aparecendo:"
+  },
+  "RecentAlbumListByGenre": {
+    "loading": "Carregando álbuns...",
+    "noAlbumsFound": "Nenhum álbum encontrado.",
+    "albunsAparecendo": "Álbuns aparecendo:"
+  },
+  "ProtecLoading":{
+    "loading": "Carregando..."
   }
 }

@@ -34,14 +34,14 @@ const FavouriteSeriesCarouselSection = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-10 text-white">Carregando séries favoritas...</div>
+      <div className="text-center py-10 text-white">{t("loadingFavSeries")}</div>
     );
   }
 
   if (series.length === 0) {
     return (
       <div className="text-center py-10 text-white">
-        Nenhuma série encontrada
+        {t("noFavSeries")}
         </div>
     );
   }
@@ -50,7 +50,7 @@ const FavouriteSeriesCarouselSection = () => {
     setSeries((prevSeries) => prevSeries.filter((serie) => serie.id !== id));
   };  
 
-  return <SeriesCarousel title="Series favoritas" series={series}  onRemoveSerie={handleRemoveSerie}/>;
+  return <SeriesCarousel title={t("SeriesFavoritos")} series={series}  onRemoveSerie={handleRemoveSerie}/>;
 };
 
 export default FavouriteSeriesCarouselSection;

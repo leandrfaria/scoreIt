@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Artist } from "@/types/Artist";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
+import { useTranslations } from "next-intl";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -14,6 +15,7 @@ interface ArtistCardProps {
 export function ArtistCard({ artist, index }: ArtistCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations("ArtistCard");
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
@@ -82,14 +84,14 @@ export function ArtistCard({ artist, index }: ArtistCardProps) {
 
               <div className="text-sm text-gray-300 space-y-3">
                 <p>
-                  <strong title="Quantas vezes as músicas do artista foram tocadas">
-                    Execuções:
+                  <strong title={t("playcountTitle")}>
+                    {t("playcount")}
                   </strong>{" "}
                   {artist.playcount}
                 </p>
                 <p>
-                  <strong title="Quantidade de pessoas diferentes que escutaram o artista">
-                    Ouvintes únicos:
+                  <strong title={t("listenersTitle")}>
+                    {t("listeners")}
                   </strong>{" "}
                   {artist.listeners}
                 </p>

@@ -52,7 +52,7 @@ export function TabSwitcherMediaType() {
             activeTab === "series" ? "font-bold" : "text-gray-400"
           }`}
         >
-          Séries
+          {t("series")}
         </button>
       </div>
     </nav>
