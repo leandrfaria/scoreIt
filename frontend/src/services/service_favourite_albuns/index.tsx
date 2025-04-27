@@ -23,7 +23,7 @@ export const fetchFavouriteAlbuns = async (id: string): Promise<Album[]> => {
 
     return raw.map((item: any) => ({
       id: item.id,
-      name: item.name,
+      name: item.name,  
       release_date: item.release_date,
       imageUrl: item.images?.[0]?.url || "",
       artistName: item.artists?.[0]?.name || "Desconhecido",

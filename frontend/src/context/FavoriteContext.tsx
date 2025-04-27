@@ -4,14 +4,18 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { useMember } from "@/context/MemberContext";
 import { fetchFavouriteMovies } from "@/services/service_favourite_movies";
 import { fetchFavouriteSeries } from "@/services/service_favourite_series";
+import { fetchFavouriteAlbuns } from "@/services/service_favourite_albuns";
 
 interface FavoriteContextType {
   favoriteMovies: Set<number>;
   favoriteSeries: Set<number>;
+  favoriteAlbums: Set<string>;
   addFavoriteMovie: (id: number) => void;
   addFavoriteSeries: (id: number) => void;
-  setFavoriteMovies: (movies: Set<number>) => void; // 🆕
-  setFavoriteSeries: (series: Set<number>) => void; // 🆕
+  addFavoriteAlbum: (id: string) => void;
+  setFavoriteMovies: (movies: Set<number>) => void;
+  setFavoriteSeries: (series: Set<number>) => void;
+  setFavoriteAlbums: (albums: Set<string>) => void;
 }
 
 const FavoriteContext = createContext<FavoriteContextType | undefined>(undefined);
@@ -19,6 +23,7 @@ const FavoriteContext = createContext<FavoriteContextType | undefined>(undefined
 export const FavoriteProvider = ({ children }: { children: ReactNode }) => {
   const [favoriteMovies, setFavoriteMoviesState] = useState<Set<number>>(new Set());
   const [favoriteSeries, setFavoriteSeriesState] = useState<Set<number>>(new Set());
+  const [favoriteAlbums, setFavoriteAlbumsState] = useState<Set<string>>(new Set());
   const { member } = useMember();
 
   useEffect(() => {
@@ -36,6 +41,9 @@ export const FavoriteProvider = ({ children }: { children: ReactNode }) => {
 
         const series = await fetchFavouriteSeries(token, String(member.id));
         setFavoriteSeriesState(new Set(series.map((serie) => serie.id)));
+
+        const albums = await fetchFavouriteAlbuns(String(member.id));
+        setFavoriteAlbumsState(new Set(albums.map((album) => album.id)));
 
       } catch (error) {
         console.error("Erro ao carregar favoritos:", error);
@@ -55,6 +63,10 @@ export const FavoriteProvider = ({ children }: { children: ReactNode }) => {
     setFavoriteSeriesState((prev) => new Set(prev).add(id));
   };
 
+  const addFavoriteAlbum = (id: string) => {
+    setFavoriteAlbumsState((prev) => new Set(prev).add(id));
+  };
+
   const setFavoriteMovies = (movies: Set<number>) => {
     setFavoriteMoviesState(movies);
   };
@@ -63,15 +75,22 @@ export const FavoriteProvider = ({ children }: { children: ReactNode }) => {
     setFavoriteSeriesState(series);
   };
 
+  const setFavoriteAlbums = (albums: Set<string>) => {
+    setFavoriteAlbumsState(albums);
+  };
+
   return (
     <FavoriteContext.Provider
       value={{
         favoriteMovies,
         favoriteSeries,
+        favoriteAlbums,
         addFavoriteMovie,
         addFavoriteSeries,
+        addFavoriteAlbum,
         setFavoriteMovies,
         setFavoriteSeries,
+        setFavoriteAlbums,
       }}
     >
       {children}
