@@ -181,7 +181,7 @@
     "salvando": "Saving...",
     "token_invalido": "Invalid or expired token.",
     "email_sucesso": "Email updated successfully! Redirecting...",
-    "email_erro": "Invalid email! Your email must contain @ and a valid domain",
+    "email_erro": "Invalid email! Check the information entered!",
     "poster_aleatorio_alt": "Random poster"
   },
   "AlbumListByGenre": {

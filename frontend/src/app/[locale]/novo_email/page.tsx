@@ -42,7 +42,7 @@ export default function NovoEmail() {
       setMensagem(t("token_invalido")); // 🌍
       return;
     }
-    if (!emailRegex.test(newEmail)) {
+    if (!emailRegex.test(newEmail.trim())) {
         toast.error(t("email_erro"));
         return;
     }  
