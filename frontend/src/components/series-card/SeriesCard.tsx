@@ -36,8 +36,6 @@ export function SeriesCard({
   const t = useTranslations("MovieCard");
   const { member } = useMember();
 
-  const year = release_date ? new Date(release_date).getFullYear() : "N/A";
-
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
 
@@ -82,7 +80,7 @@ export function SeriesCard({
           setIsFavorited(false);
 
           if (onRemoveSerie) {
-            onRemoveSerie(id); // 👈 chama aqui se foi removido
+            onRemoveSerie(id);
           }
         } else {
           toast.error(t("errorRemovingFavorite"));
@@ -93,7 +91,7 @@ export function SeriesCard({
           toast.success(t("SerieaddFavorite"));
           setIsFavorited(true);
         } else {
-          toast.error((t("SerieserrorAddingFavorite")))
+          toast.error((t("SerieserrorAddingFavorite")));
         }
       }
     } catch (error) {
@@ -113,7 +111,7 @@ export function SeriesCard({
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-black/10 p-3">
             <h3 className="text-white text-sm font-semibold truncate">{name}</h3>
-            <p className="text-gray-300 text-xs">{year}</p>
+            {/* Removido a data aqui */}
           </div>
         </div>
       </div>
@@ -139,7 +137,7 @@ export function SeriesCard({
 
               <div className="space-y-4">
                 <p className="text-xl font-semibold">{name}</p>
-                <p className="text-gray-400 text-sm">{t("releaseDate")}: {release_date ? new Date(release_date).toLocaleDateString() : "N/A"}</p>
+                {/* Linha da data removida aqui também */}
                 <p className="text-gray-300 text-sm">{overview ? overview : t("noDescription")}</p>
               </div>
             </motion.div>
