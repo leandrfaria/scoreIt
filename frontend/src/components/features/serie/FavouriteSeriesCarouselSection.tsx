@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { fetchFavouriteSeries } from "@/services/service_favourite_series";
 import { useMember } from "@/context/MemberContext";
-import { SeriesCarousel } from "../series-carousel/SeriesCarousel";
+import { SeriesCarousel } from "../features/serie/SeriesCarousel";
 import { Series } from "@/types/Series";
 
 const FavouriteSeriesCarouselSection = () => {

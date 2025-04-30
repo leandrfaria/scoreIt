@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { AlbumCard } from "@/components/album-card/AlbumCard";
+import { AlbumCard } from "@/components/features/album/AlbumCard";
 import { Album } from "@/types/Album";
 import {
   ArrowLeftIcon as IconArrowLeft,

@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Container } from "@/components/container";
-import { RandomMoviesCarousel } from "@/components/random-movies-carousel/RandomMoviesCarousel";
-import { RandomSeriesCarousel } from "@/components/random-series-carousel/RandomSeriesCarousel";
+import { Container } from "@/components/layout/Container";
+import { RandomMoviesCarousel } from "@/components/features/movie/RandomMoviesCarousel";
+import { RandomSeriesCarousel } from "@/components/features/serie/RandomSeriesCarousel";
 import { MovieList } from "@/components/movies-list/MovieList";
-import { AlbumListByGenre } from "@/components/album-list-by-genre/AlbumListByGenre";
+import { AlbumListByGenre } from "@/components/features/album/AlbumListByGenre";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
 import Link from "next/link";
-import PageTransition from "@/components/page-transition/PageTransition";
-import RecentsAlbumCarousel from "@/components/recents-album-carousel/RecentsAlbumCarousel";
-import TopArtistsCarouselSection from "@/components/top-artists-carousel/TopArtistsCarousel";
-import OnAirSeriesCarouselSection from "@/components/series-on-air-carousel/OnAirSeriesCarouselSection";
-import NowPlayingCarouselSection from "@/components/now-playing-carousel/NowPlayingCarouselSection";
-import { SeriesList } from "@/components/series-list/SeriesList"; // 👈 Importei a SeriesList certinho
+import PageTransition from "@/components/layout/PageTransition";
+import RecentsAlbumCarousel from "@/components/features/album/RecentsAlbumCarousel";
+import TopArtistsCarouselSection from "@/components/features/artist/TopArtistsCarousel";
+import OnAirSeriesCarouselSection from "@/components/features/serie/OnAirSeriesCarouselSection";
+import NowPlayingCarouselSection from "@/components/features/movie/NowPlayingCarouselSection";
+import { SeriesList } from "@/components/features/serie/SeriesList"; // 👈 Importei a SeriesList certinho
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();

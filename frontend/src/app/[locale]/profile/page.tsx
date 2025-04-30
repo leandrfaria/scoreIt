@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Container } from "@/components/container";
-import { ProtectedRoute } from "@/components/protected-route/ProtectedRoute";
+import { Container } from "@/components/layout/Container";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { FiEdit2 } from "react-icons/fi";
-import ProfileEditModal from "@/components/profile-edit-modal/ProfileEditModal";
+import ProfileEditModal from "@/components/features/user/ProfileEditModal";
 import { useMember } from "@/context/MemberContext";
 import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
@@ -13,7 +13,7 @@ import { useTranslations } from "next-intl";
 import { fetchMembers, updateMember } from "@/services/service_member";
 import FavouriteMoviesCarouselSection from "@/components/favorite-movies-carousel/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/favourite-series-carousel/FavouriteSeriesCarouselSection";
-import FavouriteAlbumCarouselSection from "@/components/favourite_album_carousel/FavouriteAlbumCarouselSection";
+import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
 import { useTabContext } from "@/context/TabContext";
 
 export default function Profile() {

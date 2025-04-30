@@ -1,28 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchMoviesByPage } from '@/services/service_movies_list';
-import { Movie } from '@/types/Movie';
+import { fetchSeriesByPage } from '@/services/service_series_list';
+import { Series } from '@/types/Series';
+import { SeriesCard } from '@/components/features/serie/SeriesCard';
 import { useTranslations } from 'next-intl';
-import { MovieCard } from '../movie-card/MovieCard';
 
-export function MovieList() {
-  const [movies, setMovies] = useState<Movie[]>([]);
+export function SeriesList() {
+  const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [inputPage, setInputPage] = useState('1');
-  const t = useTranslations('MovieList');
+  const t = useTranslations('MovieList'); // Reutilizando traduções de filmes
   const maxPage = 500;
 
   useEffect(() => {
-    const getMovies = async () => {
+    const getSeries = async () => {
       setLoading(true);
-      const moviesData = await fetchMoviesByPage(page);
-      setMovies(moviesData);
+      const seriesData = await fetchSeriesByPage(page);
+      setSeries(seriesData);
       setLoading(false);
     };
 
-    getMovies();
+    getSeries();
   }, [page]);
 
   const handlePageChange = () => {
@@ -46,15 +46,15 @@ export function MovieList() {
     return <p className="text-center mt-10 text-white">{t('loading')}</p>;
   }
 
-  if (movies.length === 0) {
+  if (series.length === 0) {
     return <p className="text-center mt-10 text-white">{t('noMoviesFound')}</p>;
   }
 
   return (
     <>
       <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center">
-        {movies.map((movie) => (
-          <MovieCard key={movie.id} {...movie} />
+        {series.map((serie) => (
+          <SeriesCard key={serie.id} {...serie} />
         ))}
       </section>
 

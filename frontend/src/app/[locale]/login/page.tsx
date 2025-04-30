@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/service_login";
-import PageTransition from "@/components/page-transition/PageTransition";
-import { Container } from "@/components/container";
+import PageTransition from "@/components/layout/PageTransition";
+import { Container } from "@/components/layout/Container";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";

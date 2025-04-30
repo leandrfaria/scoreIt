@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchOnAirSeries } from "@/services/service_on_air_series";
-import { Series } from "@/types/Series";
-import { SeriesCarousel } from "@/components/series-carousel/SeriesCarousel";
+import { fetchNowPlayingMovies } from "@/services/service_now_playing_movies";
+import { Movie } from "@/types/Movie";
+import { MovieCarousel } from "./MovieCarousel";
 import { useTranslations } from "next-intl";
 
-const OnAirSeriesCarouselSection = () => {
-  const [series, setSeries] = useState<Series[]>([]);
+const NowPlayingCarouselSection = () => {
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("NowPlayingCarousel");
 
   useEffect(() => {
-    const loadSeries = async () => {
+    const loadMovies = async () => {
       const token = localStorage.getItem("authToken");
       console.log("👉 TOKEN:", token);
 
@@ -22,30 +22,31 @@ const OnAirSeriesCarouselSection = () => {
         return;
       }
 
-      const data = await fetchOnAirSeries(token);
-      console.log("📺 SÉRIES RECEBIDAS:", data);
+      const data = await fetchNowPlayingMovies(token);
+      console.log("🎬 FILMES RECEBIDOS:", data);
 
       if (!data || data.length === 0) {
         console.warn(t("emptyListWarning"));
-        setSeries([
+        setMovies([
           {
-            id: 9999,
-            name: t("mockMovie.title"),
+            id: 999,
+            title: t("mockMovie.title"),
             posterUrl: "https://image.tmdb.org/t/p/w300/6DrHO1jr3qVrViUO6s6kFiAGM7.jpg",
             backdropUrl: "https://image.tmdb.org/t/p/original/rTh4K5uw9HypmpGslcKd4QfHl93.jpg",
             vote_average: 7.5,
             release_date: "2024-01-01",
             overview: t("mockMovie.overview"),
+            genre: "Drama",
           },
         ]);
       } else {
-        setSeries(data);
+        setMovies(data);
       }
 
       setLoading(false);
     };
 
-    loadSeries();
+    loadMovies();
   }, [t]);
 
   if (loading) {
@@ -54,7 +55,7 @@ const OnAirSeriesCarouselSection = () => {
     );
   }
 
-  if (series.length === 0) {
+  if (movies.length === 0) {
     return (
       <div className="text-center py-10 text-white">
         {t("noMoviesFound")}
@@ -62,7 +63,7 @@ const OnAirSeriesCarouselSection = () => {
     );
   }
 
-  return <SeriesCarousel title={t("seriesTitle")} series={series} />;
+  return <MovieCarousel title={t("carouselTitle")} movies={movies} />;
 };
 
-export default OnAirSeriesCarouselSection;
+export default NowPlayingCarouselSection;

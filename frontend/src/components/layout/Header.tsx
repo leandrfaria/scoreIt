@@ -16,7 +16,7 @@ import LogoLateral from "@/assets/LogoLateral";
 import { useLocale, useTranslations } from "next-intl";
 import { useMember } from "@/context/MemberContext";
 import { useTabContext } from "@/context/TabContext";
-import { TabSwitcherMediaType } from "../tab-switcher/TabSwitcherMediaType";
+import { TabSwitcherMediaType } from "./TabSwitcherMediaType";
 
 export function Header() {
   const pathname = usePathname();

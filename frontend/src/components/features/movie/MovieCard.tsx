@@ -14,7 +14,7 @@ import toast from "react-hot-toast";
 import { addFavouriteMovie } from "@/services/service_add_favourite_movie";
 import { isFavoritedMedia } from "@/services/service_is_favorited";
 import { removeFavouriteMedia } from "@/services/service_remove_favourite";
-import PageTransition from "@/components/page-transition/PageTransition";
+import PageTransition from "@/components/layout/PageTransition";
 
 interface MovieCardProps extends Movie {
   onRemoveMovie?: (id: number) => void; 

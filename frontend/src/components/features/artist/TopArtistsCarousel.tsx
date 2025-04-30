@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Artist } from "@/types/Artist";
-import { ArtistCard } from "@/components/artist-card/ArtistCard";
+import { ArtistCard } from "@/components/features/artist/ArtistCard";
 import {
   ArrowLeftIcon as IconArrowLeft,
   ArrowRightIcon as IconArrowRight,

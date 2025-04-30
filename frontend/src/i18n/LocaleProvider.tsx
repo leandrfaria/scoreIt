@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { Toaster } from "react-hot-toast";
-import { Header } from "@/components/header";
+import { Header } from "@/components/layout/Header";
 import { routing } from "./routing";
 
 type Locale = (typeof routing)['locales'][number];

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeftIcon as IconArrowLeft, ArrowRightIcon as IconArrowRight } from "lucide-react";
-import { SeriesCard } from "@/components/series-card/SeriesCard";
+import { SeriesCard } from "@/components/features/serie/SeriesCard";
 import type { Series } from "@/types/Series";
 
 interface SeriesCarouselProps {

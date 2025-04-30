@@ -1,5 +1,5 @@
 import "@/app/globals.css";
-import { Header } from "@/components/header";
+import { Header } from "@/components/layout/Header";
 import { MemberProvider } from "@/context/MemberContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { TabProvider } from "@/context/TabContext";
