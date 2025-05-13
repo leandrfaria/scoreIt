@@ -11,9 +11,9 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
-import { addFavouriteSeries } from "@/services/service_add_favourite_series";
-import { isFavoritedMedia } from "@/services/service_is_favorited";
-import { removeFavouriteMedia } from "@/services/service_remove_favourite";
+import { addFavouriteSeries } from "@/services/series/add_fav_series";
+import { isFavoritedMedia } from "@/services/user/is_favorited";
+import { removeFavouriteMedia } from "@/services/user/remove_fav";
 
 interface SeriesCardProps extends Series {
   onRemoveSerie?: (id: number) => void; 

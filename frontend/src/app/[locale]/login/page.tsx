@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/services/service_login";
+import { loginUser } from "@/services/user/login";
 import PageTransition from "@/components/layout/PageTransition";
 import { Container } from "@/components/layout/Container";
 import toast from "react-hot-toast";

@@ -7,7 +7,7 @@ import {
   ArrowLeftIcon as IconArrowLeft,
   ArrowRightIcon as IconArrowRight,
 } from "lucide-react";
-import { fetchTopArtists } from "@/services/service_top_artists";
+import { fetchTopArtists } from "@/services/artist/top_artists";
 import { useTranslations } from "next-intl";
 
 export default function TopArtistsCarouselSection() {

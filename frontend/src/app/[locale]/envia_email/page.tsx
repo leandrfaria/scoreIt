@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Container } from "@/components/layout/Container";
 import PageTransition from "@/components/layout/PageTransition";
-import { sendResetEmail } from "@/services/service_enviaEmail";
+import { sendResetEmail } from "@/services/user/send_email";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
 

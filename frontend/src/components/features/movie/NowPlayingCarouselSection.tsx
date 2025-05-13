@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchNowPlayingMovies } from "@/services/service_now_playing_movies";
+import { fetchNowPlayingMovies } from "@/services/movie/now_playing";
 import { Movie } from "@/types/Movie";
 import { MovieCarousel } from "./MovieCarousel";
 import { useTranslations } from "next-intl";

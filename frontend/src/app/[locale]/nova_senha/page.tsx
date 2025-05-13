@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Container } from "@/components/layout/Container";
 import PageTransition from "@/components/layout/PageTransition";
-import { resetPassword } from "@/services/service_refazSenha"
+import { resetPassword } from "@/services/user/remake_password"
 import toast from 'react-hot-toast';
 import { useTranslations } from "next-intl";
 

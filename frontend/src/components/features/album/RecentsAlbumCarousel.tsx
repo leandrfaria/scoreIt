@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Album } from "@/types/Album";
-import { fetchNewAlbumReleases } from "@/services/service_album_releases";
+import { fetchNewAlbumReleases } from "@/services/album/releases";
 import { AlbumCarousel } from "@/components/features/album/AlbumCarousel";
 import { useTranslations } from "next-intl";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { fetchMembers } from "@/services/service_member";
+import { fetchMembers } from "@/services/user/member";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useMember } from "./MemberContext";
 

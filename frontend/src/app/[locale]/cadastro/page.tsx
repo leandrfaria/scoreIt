@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { registerUser } from "@/services/service_cadastro";
+import { registerUser } from "@/services/user/register";
 import { Container } from "@/components/layout/Container";
 import { useRouter } from "next/navigation";
 import PageTransition from "@/components/layout/PageTransition";

@@ -7,11 +7,11 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { Album } from "@/types/Album";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
-import { addFavouriteAlbum } from "@/services/service_add_favourite_album";
+import { addFavouriteAlbum } from "@/services/service_add_favourite_album/";
 import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
-import { isFavoritedMedia } from "@/services/service_is_favorited";
-import { removeFavouriteMedia } from "@/services/service_remove_favourite";
+import { isFavoritedMedia } from "@/services/user/is_favorited";
+import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { useTranslations } from "next-intl";
 
 interface AlbumCardProps extends Album {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatedCarousel, CarouselItem } from "@/utils/aceternity/AnimatedTestimonials";
-import { fetchPopularSeries } from "@/services/service_popular_series";
+import { fetchPopularSeries } from "@/services/series/popular";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 

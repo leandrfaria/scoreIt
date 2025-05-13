@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchMoviesByPage } from '@/services/service_movies_list';
+import { fetchMoviesByPage } from '@/services/movie/movies_list';
 import { Movie } from '@/types/Movie';
 import { useTranslations } from 'next-intl';
 import { MovieCard } from '../features/movie/MovieCard';

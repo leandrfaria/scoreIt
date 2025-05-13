@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchOnAirSeries } from "@/services/service_on_air_series";
+import { fetchOnAirSeries } from "@/services/series/on_air";
 import { Series } from "@/types/Series";
 import { SeriesCarousel } from "@/components/features/serie/SeriesCarousel";
 import { useTranslations } from "next-intl";

@@ -10,7 +10,7 @@ import { useMember } from "@/context/MemberContext";
 import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
-import { fetchMembers, updateMember } from "@/services/service_member";
+import { fetchMembers, updateMember } from "@/services/user/member";
 import FavouriteMoviesCarouselSection from "@/components/favorite-movies-carousel/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/favourite-series-carousel/FavouriteSeriesCarouselSection";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";

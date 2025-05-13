@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchSeriesByPage } from '@/services/service_series_list';
+import { fetchSeriesByPage } from '@/services/series/series_list';
 import { Series } from '@/types/Series';
 import { SeriesCard } from '@/components/features/serie/SeriesCard';
 import { useTranslations } from 'next-intl';

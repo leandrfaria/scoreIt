@@ -1,5 +1,5 @@
 // services/carousel_utils.ts
-import { fetchMovies } from "./service_popular_movies";
+import { fetchMovies } from "./movie/popular";
 import { CarouselItem } from "@/utils/aceternity/AnimatedTestimonials";
 
 const translations = {

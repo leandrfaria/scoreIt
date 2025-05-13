@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Movie } from "@/types/Movie";
 import { MovieCarousel } from "../movie-carousel/MovieCarousel";
 import { useTranslations } from "next-intl";
-import { fetchFavouriteMovies } from "@/services/service_favourite_movies";
+import { fetchFavouriteMovies } from "@/services/movie/get_fav_movie";
 import { useMember } from "@/context/MemberContext";
 
 const FavouriteMoviesCarouselSection = () => {
