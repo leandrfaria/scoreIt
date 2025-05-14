@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { fetchFavouriteSeries } from "@/services/series/get_fav_series";
 import { useMember } from "@/context/MemberContext";
-import { SeriesCarousel } from "../features/serie/SeriesCarousel";
 import { Series } from "@/types/Series";
+import { SeriesCarousel } from "./SeriesCarousel";
 
 const FavouriteSeriesCarouselSection = () => {
   const [series, setSeries] = useState<Series[]>([]);

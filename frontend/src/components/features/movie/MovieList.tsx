@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { fetchMoviesByPage } from '@/services/movie/movies_list';
 import { Movie } from '@/types/Movie';
 import { useTranslations } from 'next-intl';
-import { MovieCard } from '../features/movie/MovieCard';
+import { MovieCard } from './MovieCard';
 
 export function MovieList() {
   const [movies, setMovies] = useState<Movie[]>([]);

@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Movie } from "@/types/Movie";
-import { MovieCarousel } from "../movie-carousel/MovieCarousel";
 import { useTranslations } from "next-intl";
 import { fetchFavouriteMovies } from "@/services/movie/get_fav_movie";
 import { useMember } from "@/context/MemberContext";
+import { MovieCarousel } from "./MovieCarousel";
 
 const FavouriteMoviesCarouselSection = () => {
   const [movies, setMovies] = useState<Movie[]>([]);

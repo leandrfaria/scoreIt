@@ -11,10 +11,10 @@ import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { fetchMembers, updateMember } from "@/services/user/member";
-import FavouriteMoviesCarouselSection from "@/components/favorite-movies-carousel/FavouriteMoviesCarouselSection";
-import FavouriteSeriesCarouselSection from "@/components/favourite-series-carousel/FavouriteSeriesCarouselSection";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
 import { useTabContext } from "@/context/TabContext";
+import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
+import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
 
 export default function Profile() {
   const { member, setMember } = useMember();

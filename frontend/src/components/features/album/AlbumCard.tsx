@@ -7,12 +7,12 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { Album } from "@/types/Album";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
-import { addFavouriteAlbum } from "@/services/service_add_favourite_album/";
 import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { useTranslations } from "next-intl";
+import { addFavouriteAlbum } from "@/services/album/add_fav_album";
 
 interface AlbumCardProps extends Album {
   onRemoveAlbum?: (id: string) => void;

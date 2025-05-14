@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { RandomMoviesCarousel } from "@/components/features/movie/RandomMoviesCarousel";
 import { RandomSeriesCarousel } from "@/components/features/serie/RandomSeriesCarousel";
-import { MovieList } from "@/components/movies-list/MovieList";
 import { AlbumListByGenre } from "@/components/features/album/AlbumListByGenre";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
@@ -16,6 +15,7 @@ import TopArtistsCarouselSection from "@/components/features/artist/TopArtistsCa
 import OnAirSeriesCarouselSection from "@/components/features/serie/OnAirSeriesCarouselSection";
 import NowPlayingCarouselSection from "@/components/features/movie/NowPlayingCarouselSection";
 import { SeriesList } from "@/components/features/serie/SeriesList"; // 👈 Importei a SeriesList certinho
+import { MovieList } from "@/components/features/movie/MovieList";
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
