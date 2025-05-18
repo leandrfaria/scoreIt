@@ -8,7 +8,7 @@ import { FaStar, FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { Movie } from "@/types/Movie";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
 import { addFavouriteMovie } from "@/services/movie/add_fav_movie";
@@ -36,6 +36,7 @@ export function MovieCard({
   const modalRef = useRef<HTMLDivElement>(null);
   const year = new Date(release_date).getFullYear();
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("MovieCard");
   const { member } = useMember();
 
@@ -101,11 +102,15 @@ export function MovieCard({
     }
   };
 
+  const handleViewDetails = () => {
+    router.push(`/${locale}/movie/${id}`);
+  };
+
   return (
     <>
       <div onClick={handleOpen} className="cursor-pointer w-full max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-all duration-300">
         <div className="relative w-full h-[270px] bg-gray-800">
-          {posterUrl && posterUrl != "null" ? (
+          {posterUrl && posterUrl !== "null" ? (
             <Image src={posterUrl} alt={title} fill className="object-cover" />
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500 text-sm">
@@ -133,7 +138,7 @@ export function MovieCard({
                 <button onClick={handleClose} className="text-red-400 text-xl">×</button>
               </div>
 
-              {backdropUrl && backdropUrl != "null" ? (
+              {backdropUrl && backdropUrl !== "null" ? (
                 <div className="relative w-full h-[250px] rounded-md overflow-hidden mb-6">
                   <Image src={backdropUrl} alt={title} fill className="object-cover rounded-md" />
                   <button onClick={handleFavorite} className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full">
@@ -146,7 +151,6 @@ export function MovieCard({
                 </div>
               )}
 
-
               <div className="space-y-4">
                 <p className="text-xl font-semibold">{title}</p>
                 <p className="text-gray-400 text-sm">{t("releaseDate")}: {new Date(release_date).toLocaleDateString()}</p>
@@ -154,7 +158,10 @@ export function MovieCard({
               </div>
 
               <div className="mt-6 flex justify-end">
-                <button className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition">
+                <button
+                  onClick={handleViewDetails}
+                  className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition"
+                >
                   {t("viewDetails")}
                 </button>
               </div>
