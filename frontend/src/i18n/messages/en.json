@@ -129,6 +129,9 @@
     "FilmeFavoritos": "Favorite Movies",
     "AlbunsFavoritos": "Favorite Albums",
     "SeriesFavoritos": "Favorite Series",
+    "searchPlaceholder": "Search for Movies",
+    "yearPlaceholder": "Years",
+    "genrePlaceholder": "Genrers",
     "mockMovie": {
       "title": "Mocked",
       "overview": "This is a mock."
@@ -151,7 +154,9 @@
     "errorRemovingFavorite": "Error removing from favorites.",
     "addedToFavorites": "Movie added to favorites!",
     "errorAddingFavorite": "Error adding movie to favorites.",
-    "errorUpdatingFavorites": "Error updating favorites."
+    "errorUpdatingFavorites": "Error updating favorites.",
+    "noImageAvailable": "No image available",
+    "noBackdropAvailable": "No image available"
   },
   "ArtistCard": {
     "playcount": "Plays:",

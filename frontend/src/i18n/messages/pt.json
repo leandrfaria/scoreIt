@@ -129,6 +129,9 @@
     "FilmeFavoritos": "Filmes favoritos",
     "AlbunsFavoritos": "Albuns favoritos",
     "SeriesFavoritos": "Series favoritas",
+    "searchPlaceholder": "Busque por filmes",
+    "yearPlaceholder": "Anos",
+    "genrePlaceholder": "Generos",
     "mockMovie": {
       "title": "Mockado",
       "overview": "Esse é um mock."
@@ -151,7 +154,9 @@
     "SerieserrorAddingFavorite": "Erro ao adicionar serie aos favoritos.",
     "addedToFavorites": "Filme adicionado aos favoritos!",
     "errorAddingFavorite": "Erro ao adicionar filme aos favoritos.",
-    "errorUpdatingFavorites": "Erro ao atualizar favoritos."
+    "errorUpdatingFavorites": "Erro ao atualizar favoritos.",
+    "noImageAvailable": "Imagem não disponível",
+    "noBackdropAvailable": "Imagem não disponivel"
   },
   "top_artists": {
     "titulo": "Top Artistas",

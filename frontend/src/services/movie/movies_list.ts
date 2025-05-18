@@ -1,6 +1,5 @@
 import { Movie } from '@/types/Movie';
 
-// Não vou mais apagar essa função 😉
 export const fetchGenres = async (): Promise<{ id: number; name: string }[]> => {
   const token = localStorage.getItem('authToken');
   if (!token) {
@@ -40,17 +39,14 @@ export const fetchMoviesByPage = async (
   }
 
   try {
-    let url = `http://localhost:8080/movie/get/page/${page}`;
+    // Montando a URL com todos os filtros
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    if (title) params.append('title', title);
+    if (year) params.append('year', year.toString());
+    if (genreID) params.append('genre', genreID.toString());
 
-    if (title) {
-      url = `http://localhost:8080/movie/search/title/${title}?page=${page}`;
-    } else if (year && genreID) {
-      url = `http://localhost:8080/movie/search/year/${year}/genre/${genreID}?page=${page}`;
-    } else if (year) {
-      url = `http://localhost:8080/movie/search/year/${year}?page=${page}`;
-    } else if (genreID) {
-      url = `http://localhost:8080/movie/search/genre/${genreID}?page=${page}`;
-    }
+    const url = `http://localhost:8080/movie/search?${params.toString()}`;
 
     const response = await fetch(url, {
       headers: {
@@ -68,8 +64,8 @@ export const fetchMoviesByPage = async (
     return results.map((movie: any) => ({
       id: movie.id,
       title: movie.title,
-      posterUrl: `https://image.tmdb.org/t/p/w300${movie.poster_path}`,
-      backdropUrl: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
+      posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : null,
+      backdropUrl: movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : null,
       vote_average: movie.vote_average,
       release_date: movie.release_date,
       overview: movie.overview,
@@ -80,3 +76,5 @@ export const fetchMoviesByPage = async (
     return [];
   }
 };
+
+

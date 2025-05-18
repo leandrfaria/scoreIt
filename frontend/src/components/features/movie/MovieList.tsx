@@ -20,12 +20,17 @@ export function MovieList() {
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
   const t = useTranslations('MovieList');
   const maxPage = 500;
+  const searchRef = useRef<HTMLInputElement | null>(null);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
   // Debounce para o searchTerm
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 300); // 300ms de debounce
+    }, 1000); // 1000ms de debounce
 
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
@@ -48,6 +53,7 @@ export function MovieList() {
         setLoading(false);
       }
     };
+
     getMovies();
   }, [page, selectedYear, selectedGenre, debouncedSearchTerm]);
 
@@ -80,16 +86,9 @@ export function MovieList() {
     }
   };
 
-  if (loading) {
-    return <p className="text-center mt-10 text-white">{t('loading')}</p>;
-  }
-
-  if (movies.length === 0) {
-    return <p className="text-center mt-10 text-white">{t('noMoviesFound')}</p>;
-  }
-
   return (
     <>
+      {/* 🔍 Barra de busca, filtro de ano e gênero */}
       <div className="relative flex items-center mb-6 gap-4">
         <button onClick={() => setIsSearchVisible(!isSearchVisible)} className="focus:outline-none">
           <FaSearch className="text-white w-5 h-5" />
@@ -97,8 +96,9 @@ export function MovieList() {
         <div className={`transition-all duration-300 overflow-hidden ${isSearchVisible ? 'w-48' : 'w-0'}`}>
           <input
             type="text"
+            ref={searchRef}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             placeholder="Buscar filmes..."
             className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none w-full"
           />
@@ -131,12 +131,20 @@ export function MovieList() {
         </select>
       </div>
 
-      <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center">
-        {movies.map((movie) => (
-          <MovieCard key={movie.id} {...movie} />
-        ))}
-      </section>
+      {/* 🎥 Lista de filmes */}
+      {loading ? (
+        <p className="text-center mt-10 text-white">{t('loading')}</p>
+      ) : movies.length === 0 ? (
+        <p className="text-center mt-10 text-white">{t('noMoviesFound')}</p>
+      ) : (
+        <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center">
+          {movies.map((movie) => (
+            <MovieCard key={movie.id} {...movie} />
+          ))}
+        </section>
+      )}
 
+      {/* 🔄 Paginação */}
       <div className="flex justify-center items-center gap-2 mt-10 mb-20 text-white">
         <span className="text-white text-base">{t('ChoosePage')}</span>
         <button
