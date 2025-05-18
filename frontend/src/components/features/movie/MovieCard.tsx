@@ -104,8 +104,14 @@ export function MovieCard({
   return (
     <>
       <div onClick={handleOpen} className="cursor-pointer w-full max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-all duration-300">
-        <div className="relative w-full h-[270px]">
-          <Image src={posterUrl} alt={title} fill className="object-cover" />
+        <div className="relative w-full h-[270px] bg-gray-800">
+          {posterUrl && posterUrl != "null" ? (
+            <Image src={posterUrl} alt={title} fill className="object-cover" />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+              {t("noImageAvailable")}
+            </div>
+          )}
           <div className="absolute top-3 right-3 bg-black/70 text-white text-sm px-2 py-1 rounded-full flex items-center gap-1">
             <FaStar className="text-white" size={14} />
             <span>{vote_average.toFixed(1)} <span className="text-xs text-gray-300">/ 10</span></span>
@@ -127,14 +133,19 @@ export function MovieCard({
                 <button onClick={handleClose} className="text-red-400 text-xl">×</button>
               </div>
 
-              {backdropUrl && (
+              {backdropUrl && backdropUrl != "null" ? (
                 <div className="relative w-full h-[250px] rounded-md overflow-hidden mb-6">
                   <Image src={backdropUrl} alt={title} fill className="object-cover rounded-md" />
                   <button onClick={handleFavorite} className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full">
                     {isFavorited ? <FaHeart className="text-red-500 w-6 h-6" /> : <FiHeart className="text-white w-6 h-6" />}
                   </button>
                 </div>
+              ) : (
+                <div className="w-full h-[250px] rounded-md overflow-hidden mb-6 bg-gray-800 flex items-center justify-center text-gray-500 text-sm">
+                  {t("noBackdropAvailable")}
+                </div>
               )}
+
 
               <div className="space-y-4">
                 <p className="text-xl font-semibold">{title}</p>
