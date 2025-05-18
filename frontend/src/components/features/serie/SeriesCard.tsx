@@ -8,7 +8,7 @@ import { FaStar, FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
 import { Series } from "@/types/Series";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
 import { addFavouriteSeries } from "@/services/series/add_fav_series";
@@ -33,6 +33,7 @@ export function SeriesCard({
   const [isFavorited, setIsFavorited] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("MovieCard");
   const { member } = useMember();
 
@@ -69,7 +70,7 @@ export function SeriesCard({
     try {
       const token = localStorage.getItem("authToken");
       if (!token || !member) {
-        toast.error((t("userNotAuthenticated")));
+        toast.error(t("userNotAuthenticated"));
         return;
       }
 
@@ -91,13 +92,17 @@ export function SeriesCard({
           toast.success(t("SerieaddFavorite"));
           setIsFavorited(true);
         } else {
-          toast.error((t("SerieserrorAddingFavorite")));
+          toast.error(t("SerieserrorAddingFavorite"));
         }
       }
     } catch (error) {
       console.error(error);
-      toast.error((t("errorUpdatingFavorites")));
+      toast.error(t("errorUpdatingFavorites"));
     }
+  };
+
+  const handleViewDetails = () => {
+    router.push(`/${locale}/series/${id}`);
   };
 
   return (
@@ -111,7 +116,6 @@ export function SeriesCard({
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-black/10 p-3">
             <h3 className="text-white text-sm font-semibold truncate">{name}</h3>
-            {/* Removido a data aqui */}
           </div>
         </div>
       </div>
@@ -137,8 +141,16 @@ export function SeriesCard({
 
               <div className="space-y-4">
                 <p className="text-xl font-semibold">{name}</p>
-                {/* Linha da data removida aqui também */}
                 <p className="text-gray-300 text-sm">{overview ? overview : t("noDescription")}</p>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={handleViewDetails}
+                  className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition"
+                >
+                  {t("viewDetails")}
+                </button>
               </div>
             </motion.div>
           </>
