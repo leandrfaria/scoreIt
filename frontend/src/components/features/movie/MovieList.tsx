@@ -107,9 +107,9 @@ export function MovieList() {
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
-          className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none bg-gray-800 text-white appearance-none hover:border-white transition-colors"
+          className="px-4 py-2 rounded-md border border-darkgreen focus:outline-none bg-black text-lightgreen appearance-none"
         >
-          <option value="">Anos</option>
+          <option value="">{t('Years')}</option>
           {Array.from({ length: 100 }, (_, i) => 2025 - i).map((year) => (
             <option key={year} value={year}>
               {year}
@@ -120,9 +120,9 @@ export function MovieList() {
         <select
           value={selectedGenre}
           onChange={(e) => setSelectedGenre(e.target.value)}
-          className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none bg-gray-800 text-white appearance-none hover:border-white transition-colors"
+          className="px-4 py-2 rounded-md border border-darkgreen focus:outline-none bg-black text-lightgreen appearance-none"
         >
-          <option value="">Gêneros</option>
+          <option value="">{t('Genres')}</option>
           {genres.map((genre) => (
             <option key={genre.id} value={genre.id}>
               {genre.name}
