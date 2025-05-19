@@ -140,7 +140,23 @@
   "MovieList": {
     "loading": "Loading movies...",
     "noMoviesFound": "No movies found.",
-    "ChoosePage": "Choose the page:"
+    "ChoosePage": "Choose the page:",
+    "Genres": "All genres",
+    "Years": "All years",
+    "genreNames": {
+          "Action": "Action",
+          "Adventure": "Adventure",
+          "Animation": "Animation",
+          "Comedy": "Comedy",
+          "Drama": "Drama",
+          "Fantasy": "Fantasy",
+          "Horror": "Horror",
+          "Romance": "Romance",
+          "Sci-Fi": "Science Fiction",
+          "Thriller": "Thriller",
+          "Documentary": "Documentary",
+          "Mystery": "Mystery"
+    }
   },
   "MovieCard": {
     "releaseDate": "Release Date",
