@@ -134,40 +134,43 @@ export function Header() {
         {/* LADO DIREITO (IDIOMA + AVATAR OU LOGIN) */}
         <div className="flex-1 flex justify-end items-center gap-4">
           {/*Barra de busca de usuários*/}
-          <div className="relative flex items-center"> {/* Container flexível */}
-            <button 
-                onClick={() => setIsSearchVisible(!isSearchVisible)} 
+          {isLoggedIn &&
+            <div className="relative flex items-center"> {/* Container flexível */}
+              <button
+                onClick={() => setIsSearchVisible(!isSearchVisible)}
                 className="focus:outline-none mr-2" // Margem à direita para espaçamento
-            >
+              >
                 <FaSearch className="text-white w-5 h-5" />
-            </button>
-            <div className={`transition-all duration-300 overflow-hidden ${isSearchVisible ? "w-48" : "w-0"}`}>
+              </button>
+              <div className={`transition-all duration-300 overflow-hidden ${isSearchVisible ? "w-48" : "w-0"}`}>
                 <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    placeholder="Buscar usuários..."
-                    className={`px-4 py-2 rounded-md border border-gray-300 focus:outline-none w-full`}
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  placeholder="Buscar usuários..."
+                  className={`px-4 py-2 rounded-md border border-gray-300 focus:outline-none w-full`}
                 />
-            </div>
-            {/* Lista de Resultados */}
-            {isSearchVisible && searchResults.length > 0 && (
+              </div>
+              {/* Lista de Resultados */}
+              {isSearchVisible && searchResults.length > 0 && (
                 <div className="absolute z-10 bg-gray-800 black-md rounded-md mt-23 ml-7 w-48"> {/* Lista flutuante */}
-                    {searchResults.map((member: Member) => (
-                        <Link key={member.id} href={`/${locale}/profile/${member.id}`} className="block px-4 py-2 rounded-md hover:bg-gray-700">
-                            <div className="flex items-center">
-                                <img
-                                    src={member.profileImageUrl || "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"}
-                                    alt={member.name}
-                                    className="w-8 h-8 rounded-full mr-2"
-                                />
-                                <span>{member.name}</span>
-                            </div>
-                        </Link>
-                    ))}
+                  {searchResults.map((member: Member) => (
+                    <Link key={member.id} href={`/${locale}/profile/${member.id}`} className="block px-4 py-2 rounded-md hover:bg-gray-700">
+                      <div className="flex items-center" onClick={() => {setIsSearchVisible(!isSearchVisible); setSearchTerm(''); setSearchResults([])}}
+>
+                        <img
+                          src={member.profileImageUrl || "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"}
+                          alt={member.name}
+                          className="w-8 h-8 rounded-full mr-2"
+                        />
+                        <span>{member.name}</span>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-            )}
-        </div>
+              )}
+            </div>
+          }
           {/* Trocar idioma */}
           <DropdownMenu>
             <DropdownMenuTrigger
