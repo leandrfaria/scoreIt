@@ -7,7 +7,11 @@ import { fetchFavouriteAlbuns } from "@/services/album/get_fav_album";
 import { useMember } from "@/context/MemberContext";
 import { useTranslations } from "next-intl";
 
-const FavouriteAlbumCarouselSection = () => {
+type Props = {
+  memberId?: string;
+};
+
+const FavouriteAlbumCarouselSection = ({ memberId }: Props) => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("NowPlayingCarousel");
@@ -16,21 +20,21 @@ const FavouriteAlbumCarouselSection = () => {
   useEffect(() => {
     const loadAlbums = async () => {
       const token = localStorage.getItem("authToken");
-      console.log("👉 TOKEN:", token);
-      console.log("🙋‍♂️ MEMBER:", member);
+      const idToUse = memberId ?? String(member?.id);
 
-      if (!token || !member?.id) {
+      if (!token || !idToUse) {
         console.error(t("tokenNotFound"));
         setLoading(false);
         return;
       }
-      const data = await fetchFavouriteAlbuns(String(member.id));
+
+      const data = await fetchFavouriteAlbuns(idToUse);
       setAlbums(data);
       setLoading(false);
     };
 
     loadAlbums();
-  }, []);
+  }, [memberId, member, t]);
 
   if (loading) {
     return <div className="text-center py-10 text-white">{t("loadingFavAlbum")}</div>;
@@ -44,7 +48,13 @@ const FavouriteAlbumCarouselSection = () => {
     setAlbums((prevAlbums) => prevAlbums.filter((album) => album.id !== id));
   };
 
-  return <AlbumCarousel title={t("AlbunsFavoritos")} albums={albums} onRemoveAlbum={handleRemoveAlbum}/>;
+  return (
+    <AlbumCarousel
+      title={t("AlbunsFavoritos")}
+      albums={albums}
+      onRemoveAlbum={handleRemoveAlbum}
+    />
+  );
 };
 
 export default FavouriteAlbumCarouselSection;

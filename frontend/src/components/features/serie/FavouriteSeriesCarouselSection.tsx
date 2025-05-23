@@ -7,7 +7,11 @@ import { useMember } from "@/context/MemberContext";
 import { Series } from "@/types/Series";
 import { SeriesCarousel } from "./SeriesCarousel";
 
-const FavouriteSeriesCarouselSection = () => {
+type Props = {
+  memberId?: string;
+};
+
+const FavouriteSeriesCarouselSection = ({ memberId }: Props) => {
   const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("NowPlayingCarousel");
@@ -16,21 +20,21 @@ const FavouriteSeriesCarouselSection = () => {
   useEffect(() => {
     const loadSeries = async () => {
       const token = localStorage.getItem("authToken");
+      const idToUse = memberId ?? String(member?.id);
 
-      if (!token || !member?.id) {
+      if (!token || !idToUse) {
         console.error(t("tokenNotFound"));
         setLoading(false);
         return;
       }
 
-      const data = await fetchFavouriteSeries(token, String(member.id));
+      const data = await fetchFavouriteSeries(token, idToUse);
       setSeries(data);
-
       setLoading(false);
     };
 
     loadSeries();
-  }, [t, member]);
+  }, [t, memberId, member]);
 
   if (loading) {
     return (
@@ -42,15 +46,21 @@ const FavouriteSeriesCarouselSection = () => {
     return (
       <div className="text-center py-10 text-white">
         {t("noFavSeries")}
-        </div>
+      </div>
     );
   }
 
   const handleRemoveSerie = (id: number) => {
     setSeries((prevSeries) => prevSeries.filter((serie) => serie.id !== id));
-  };  
+  };
 
-  return <SeriesCarousel title={t("SeriesFavoritos")} series={series}  onRemoveSerie={handleRemoveSerie}/>;
+  return (
+    <SeriesCarousel
+      title={t("SeriesFavoritos")}
+      series={series}
+      onRemoveSerie={handleRemoveSerie}
+    />
+  );
 };
 
 export default FavouriteSeriesCarouselSection;
