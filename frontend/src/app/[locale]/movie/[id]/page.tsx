@@ -12,11 +12,13 @@ import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { addFavouriteMovie } from "@/services/movie/add_fav_movie";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
+import RatingModal from "@/components/layout/RatingModal";
 
 export default function MoviePage() {
   const { id } = useParams<{ id: string }>();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const { member } = useMember();
 
   useEffect(() => {
@@ -66,7 +68,6 @@ export default function MoviePage() {
 
   return (
     <main className="relative w-full min-h-screen text-white">
-      {/* 🔥 BACKDROP como background full screen */}
       {movie.backdropUrl && (
         <div className="absolute inset-0 -z-10">
           <Image
@@ -80,7 +81,6 @@ export default function MoviePage() {
         </div>
       )}
 
-      {/* CONTEÚDO PRINCIPAL */}
       <div className="flex flex-col justify-end h-screen max-w-6xl mx-auto px-8 pb-24 space-y-5">
         <h1 className="text-6xl font-extrabold">{movie.title}</h1>
 
@@ -91,16 +91,16 @@ export default function MoviePage() {
               {movie.vote_average.toFixed(1)}
             </span>
           </div>
-          <span className="uppercase">{movie.genre || "DESCONHECIDO"}</span>
+          <span className="uppercase">
+            {movie.genres?.[0] || "DESCONHECIDO"}
+          </span>
           <span>{year}</span>
         </div>
 
-        {/* Sinopse já aqui */}
         <p className="max-w-2xl text-gray-200 text-base leading-relaxed">
           {movie.overview}
         </p>
 
-        {/* Gêneros como tags */}
         <div className="flex gap-2 flex-wrap">
           {movie.genres?.map((genre, idx) => (
             <span
@@ -112,9 +112,11 @@ export default function MoviePage() {
           ))}
         </div>
 
-        {/* Botões */}
         <div className="flex gap-4">
-          <button className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition">
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition"
+          >
             Avaliar
           </button>
           <button
@@ -133,6 +135,13 @@ export default function MoviePage() {
           </button>
         </div>
       </div>
+
+      <RatingModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        mediaId={movie.id}
+        mediaType="movie"
+      />
     </main>
   );
 }
