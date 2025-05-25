@@ -107,7 +107,7 @@ export function SeriesCard({
     className="cursor-pointer w-full max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-all duration-300"
   >
     <div className="relative w-full h-[270px]">
-      {posterUrl && posterUrl.trim() !== "" ? (
+      {posterUrl && posterUrl.trim() !== "null" ? (
         <Image src={posterUrl} alt={name} fill className="object-cover" />
       ) : (
         <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-white text-sm">
@@ -150,7 +150,7 @@ export function SeriesCard({
             </button>
           </div>
 
-          {backdropUrl && backdropUrl.trim() !== "" ? (
+          {backdropUrl && backdropUrl.trim() !== "null" ? (
             <div className="relative w-full h-[250px] rounded-md overflow-hidden mb-6">
               <Image
                 src={backdropUrl}

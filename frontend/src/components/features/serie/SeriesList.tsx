@@ -87,14 +87,6 @@ export function SeriesList() {
     }
   };
 
-  if (loading) {
-    return <p className="text-center mt-10 text-white">{t('loading')}</p>;
-  }
-
-  if (series.length === 0) {
-    return <p className="text-center mt-10 text-white">{t('noMoviesFound')}</p>;
-  }
-
   return (
     <>
 
@@ -141,11 +133,17 @@ export function SeriesList() {
             </select>
           </div>
 
-      <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center">
-        {series.map((serie) => (
-          <SeriesCard key={serie.id} {...serie} />
-        ))}
-      </section>
+        {loading ? (
+          <p className="text-center mt-10 text-white">{t('loading')}</p>
+        ) : series.length === 0 ? (
+          <p className="text-center mt-10 text-white">{t('noFavSeries')}</p>
+        ) : (
+          <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 justify-center">
+            {series.map((serie) => (
+              <SeriesCard key={serie.id} {...serie} />
+            ))}
+          </section>
+        )}
 
       <div className="flex justify-center items-center gap-2 mt-10 mb-20 text-white">
         <span className="text-white text-base">{t("ChoosePage")}</span>
