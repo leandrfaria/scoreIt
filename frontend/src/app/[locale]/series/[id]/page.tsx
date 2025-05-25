@@ -11,19 +11,35 @@ import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { addFavouriteSeries } from "@/services/series/add_fav_series";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
-import { fetchSerieById } from "@/services/series/fetch_series_by_id";
+import RatingModal from "@/components/layout/RatingModal";
 
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();
-  const [serie, setSerie] = useState<Series | null>(null);
+  const [serie, setSerie] = useState<any | null>(null); // usando `any` por enquanto
   const [isFavorited, setIsFavorited] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const { member } = useMember();
 
   useEffect(() => {
     const loadSerie = async () => {
-      const result = await fetchSerieById(id);
-      setSerie(result);
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
+
+      try {
+        const response = await fetch(`http://localhost:8080/series/${id}/details`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        });
+
+        const data = await response.json();
+        setSerie(data);
+      } catch (err) {
+        console.error("Erro ao buscar detalhes da série:", err);
+      }
     };
+
     loadSerie();
   }, [id]);
 
@@ -89,7 +105,7 @@ export default function SeriePage() {
               {serie.vote_average.toFixed(1)}
             </span>
           </div>
-          <span className="uppercase">{serie.genre}</span>
+          <span className="uppercase">{serie.genres?.[0] || "DESCONHECIDO"}</span>
           <span>{year}</span>
         </div>
 
@@ -97,8 +113,22 @@ export default function SeriePage() {
           {serie.overview || "Sem descrição disponível."}
         </p>
 
+        <div className="flex gap-2 flex-wrap">
+          {serie.genres?.map((genre: string, idx: number) => (
+            <span
+              key={idx}
+              className="bg-white/20 px-3 py-1 rounded-full text-sm text-white font-medium"
+            >
+              {genre}
+            </span>
+          ))}
+        </div>
+
         <div className="flex gap-4">
-          <button className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition">
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition"
+          >
             Avaliar
           </button>
           <button
@@ -117,6 +147,15 @@ export default function SeriePage() {
           </button>
         </div>
       </div>
+
+      {member && serie && (
+        <RatingModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          mediaId={serie.id}
+          mediaType="series"
+        />
+      )}
     </main>
   );
 }
