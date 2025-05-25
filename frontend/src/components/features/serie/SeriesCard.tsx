@@ -103,31 +103,31 @@ export function SeriesCard({
   };
 
   return (
-    <>
-      <div
-        onClick={handleOpen}
-        className="cursor-pointer w-full max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-all duration-300"
-      >
-        <div className="relative w-full h-[270px]">
-          {posterUrl && posterUrl.trim() !== "" ? (
-            <Image src={posterUrl} alt={name} fill className="object-cover" />
-          ) : (
-            <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-white text-sm">
-              {t("noImageAvailable")}
-            </div>
-          )}
-          <div className="absolute top-3 right-3 bg-black/70 text-white text-sm px-2 py-1 rounded-full flex items-center gap-1">
-            <FaStar className="text-white" size={14} />
-            <span>
-              {vote_average.toFixed(1)}{" "}
-              <span className="text-xs text-gray-300">/ 10</span>
-            </span>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-black/10 p-3">
-            <h3 className="text-white text-sm font-semibold truncate">{name}</h3>
-          </div>
+<>
+  <div
+    onClick={handleOpen}
+    className="cursor-pointer w-full max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-all duration-300"
+  >
+    <div className="relative w-full h-[270px]">
+      {posterUrl && posterUrl.trim() !== "null" ? (
+        <Image src={posterUrl} alt={name} fill className="object-cover" />
+      ) : (
+        <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-white text-sm">
+          {t("noImageAvailable")}
         </div>
+      )}
+      <div className="absolute top-3 right-3 bg-black/70 text-white text-sm px-2 py-1 rounded-full flex items-center gap-1">
+        <FaStar className="text-white" size={14} />
+        <span>
+          {vote_average.toFixed(1)}{" "}
+          <span className="text-xs text-gray-300">/ 10</span>
+        </span>
       </div>
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-black/10 p-3">
+        <h3 className="text-white text-sm font-semibold truncate">{name}</h3>
+      </div>
+    </div>
+  </div>
 
       <AnimatePresence>
         {isOpen && (
@@ -150,30 +150,30 @@ export function SeriesCard({
                 <button onClick={handleClose} className="text-red-400 text-xl">×</button>
               </div>
 
-              {backdropUrl && backdropUrl.trim() !== "" ? (
-                <div className="relative w-full h-[250px] rounded-md overflow-hidden mb-6">
-                  <Image
-                    src={backdropUrl}
-                    alt={name}
-                    fill
-                    className="object-cover rounded-md"
-                  />
-                  <button
-                    onClick={handleFavorite}
-                    className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full"
-                  >
-                    {isFavorited ? (
-                      <FaHeart className="text-red-500 w-6 h-6" />
-                    ) : (
-                      <FiHeart className="text-white w-6 h-6" />
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <div className="w-full h-[250px] bg-neutral-800 rounded-md mb-6 flex items-center justify-center text-white text-sm">
-                  {t("noBackdropAvailable")}
-                </div>
-              )}
+          {backdropUrl && backdropUrl.trim() !== "null" ? (
+            <div className="relative w-full h-[250px] rounded-md overflow-hidden mb-6">
+              <Image
+                src={backdropUrl}
+                alt={name}
+                fill
+                className="object-cover rounded-md"
+              />
+              <button
+                onClick={handleFavorite}
+                className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full"
+              >
+                {isFavorited ? (
+                  <FaHeart className="text-red-500 w-6 h-6" />
+                ) : (
+                  <FiHeart className="text-white w-6 h-6" />
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="w-full h-[250px] bg-neutral-800 rounded-md mb-6 flex items-center justify-center text-white text-sm">
+              {t("noBackdropAvailable")}
+            </div>
+          )}
 
               <div className="space-y-4">
                 <p className="text-xl font-semibold">{name}</p>

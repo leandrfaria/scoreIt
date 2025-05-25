@@ -124,7 +124,7 @@
     "loadingFavAlbum": "Loading Albums...",
     "noFavAlbum": "No albums found",
     "loadingFavSeries": "Loading Series...",
-    "noFavSeries": "No Serie found.",
+    "noFavSeries": "No Serie found",
     "seriesTitle": "Series on Air",
     "FilmeFavoritos": "Favorite Movies",
     "AlbunsFavoritos": "Favorite Albums",
@@ -140,6 +140,8 @@
   "MovieList": {
     "loading": "Loading movies...",
     "noMoviesFound": "No movies found.",
+    "noFavSeries": "No serie found",
+    "noFavAlbum":"No albums found",
     "ChoosePage": "Choose the page:",
     "Genres": "All genres",
     "Years": "All years",
@@ -206,6 +208,7 @@
     "poster_aleatorio_alt": "Random poster"
   },
   "AlbumListByGenre": {
+    "searchPlaceholder": "Search for a Album name...",
     "loading": "Loading albums...",
     "noAlbumsFound": "No albums found.",
     "albunsAparecendo": "Albums appearing:"

@@ -124,7 +124,7 @@
     "loadingFavAlbum": "Carregando álbuns...",
     "noFavAlbum": "Nenhum álbum encontrado.",
     "loadingFavSeries": "Carregando Séries...",
-    "noFavSeries": "Nenhuma série encontrada.",
+    "noFavSeries": "Nenhuma série encontrada",
     "seriesTitle": "Séries no Ar",
     "FilmeFavoritos": "Filmes favoritos",
     "AlbunsFavoritos": "Albuns favoritos",
@@ -140,6 +140,8 @@
   "MovieList": {
     "loading": "Carregando filmes...",
     "noMoviesFound": "Nenhum filme encontrado.",
+    "noFavSeries": "Nenhuma série encontrada",
+    "noFavAlbum":"Nenhum álbum encontrado.",
     "ChoosePage": "Escolha a página:",
     "Genres": "Todos os generos",
     "Years": "Todos os anos",
@@ -206,6 +208,7 @@
     "poster_aleatorio_alt": "Poster aleatório"
   },
   "AlbumListByGenre": {
+    "searchPlaceholder": "Buscar por nome do álbum...",
     "loading": "Carregando álbuns...",
     "noAlbumsFound": "Nenhum álbum encontrado.",
     "albunsAparecendo": "Álbuns aparecendo:"
