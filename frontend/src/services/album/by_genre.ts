@@ -57,9 +57,6 @@ export const fetchAlbumsByGenre = async (
   }
 };
 
-/**
- * 🔍 Busca álbuns por nome
- */
 export const fetchAlbumsByName = async (query: string, limit = 20): Promise<Album[]> => {
   try {
     const data = await fetchWithAuth(
