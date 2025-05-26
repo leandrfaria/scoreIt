@@ -189,7 +189,8 @@
     "addedToFavorites": "Album added to favorites!",
     "errorAddingFavorite": "Error adding album to favorites.",
     "artist": "Artist:",
-    "releaseDate": "Release date:"
+    "releaseDate": "Release date:",
+    "viewDetails": "View details"
   },
   "top_artists": {
     "titulo": "Top Artists",

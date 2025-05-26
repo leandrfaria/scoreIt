@@ -189,13 +189,14 @@
     "listenersTitle": "Quantidade de pessoas diferentes que escutaram o artista"
   },
   "AlbumCard": {
-    "notAuthenticated": "Usuário não autenticado.",
-    "removedFromFavorites": "Removido dos favoritos!",
-    "errorRemovingFavorite": "Erro ao remover dos favoritos.",
-    "addedToFavorites": "Álbum adicionado aos favoritos!",
-    "errorAddingFavorite": "Erro ao adicionar álbum aos favoritos.",
-    "artist": "Artista:",
-    "releaseDate": "Lançamento:"
+    "notAuthenticated": "User not authenticated.",
+    "removedFromFavorites": "Removed from favorites!",
+    "errorRemovingFavorite": "Error removing from favorites.",
+    "addedToFavorites": "Album added to favorites!",
+    "errorAddingFavorite": "Error adding album to favorites.",
+    "artist": "Artist:",
+    "releaseDate": "Release date:",
+    "viewDetails": "Ver detalhes"
   },
   "novo_email": {
     "titulo": "Adicione seu novo Email",

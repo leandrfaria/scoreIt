@@ -11,7 +11,8 @@ import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { addFavouriteAlbum } from "@/services/album/add_fav_album";
 
 interface AlbumCardProps extends Album {
@@ -23,26 +24,27 @@ export function AlbumCard({
   name,
   release_date,
   imageUrl,
-  artistName,
-  onRemoveAlbum
+  artist,
+  onRemoveAlbum,
 }: AlbumCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
   const [isFavorited, setIsFavorited] = useState(false);
   const t = useTranslations("AlbumCard");
+  const router = useRouter();
+  const locale = useLocale();
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
-
   useOutsideClick(modalRef, handleClose);
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
+    const esc = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
     };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
   }, []);
 
   useEffect(() => {
@@ -50,14 +52,12 @@ export function AlbumCard({
       try {
         const token = localStorage.getItem("authToken");
         if (!token || !member) return;
-  
         const favorited = await isFavoritedMedia(member.id, id);
         setIsFavorited(favorited);
       } catch (error) {
         console.error("Erro ao verificar favorito:", error);
       }
     };
-  
     checkIfFavorited();
   }, []);
 
@@ -70,13 +70,11 @@ export function AlbumCard({
       }
 
       if (isFavorited) {
-        const success = await removeFavouriteMedia(member.id, id, 'album');
+        const success = await removeFavouriteMedia(member.id, id, "album");
         if (success) {
           toast.success(t("removedFromFavorites"));
           setIsFavorited(false);
-          if (onRemoveAlbum) {
-            onRemoveAlbum(id);
-          }
+          if (onRemoveAlbum) onRemoveAlbum(id);
         } else {
           toast.error(t("errorRemovingFavorite"));
         }
@@ -88,11 +86,15 @@ export function AlbumCard({
         } else {
           toast.error(t("errorAddingFavorite"));
         }
-      }   
+      }
     } catch (error) {
       console.error(error);
       toast.error(t("errorAddingFavorite"));
     }
+  };
+
+  const handleViewDetails = () => {
+    router.push(`/${locale}/album/${id}`);
   };
 
   return (
@@ -113,7 +115,7 @@ export function AlbumCard({
           <h3 className="text-white text-sm font-semibold leading-tight line-clamp-1">
             {name}
           </h3>
-          <p className="text-gray-400 text-xs mt-1 line-clamp-1">{artistName}</p>
+          <p className="text-gray-400 text-xs mt-1 line-clamp-1">{artist}</p>
         </div>
       </div>
 
@@ -135,7 +137,9 @@ export function AlbumCard({
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">{name}</h2>
-                <button onClick={handleClose} className="text-red-400 text-2xl">×</button>
+                <button onClick={handleClose} className="text-red-400 text-2xl">
+                  ×
+                </button>
               </div>
 
               <div className="w-full h-[250px] relative rounded-md overflow-hidden mb-4">
@@ -159,12 +163,23 @@ export function AlbumCard({
 
               <div className="space-y-2">
                 <p className="text-sm">
-                  <span className="text-gray-400">{t("artist")}</span> {artistName}
+                  <span className="text-gray-400">{t("artist")}</span> {artist}
                 </p>
                 <p className="text-sm">
                   <span className="text-gray-400">{t("releaseDate")}</span>{" "}
-                  {release_date ? new Date(release_date).toLocaleDateString() : "N/A"}
+                  {release_date
+                    ? new Date(release_date).toLocaleDateString()
+                    : "N/A"}
                 </p>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={handleViewDetails}
+                  className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition"
+                >
+                  {t("viewDetails")}
+                </button>
               </div>
             </motion.div>
           </>
