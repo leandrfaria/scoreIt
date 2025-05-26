@@ -44,13 +44,14 @@ export const fetchAlbumsByGenre = async (
       return [];
     }
 
-    return data.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      release_date: "",
-      imageUrl: item.imageUrl,
-      artistName: item.artistName || "Desconhecido",
-    }));
+  return data.map((item: any) => ({
+    id: item.id,
+    name: item.name,
+    release_date: item.release_date || "", // tenta usar a data, senão deixa vazio
+    imageUrl: item.imageUrl,
+    artistName: item.artistName || "Desconhecido",
+  }));
+
   } catch (err) {
     console.error("Erro ao buscar álbuns por gênero:", err);
     return [];
