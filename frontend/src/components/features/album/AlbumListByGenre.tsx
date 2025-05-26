@@ -25,28 +25,22 @@ const fetchData = async (query: string, genre: string, limit: number) => {
   setLoading(true);
 
   try {
-    const shouldFetchMore = query.trim().length > 0;
-    const fetchLimit = shouldFetchMore ? 100 : limit;
-
-    const allFetched = await fetchAlbumsByGenre(genre, 0, fetchLimit);
-
-    let filtered = allFetched;
-
-    if (shouldFetchMore) {
-      const lowerQuery = query.toLowerCase();
-      filtered = allFetched.filter((album) =>
-        album.name.toLowerCase().includes(lowerQuery)
-      );
+    if (query.trim().length > 0) {
+      // Se estiver buscando por nome, buscar de todos os gêneros
+      const allMatching = await fetchAlbumsByName(query); // Você precisa garantir que essa função existe no serviço
+      setAllAlbums(allMatching.slice(0, limit));
+    } else {
+      // Caso contrário, buscar pelos álbuns do gênero selecionado
+      const byGenre = await fetchAlbumsByGenre(genre, 0, limit);
+      setAllAlbums(byGenre);
     }
-
-    // Aplica o limite final só na exibição
-    setAllAlbums(filtered.slice(0, limit));
   } catch (err) {
     console.error('Erro ao buscar álbuns:', err);
   } finally {
     setLoading(false);
   }
 };
+
 
 
   // Debounce
@@ -106,7 +100,10 @@ const fetchData = async (query: string, genre: string, limit: number) => {
         <select
           value={selectedGenre}
           onChange={(e) => setSelectedGenre(e.target.value)}
-          className="px-4 py-2 rounded-md border border-darkgreen focus:outline-none bg-black text-lightgreen appearance-none"
+          disabled={searchTerm.trim().length > 0} // 🔒 Desabilita quando há busca
+          className={`px-4 py-2 rounded-md border border-darkgreen focus:outline-none bg-black text-lightgreen appearance-none ${
+            searchTerm.trim().length > 0 ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           <option value=""></option>
           {genres.map((genre) => (
@@ -115,6 +112,7 @@ const fetchData = async (query: string, genre: string, limit: number) => {
             </option>
           ))}
         </select>
+
       </div>
 
       {/* 🎧 Lista de álbuns */}
