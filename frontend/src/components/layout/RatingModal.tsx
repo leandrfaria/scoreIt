@@ -1,16 +1,22 @@
 "use client";
-
+import { useState, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
-import { useState } from "react";
+import { FaStar, FaCheckCircle } from "react-icons/fa";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "@/styles/react-datepicker-dark.css";
 import { postReview } from "@/services/review/post_review";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
 
-interface RatingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  mediaId: string | number;
-  mediaType: "movie" | "series" | "album";
+function formatDateTimeLocal(date: Date) {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const mm = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
 export default function RatingModal({
@@ -18,103 +24,160 @@ export default function RatingModal({
   onClose,
   mediaId,
   mediaType,
-}: RatingModalProps) {
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  mediaId: number;
+  mediaType: "movie" | "series";
+}) {
+  const { member } = useMember();
   const [score, setScore] = useState(0);
-  const [watchDate, setWatchDate] = useState("");
+  const [watchDate, setWatchDate] = useState<Date | null>(null);
   const [memberReview, setMemberReview] = useState("");
   const [spoiler, setSpoiler] = useState(false);
-  const { member } = useMember();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setWatchDate(new Date());
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
-    if (!member) {
-      toast.error("Você precisa estar logado.");
-      return;
-    }
+    if (!score || !watchDate || !member) return;
+    setIsSubmitting(true);
 
-    const success = await postReview({
+    const payload = {
       mediaId,
       mediaType,
       memberId: member.id,
       score,
-      watchDate,
-      memberReview,
+      watchDate: formatDateTimeLocal(watchDate),
+      memberReview: memberReview.trim(),
       spoiler,
-    });
+    };
+
+    const success = await postReview(payload);
+    setIsSubmitting(false);
 
     if (success) {
-      toast.success("Avaliação enviada com sucesso!");
-      onClose();
+      toast.custom((t) => (
+        <div
+          className={`${
+            t.visible ? "animate-enter" : "animate-leave"
+          } max-w-md w-full bg-neutral-900 text-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-white/10`}
+        >
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <FaCheckCircle className="text-green-400 w-6 h-6" />
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium">Avaliação enviada!</p>
+                <p className="mt-1 text-sm text-gray-300">
+                  Sua opinião foi registrada com sucesso.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ));
+
       setScore(0);
-      setWatchDate("");
+      setWatchDate(new Date());
       setMemberReview("");
       setSpoiler(false);
+      onClose();
     } else {
-      toast.error("Erro ao enviar avaliação.");
+      alert("Erro ao enviar avaliação");
     }
   };
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="w-full max-w-md rounded bg-neutral-900 text-white p-6 space-y-4">
-          <Dialog.Title className="text-xl font-bold">Avaliar</Dialog.Title>
+        <Dialog.Panel className="w-full max-w-lg rounded-lg bg-[#02070A] text-white shadow-lg border border-white/10 p-6 space-y-6">
+          <Dialog.Title className="text-2xl font-bold">Avaliar Filme</Dialog.Title>
 
-          <div className="space-y-2">
-            <label className="block text-sm">
-              Nota (0-10):
-              <input
-                type="number"
-                min={0}
-                max={10}
-                step={0.1}
-                value={score}
-                onChange={(e) => setScore(parseFloat(e.target.value))}
-                className="w-full mt-1 p-2 rounded bg-neutral-800 text-white"
-              />
-            </label>
+          {/* Nota */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-300">Sua nota</label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <FaStar
+                  key={i}
+                  className={`cursor-pointer text-2xl transition ${
+                    i <= score ? "text-[var(--color-lightgreen)]" : "text-gray-600"
+                  }`}
+                  onClick={() => setScore(i)}
+                />
+              ))}
+            </div>
+          </div>
 
-            <label className="block text-sm">
-              Data em que assistiu:
-              <input
-                type="date"
-                value={watchDate}
-                onChange={(e) => setWatchDate(e.target.value)}
-                className="w-full mt-1 p-2 rounded bg-neutral-800 text-white"
-              />
-            </label>
+          {/* Data */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-300">Data que assistiu</label>
+            <DatePicker
+              selected={watchDate}
+              onChange={(date) => setWatchDate(date)}
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+              dateFormat="dd/MM/yyyy HH:mm"
+              placeholderText="Selecione a data e hora"
+              className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none"
+              calendarClassName="react-datepicker"
+              popperClassName="z-50"
+            />
+          </div>
 
-            <label className="block text-sm">
-              Comentário:
-              <textarea
-                value={memberReview}
-                onChange={(e) => setMemberReview(e.target.value)}
-                className="w-full mt-1 p-2 rounded bg-neutral-800 text-white"
-              />
-            </label>
+          {/* Review */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-300">O que achou?</label>
+            <textarea
+              value={memberReview}
+              onChange={(e) => setMemberReview(e.target.value)}
+              rows={4}
+              className="bg-zinc-800 text-white p-2 rounded border border-white/10 focus:outline-none resize-none"
+              placeholder="Compartilhe sua opinião..."
+            />
+          </div>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={spoiler}
-                onChange={(e) => setSpoiler(e.target.checked)}
-              />
-              Contém spoilers
+          {/* Spoiler */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="spoiler"
+              checked={spoiler}
+              onChange={() => setSpoiler(!spoiler)}
+              className="accent-red-500"
+            />
+            <label htmlFor="spoiler" className="text-sm text-gray-300">
+              Contém spoiler
             </label>
           </div>
 
-          <div className="flex justify-end gap-2">
+          {/* Botões */}
+          <div className="flex justify-end gap-4 pt-4">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded bg-white/10 hover:bg-white/20 transition"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded bg-zinc-700 hover:bg-zinc-600 transition"
             >
               Cancelar
             </button>
             <button
               onClick={handleSubmit}
-              className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 transition"
+              disabled={!score || !watchDate || isSubmitting}
+              className="px-6 py-2 rounded bg-[var(--color-darkgreen)] hover:brightness-110 transition font-semibold disabled:opacity-40 flex items-center gap-2"
             >
-              Enviar
+              {isSubmitting ? (
+                <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              ) : (
+                "Enviar Avaliação"
+              )}
             </button>
           </div>
         </Dialog.Panel>
