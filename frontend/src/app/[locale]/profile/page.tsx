@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Container } from "@/components/layout/Container";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
@@ -15,12 +15,16 @@ import FavouriteAlbumCarouselSection from "@/components/features/album/Favourite
 import { useTabContext } from "@/context/TabContext";
 import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
+import { ProfileStats } from "@/components/features/user/ProfileStats";
+import { countFollowers, countFollowing } from "@/services/followers/countStats";
 
 export default function Profile() {
   const { member, setMember } = useMember();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { activeTab } = useTabContext(); 
+  const { activeTab } = useTabContext();
   const t = useTranslations("profile");
+  const [followers, setFollowers] = useState<number>(0);
+  const [following, setFollowing] = useState<number>(0);
 
   const handleUpdateMember = async (
     formData: { name: string; bio: string; birthDate: string; gender: string },
@@ -66,22 +70,47 @@ export default function Profile() {
     }
   };
 
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token || !member) return;
+
+        const [followerCount, followingCount] = await Promise.all([
+          countFollowers(member.id.toString(), token),
+          countFollowing(member.id.toString(), token),
+        ]);
+
+        console.log("SEGUIDORES::: ", followerCount)
+        console.log("SEGUINDO::: ", followingCount)
+        setFollowers(followerCount);
+        setFollowing(followingCount);
+      } catch (err) {
+        console.error("Erro ao buscar contadores:", err);
+      }
+    };
+
+    fetchCounts();
+  }, [member]);
+
   return (
     <ProtectedRoute>
       <main className="w-full">
         <Container>
-        <div className="mt-5">
-          <ProfileHeader
-            member={member}
-            onEditClick={() => setIsModalOpen(true)}
-            t={t}
-          />
-        </div>
+          <div className="mt-5">
+            <ProfileHeader
+              member={member}
+              onEditClick={() => setIsModalOpen(true)}
+              t={t}
+              followers={followers}
+              following={following}
+            />
+          </div>
         </Container>
         <Container>
-          {activeTab == "filmes" && <FavouriteMoviesCarouselSection/>}
-          {activeTab == "musicas" && <FavouriteAlbumCarouselSection/>}
-          {activeTab == "series" && <FavouriteSeriesCarouselSection/>}
+          {activeTab == "filmes" && <FavouriteMoviesCarouselSection />}
+          {activeTab == "musicas" && <FavouriteAlbumCarouselSection />}
+          {activeTab == "series" && <FavouriteSeriesCarouselSection />}
         </Container>
         {isModalOpen && member && (
           <ProfileEditModal
@@ -99,9 +128,11 @@ interface ProfileHeaderProps {
   member: Member | null;
   onEditClick: () => void;
   t: any;
+  followers: number;
+  following: number;
 }
 
-const ProfileHeader = ({ member, onEditClick, t }: ProfileHeaderProps) => (
+const ProfileHeader = ({ member, onEditClick, t, followers, following }: ProfileHeaderProps) => (
   <div className="flex justify-between items-center">
     <div className="flex items-center gap-4">
       <div className="w-16 h-16 rounded-full bg-gray-400 overflow-hidden relative">
@@ -131,30 +162,6 @@ const ProfileHeader = ({ member, onEditClick, t }: ProfileHeaderProps) => (
         </p>
       </div>
     </div>
-    <ProfileStats t={t} />
-  </div>
-);
-
-interface ProfileStatsProps {
-  t: any;
-}
-
-const ProfileStats = ({ t }: ProfileStatsProps) => (
-  <div className="flex gap-6 text-center">
-    <Stat label={t("movies")} value="7" />
-    <Stat label={t("followers")} value="25" />
-    <Stat label={t("following")} value="14" />
-  </div>
-);
-
-interface StatProps {
-  label: string;
-  value: string;
-}
-
-const Stat = ({ label, value }: StatProps) => (
-  <div>
-    <p className="text-sm text-white">{label}</p>
-    <p className="text-lg font-semibold text-white">{value}</p>
+    <ProfileStats t={t} followers={followers} following={following} />
   </div>
 );
