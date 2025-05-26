@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaCheckCircle } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "@/styles/react-datepicker-dark.css";
 import { postReview } from "@/services/review/post_review";
 import { useMember } from "@/context/MemberContext";
+import toast from "react-hot-toast";
 
 function formatDateTimeLocal(date: Date) {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -60,6 +61,28 @@ export default function RatingModal({
     setIsSubmitting(false);
 
     if (success) {
+      toast.custom((t) => (
+        <div
+          className={`${
+            t.visible ? "animate-enter" : "animate-leave"
+          } max-w-md w-full bg-neutral-900 text-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-white/10`}
+        >
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <FaCheckCircle className="text-green-400 w-6 h-6" />
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium">Avaliação enviada!</p>
+                <p className="mt-1 text-sm text-gray-300">
+                  Sua opinião foi registrada com sucesso.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ));
+
       setScore(0);
       setWatchDate(new Date());
       setMemberReview("");

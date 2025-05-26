@@ -1,9 +1,9 @@
 interface ReviewPayload {
-  mediaId: number;
-  mediaType: "movie" | "series"; 
+  mediaId: string | number;
+  mediaType: "movie" | "series" | "album";
   memberId: number;
   score: number;
-  watchDate: string; 
+  watchDate: string;
   memberReview: string;
   spoiler: boolean;
 }
