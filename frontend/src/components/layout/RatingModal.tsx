@@ -27,8 +27,8 @@ export default function RatingModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  mediaId: number;
-  mediaType: "movie" | "series";
+  mediaId: string | number;
+  mediaType: "movie" | "series" | "album";
 }) {
   const { member } = useMember();
   const [score, setScore] = useState(0);
@@ -89,7 +89,7 @@ export default function RatingModal({
       setSpoiler(false);
       onClose();
     } else {
-      alert("Erro ao enviar avaliação");
+      toast.error("Erro ao enviar avaliação.");
     }
   };
 
@@ -98,7 +98,7 @@ export default function RatingModal({
       <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="w-full max-w-lg rounded-lg bg-[#02070A] text-white shadow-lg border border-white/10 p-6 space-y-6">
-          <Dialog.Title className="text-2xl font-bold">Avaliar Filme</Dialog.Title>
+          <Dialog.Title className="text-2xl font-bold">Avaliar</Dialog.Title>
 
           {/* Nota */}
           <div className="flex flex-col gap-2">

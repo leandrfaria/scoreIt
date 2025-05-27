@@ -1,5 +1,5 @@
 interface ReviewPayload {
-  mediaId: string | number;
+  mediaId: string | number; 
   mediaType: "movie" | "series" | "album";
   memberId: number;
   score: number;
