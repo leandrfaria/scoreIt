@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog } from "@headlessui/react";
 import { FaStar, FaCheckCircle } from "react-icons/fa";
 import DatePicker from "react-datepicker";
@@ -32,16 +32,10 @@ export default function RatingModal({
 }) {
   const { member } = useMember();
   const [score, setScore] = useState(0);
-  const [watchDate, setWatchDate] = useState<Date | null>(null);
+  const [watchDate, setWatchDate] = useState<Date | null>(new Date());
   const [memberReview, setMemberReview] = useState("");
   const [spoiler, setSpoiler] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setWatchDate(new Date());
-    }
-  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!score || !watchDate || !member) return;
@@ -84,7 +78,7 @@ export default function RatingModal({
       ));
 
       setScore(0);
-      setWatchDate(new Date());
+      setWatchDate(new Date()); // reset aqui é seguro
       setMemberReview("");
       setSpoiler(false);
       onClose();
