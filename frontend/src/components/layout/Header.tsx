@@ -88,7 +88,6 @@ export function Header() {
       return;
     }
 
-    console.log("TO PASSANDO AQUI EM:   ", value)
     try {
       const token = localStorage.getItem("authToken");
 

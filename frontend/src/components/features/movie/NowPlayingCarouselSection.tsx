@@ -14,7 +14,6 @@ const NowPlayingCarouselSection = () => {
   useEffect(() => {
     const loadMovies = async () => {
       const token = localStorage.getItem("authToken");
-      console.log("👉 TOKEN:", token);
 
       if (!token) {
         console.error(t("tokenNotFound"));
@@ -23,7 +22,6 @@ const NowPlayingCarouselSection = () => {
       }
 
       const data = await fetchNowPlayingMovies(token);
-      console.log("🎬 FILMES RECEBIDOS:", data);
 
       if (!data || data.length === 0) {
         console.warn(t("emptyListWarning"));

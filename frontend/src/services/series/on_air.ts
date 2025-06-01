@@ -20,7 +20,6 @@ export const fetchOnAirSeries = async (token: string): Promise<Series[]> => {
     }
 
     const data = JSON.parse(text);
-    console.log("📦 DATA PARSED:", data);
 
     const results = data.results || data.data?.results || data || [];
 
@@ -41,6 +40,7 @@ export const fetchOnAirSeries = async (token: string): Promise<Series[]> => {
       vote_average: serie.vote_average,
       release_date: serie.release_date,
       overview: serie.overview?.trim() ? serie.overview : undefined,
+      genres: serie.genre ? [serie.genre] : ["Desconhecido"],
     }));
 
     return transformed;

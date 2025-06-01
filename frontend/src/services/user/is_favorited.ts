@@ -6,8 +6,6 @@ export const isFavoritedMedia = async (userId: number, id: string | number): Pro
         console.error("Token não encontrado.");
         return false;
       } 
-
-      console.log("id: ", id)
       
       const response = await fetch(`http://localhost:8080/member/is-favorited?memberId=${userId}&mediaId=${id}`, {
         method: "GET",
