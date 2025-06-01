@@ -10,7 +10,7 @@ type SortOption = "rating" | "date" | "comments";
 
 interface FullReview extends ReviewFromApi {
   memberName: string;
-  memberAvatar: string; // CORRIGIDO: garantimos string, sem `?`
+  memberAvatar: string;
 }
 
 export default function ReviewSection({ mediaId }: { mediaId: string }) {
@@ -33,13 +33,15 @@ export default function ReviewSection({ mediaId }: { mediaId: string }) {
                 memberName: member.name,
                 memberAvatar:
                   member.profileImageUrl ||
-                  `https://randomuser.me/api/portraits/lego/${review.memberId % 10}.jpg`,
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    member.name
+                  )}&background=random&color=fff`,
               };
             } catch (error) {
               return {
                 ...review,
                 memberName: "Usuário desconhecido",
-                memberAvatar: `https://randomuser.me/api/portraits/lego/${review.memberId % 10}.jpg`,
+                memberAvatar: `https://ui-avatars.com/api/?name=Anônimo&background=555&color=fff`,
               };
             }
           })
@@ -66,8 +68,8 @@ export default function ReviewSection({ mediaId }: { mediaId: string }) {
   const sortedReviews = [...reviews].sort((a, b) => {
     if (sortOption === "date") {
       return ascending
-        ? new Date(a.reviewDate).getTime() - new Date(b.reviewDate).getTime()
-        : new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime();
+        ? new Date(a.watchDate).getTime() - new Date(b.watchDate).getTime()
+        : new Date(b.watchDate).getTime() - new Date(a.watchDate).getTime();
     }
 
     if (sortOption === "rating") {
@@ -131,7 +133,7 @@ export default function ReviewSection({ mediaId }: { mediaId: string }) {
                 key={review.id}
                 name={review.memberName}
                 avatar={review.memberAvatar}
-                date={review.reviewDate}
+                date={review.watchDate} // ✅ exibindo a data real da review
                 rating={review.score}
                 comment={review.memberReview}
               />
