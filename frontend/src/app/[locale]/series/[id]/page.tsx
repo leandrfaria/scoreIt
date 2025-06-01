@@ -11,7 +11,7 @@ import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { addFavouriteSeries } from "@/services/series/add_fav_series";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
-import RatingModal from "@/components/layout/RatingModal";
+import RatingModal from "@/components/features/review/RatingModal";
 
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();

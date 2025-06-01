@@ -9,7 +9,7 @@ import { useMember } from "@/context/MemberContext";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { addFavouriteAlbum } from "@/services/album/add_fav_album";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
-import RatingModal from "@/components/layout/RatingModal";
+import RatingModal from "@/components/features/review/RatingModal";
 import toast from "react-hot-toast";
 import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
