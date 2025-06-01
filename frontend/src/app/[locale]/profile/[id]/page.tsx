@@ -160,6 +160,6 @@ const ProfileHeader = ({
         />
       </div>
     </div>
-    <ProfileStats t={t} followers={followers} following={following} />
+    <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()}/>
   </div>
 );

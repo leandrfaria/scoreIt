@@ -82,8 +82,6 @@ export default function Profile() {
           countFollowing(member.id.toString(), token),
         ]);
 
-        console.log("SEGUIDORES::: ", followerCount)
-        console.log("SEGUINDO::: ", followingCount)
         setFollowers(followerCount);
         setFollowing(followingCount);
       } catch (err) {
@@ -168,6 +166,6 @@ const ProfileHeader = ({ member, onEditClick, t, followers, following }: Profile
         </p>
       </div>
     </div>
-    <ProfileStats t={t} followers={followers} following={following} />
+    {member && <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()}/>}
   </div>
 );

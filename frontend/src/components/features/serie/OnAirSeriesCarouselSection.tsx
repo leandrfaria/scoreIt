@@ -14,7 +14,6 @@ const OnAirSeriesCarouselSection = () => {
   useEffect(() => {
     const loadSeries = async () => {
       const token = localStorage.getItem("authToken");
-      console.log("👉 TOKEN:", token);
 
       if (!token) {
         console.error(t("tokenNotFound"));
@@ -23,7 +22,6 @@ const OnAirSeriesCarouselSection = () => {
       }
 
       const data = await fetchOnAirSeries(token);
-      console.log("📺 SÉRIES RECEBIDAS:", data);
 
       if (!data || data.length === 0) {
         console.warn(t("emptyListWarning"));
@@ -36,6 +34,7 @@ const OnAirSeriesCarouselSection = () => {
             vote_average: 7.5,
             release_date: "2024-01-01",
             overview: t("mockMovie.overview"),
+            genres: []
           },
         ]);
       } else {

@@ -13,7 +13,6 @@ const fetchMembers = async (useJwtId = false) => {
         const decoded = jwtDecode<CustomJwtPayload>(token);
         const memberId = decoded.id;
         url += `/${memberId}`;
-        console.log('ID :::: ', memberId);
     }
 
     const response = await fetch(url, {
@@ -38,7 +37,6 @@ const fetchMemberById = async (id: string) => {
 
     if (id && token) {
         url += `/${id}`;
-        console.log('ID :::: ', id);
     }
 
     const response = await fetch(url, {

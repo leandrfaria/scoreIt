@@ -19,7 +19,6 @@ export const fetchFavouriteSeries = async (token: string, id: string): Promise<S
     }
 
     const data = JSON.parse(text);
-    console.log("📦 DATA PARSED:", data);
 
     const results = data.results || data.data?.results || data || [];
 
@@ -40,7 +39,7 @@ export const fetchFavouriteSeries = async (token: string, id: string): Promise<S
       vote_average: serie.vote_average,
       release_date: serie.release_date,
       overview: serie.overview || "Sem descrição disponível.",
-      genre: serie.genre || "Desconhecido",
+      genres: serie.genre ? [serie.genre] : ["Desconhecido"],
     }));
 
     return transformed;
