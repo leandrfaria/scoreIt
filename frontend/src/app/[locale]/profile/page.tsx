@@ -17,6 +17,7 @@ import FavouriteMoviesCarouselSection from "@/components/features/movie/Favourit
 import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
+import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 
 export default function Profile() {
   const { member, setMember } = useMember();
@@ -107,7 +108,12 @@ export default function Profile() {
             />
           </div>
         </Container>
+
         <Container>
+                <ReviewsCarouselSection />
+              </Container>
+        <Container>
+          
           {activeTab == "filmes" && <FavouriteMoviesCarouselSection />}
           {activeTab == "musicas" && <FavouriteAlbumCarouselSection />}
           {activeTab == "series" && <FavouriteSeriesCarouselSection />}
