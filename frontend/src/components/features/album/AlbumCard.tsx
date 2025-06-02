@@ -14,6 +14,7 @@ import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { addFavouriteAlbum } from "@/services/album/add_fav_album";
+import { fetchMemberLists, addContentToList } from "@/services/movie/add_list_movie";
 
 interface AlbumCardProps extends Album {
   onRemoveAlbum?: (id: string) => void;
@@ -31,6 +32,9 @@ export function AlbumCard({
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
   const [isFavorited, setIsFavorited] = useState(false);
+  const [customLists, setCustomLists] = useState<string[]>([]);  // nomes únicos das listas
+  const [selectedList, setSelectedList] = useState<string>("");
+  const [isAdding, setIsAdding] = useState(false);
   const t = useTranslations("AlbumCard");
   const router = useRouter();
   const locale = useLocale();
@@ -60,6 +64,28 @@ export function AlbumCard({
     };
     checkIfFavorited();
   }, []);
+
+      useEffect(() => {
+    const loadLists = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token || !member) return;
+
+        const lists = await fetchMemberLists(token, member.id);
+        // Extrai nomes únicos das listas a partir do array de CustomList
+        const uniqueListNames = Array.from(new Set(lists.map((item) => item.listName)));
+        setCustomLists(uniqueListNames);
+        if (uniqueListNames.length > 0) setSelectedList(uniqueListNames[0]);
+      } catch (error) {
+        toast.error("Erro carregando listas");
+      }
+    };
+
+    if (isOpen) {
+      loadLists();
+    }
+  }, [isOpen, member]);
+
 
   const handleFavorite = async () => {
     try {
@@ -92,6 +118,37 @@ export function AlbumCard({
       toast.error(t("errorAddingFavorite"));
     }
   };
+    const handleAddToList = async () => {
+      if (!selectedList) {
+        toast.error("Selecione uma lista");
+        return;
+      }
+
+      try {
+        setIsAdding(true);
+        const token = localStorage.getItem("authToken");
+        if (!token || !member) {
+          toast.error('usuario não autenticado');
+          setIsAdding(false);
+          return;
+        }
+
+      console.log("Id que será enviado para o backend:", id);
+      await addContentToList(token, {
+        memberId: member.id,
+        id: String(id), // garanta que 'id' seja o TMDB id correto
+        mediaType: "series",
+        listName: selectedList,
+      });
+
+        toast.success("Album adicionado à lista!");
+      } catch (error) {
+        console.error(error);
+        toast.error("Erro ao adicionar album à lista");
+      } finally {
+        setIsAdding(false);
+      }
+    };
 
   const handleViewDetails = () => {
     router.push(`/${locale}/album/${id}`);
@@ -171,6 +228,33 @@ export function AlbumCard({
                     ? new Date(release_date).toLocaleDateString()
                     : "N/A"}
                 </p>
+              </div>
+              <div className="mt-6 flex items-center gap-2">
+                <select
+                  value={selectedList}
+                  onChange={(e) => setSelectedList(e.target.value)}
+                  className="bg-neutral-800 text-white p-2 rounded flex-grow"
+                  disabled={customLists.length === 0}
+                >
+                  {customLists.length === 0 ? (
+                    <option key="no-list" value="">
+                      Sem lista
+                    </option>
+                  ) : (
+                    customLists.map((listName) => (
+                      <option key={listName} value={listName}>
+                        {listName}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <button
+                  onClick={handleAddToList}
+                  disabled={isAdding || customLists.length === 0}
+                  className="bg-green-600 px-4 py-2 rounded hover:bg-green-500 disabled:bg-green-900 disabled:cursor-not-allowed"
+                >
+                  {isAdding ? "Adicionando..." : "Adicionar"}
+                </button>
               </div>
 
               <div className="mt-6 flex justify-end">

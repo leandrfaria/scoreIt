@@ -14,6 +14,8 @@ import toast from "react-hot-toast";
 import { addFavouriteSeries } from "@/services/series/add_fav_series";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
+import { fetchMemberLists, addContentToList } from "@/services/movie/add_list_movie";
+
 
 interface SeriesCardProps extends Series {
   onRemoveSerie?: (id: number) => void;
@@ -36,6 +38,9 @@ export function SeriesCard({
   const locale = useLocale();
   const t = useTranslations("MovieCard");
   const { member } = useMember();
+  const [customLists, setCustomLists] = useState<string[]>([]);  // nomes únicos das listas
+  const [selectedList, setSelectedList] = useState<string>("");
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
@@ -65,6 +70,27 @@ export function SeriesCard({
 
     checkIfFavorited();
   }, []);
+
+    useEffect(() => {
+    const loadLists = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token || !member) return;
+
+        const lists = await fetchMemberLists(token, member.id);
+        // Extrai nomes únicos das listas a partir do array de CustomList
+        const uniqueListNames = Array.from(new Set(lists.map((item) => item.listName)));
+        setCustomLists(uniqueListNames);
+        if (uniqueListNames.length > 0) setSelectedList(uniqueListNames[0]);
+      } catch (error) {
+        toast.error("Erro carregando listas");
+      }
+    };
+
+    if (isOpen) {
+      loadLists();
+    }
+  }, [isOpen, member]);
 
   const handleFavorite = async () => {
     try {
@@ -97,6 +123,38 @@ export function SeriesCard({
       toast.error(t("errorUpdatingFavorites"));
     }
   };
+
+  const handleAddToList = async () => {
+  if (!selectedList) {
+    toast.error("Selecione uma lista");
+    return;
+  }
+
+  try {
+    setIsAdding(true);
+    const token = localStorage.getItem("authToken");
+    if (!token || !member) {
+      toast.error(t("userNotAuthenticated"));
+      setIsAdding(false);
+      return;
+    }
+
+  console.log("Id que será enviado para o backend:", id);
+  await addContentToList(token, {
+    memberId: member.id,
+    id: String(id), // garanta que 'id' seja o TMDB id correto
+    mediaType: "series",
+    listName: selectedList,
+  });
+
+    toast.success("Serie adicionada à lista!");
+  } catch (error) {
+    console.error(error);
+    toast.error("Erro ao adicionar Serie à lista");
+  } finally {
+    setIsAdding(false);
+  }
+};
 
   const handleViewDetails = () => {
     router.push(`/${locale}/series/${id}`);
@@ -180,6 +238,33 @@ export function SeriesCard({
                 <p className="text-gray-300 text-sm">
                   {overview ? overview : t("noDescription")}
                 </p>
+              </div>
+              <div className="mt-6 flex items-center gap-2">
+                <select
+                  value={selectedList}
+                  onChange={(e) => setSelectedList(e.target.value)}
+                  className="bg-neutral-800 text-white p-2 rounded flex-grow"
+                  disabled={customLists.length === 0}
+                >
+                  {customLists.length === 0 ? (
+                    <option key="no-list" value="">
+                      Sem lista
+                    </option>
+                  ) : (
+                    customLists.map((listName) => (
+                      <option key={listName} value={listName}>
+                        {listName}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <button
+                  onClick={handleAddToList}
+                  disabled={isAdding || customLists.length === 0}
+                  className="bg-green-600 px-4 py-2 rounded hover:bg-green-500 disabled:bg-green-900 disabled:cursor-not-allowed"
+                >
+                  {isAdding ? "Adicionando..." : "Adicionar"}
+                </button>
               </div>
 
               <div className="mt-6 flex justify-end">

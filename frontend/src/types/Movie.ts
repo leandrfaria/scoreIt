@@ -1,9 +1,10 @@
 export interface Movie {
   id: number;
+  internalId: number; // ID interno do banco de dados (7)
   title: string;
   overview: string;
   release_date: string;
-  posterUrl: string;
+  posterUrl: string | null;
   backdropUrl: string;
   vote_average: number;
   genre: string;
