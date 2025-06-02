@@ -11,11 +11,12 @@ import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { addFavouriteSeries } from "@/services/series/add_fav_series";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
-import RatingModal from "@/components/layout/RatingModal";
+import RatingModal from "@/components/features/review/RatingModal";
+import ReviewSection from "@/components/features/review/ReviewSection";
 
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();
-  const [serie, setSerie] = useState<any | null>(null); // usando `any` por enquanto
+  const [serie, setSerie] = useState<any | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const { member } = useMember();
@@ -101,9 +102,7 @@ export default function SeriePage() {
         <div className="flex items-center gap-4 text-sm text-gray-300">
           <div className="flex items-center gap-1 text-yellow-400">
             <FaStar />
-            <span className="text-lg font-medium">
-              {serie.vote_average.toFixed(1)}
-            </span>
+            <span className="text-lg font-medium">{serie.vote_average.toFixed(1)}</span>
           </div>
           <span className="uppercase">{serie.genres?.[0] || "DESCONHECIDO"}</span>
           <span>{year}</span>
@@ -156,6 +155,8 @@ export default function SeriePage() {
           mediaType="series"
         />
       )}
+
+      {serie && <ReviewSection mediaId={serie.id.toString()} />}
     </main>
   );
 }

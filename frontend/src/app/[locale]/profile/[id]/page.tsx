@@ -14,7 +14,11 @@ import { useTabContext } from "@/context/TabContext";
 import { useMember } from "@/context/MemberContext";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
-import { countFollowers, countFollowing } from "@/services/followers/countStats";
+import {
+  countFollowers,
+  countFollowing,
+} from "@/services/followers/countStats";
+import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 
 export default function PublicProfilePage() {
   const [otherMember, setOtherMember] = useState<Member | null>(null);
@@ -74,7 +78,8 @@ export default function PublicProfilePage() {
 
   if (member?.id && String(member.id) === id) return null;
   if (loading) return <p className="text-white">Carregando...</p>;
-  if (!otherMember) return <p className="text-white">Usuário não encontrado.</p>;
+  if (!otherMember)
+    return <p className="text-white">Usuário não encontrado.</p>;
 
   return (
     <main className="w-full">
@@ -90,10 +95,21 @@ export default function PublicProfilePage() {
           />
         </div>
       </Container>
+
       <Container>
-        {activeTab == "filmes" && <FavouriteMoviesCarouselSection memberId={id as string} />}
-        {activeTab == "musicas" && <FavouriteAlbumCarouselSection memberId={id as string} />}
-        {activeTab == "series" && <FavouriteSeriesCarouselSection memberId={id as string} />}
+        <ReviewsCarouselSection memberId={id as string} />
+      </Container>
+
+      <Container>
+        {activeTab == "filmes" && (
+          <FavouriteMoviesCarouselSection memberId={id as string} />
+        )}
+        {activeTab == "musicas" && (
+          <FavouriteAlbumCarouselSection memberId={id as string} />
+        )}
+        {activeTab == "series" && (
+          <FavouriteSeriesCarouselSection memberId={id as string} />
+        )}
       </Container>
     </main>
   );
@@ -144,6 +160,6 @@ const ProfileHeader = ({
         />
       </div>
     </div>
-    <ProfileStats t={t} followers={followers} following={following} />
+    <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()}/>
   </div>
 );

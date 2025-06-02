@@ -20,6 +20,7 @@ import { CustomListModal } from "@/components/features/user/CustomListModal";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
 import { fetchMemberLists } from "@/services/movie/add_list_movie";
 import { CustomList } from "@/types/CustomList";
+import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 
 export default function Profile() {
   const { member, setMember } = useMember();
@@ -205,9 +206,13 @@ export default function Profile() {
         </Container>
 
         <Container>
-          {activeTab === "filmes" && <FavouriteMoviesCarouselSection />}
-          {activeTab === "musicas" && <FavouriteAlbumCarouselSection />}
-          {activeTab === "series" && <FavouriteSeriesCarouselSection />}
+                <ReviewsCarouselSection />
+              </Container>
+        <Container>
+          
+          {activeTab == "filmes" && <FavouriteMoviesCarouselSection />}
+          {activeTab == "musicas" && <FavouriteAlbumCarouselSection />}
+          {activeTab == "series" && <FavouriteSeriesCarouselSection />}
         </Container>
 
         {isEditModalOpen && member && (
@@ -275,6 +280,6 @@ const ProfileHeader = ({ member, onEditClick, t, followers, following }: Profile
         <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
       </div>
     </div>
-    <ProfileStats t={t} followers={followers} following={following} />
+    {member && <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()}/>}
   </div>
 );

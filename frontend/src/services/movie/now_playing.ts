@@ -21,7 +21,6 @@ export const fetchNowPlayingMovies = async (token: string): Promise<Movie[]> => 
     }
 
     const data = JSON.parse(text);
-    console.log("📦 DATA PARSED:", data);
 
     const results = data.results || data.data?.results || data || [];
 

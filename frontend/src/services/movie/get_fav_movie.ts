@@ -19,7 +19,6 @@ export const fetchFavouriteMovies = async (token: string, id: string): Promise<M
     }
 
     const data = JSON.parse(text);
-    console.log("📦 DATA PARSED:", data);
 
     const results = data.results || data.data?.results || data || [];
 
