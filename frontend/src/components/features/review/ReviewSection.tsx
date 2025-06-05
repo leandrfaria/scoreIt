@@ -5,6 +5,8 @@ import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import ReviewCard from "./ReviewCard";
 import { ReviewFromApi, getReviewsByMediaId } from "@/services/review/get_media_review";
 import { fetchMemberById } from "@/services/user/member";
+import EditReviewModal from "./EditReviewModal";
+import { useMember } from "@/context/MemberContext";
 
 type SortOption = "rating" | "date" | "comments";
 
@@ -14,10 +16,12 @@ interface FullReview extends ReviewFromApi {
 }
 
 export default function ReviewSection({ mediaId }: { mediaId: string }) {
+  const { member } = useMember();
   const [reviews, setReviews] = useState<FullReview[]>([]);
   const [visibleCount, setVisibleCount] = useState(6);
   const [sortOption, setSortOption] = useState<SortOption>("date");
   const [ascending, setAscending] = useState(false);
+  const [editingReview, setEditingReview] = useState<FullReview | null>(null);
 
   useEffect(() => {
     const fetchReviewsWithAuthors = async () => {
@@ -133,9 +137,11 @@ export default function ReviewSection({ mediaId }: { mediaId: string }) {
                 key={review.id}
                 name={review.memberName}
                 avatar={review.memberAvatar}
-                date={review.watchDate} // ✅ exibindo a data real da review
+                date={review.watchDate}
                 rating={review.score}
                 comment={review.memberReview}
+                onEdit={() => setEditingReview(review)}
+                canEdit={!!member && review.memberId === member.id}
               />
             ))}
           </div>
@@ -149,6 +155,14 @@ export default function ReviewSection({ mediaId }: { mediaId: string }) {
                 Ver mais
               </button>
             </div>
+          )}
+
+          {editingReview && (
+            <EditReviewModal
+              isOpen={!!editingReview}
+              onClose={() => setEditingReview(null)}
+              review={editingReview}
+            />
           )}
         </>
       )}
