@@ -1,6 +1,4 @@
-"use client";
-
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaPen } from "react-icons/fa";
 
 type ReviewProps = {
   name: string;
@@ -8,11 +6,27 @@ type ReviewProps = {
   date: string;
   rating: number;
   comment?: string;
+  canEdit?: boolean;
+  onEdit?: () => void;
 };
 
-export default function ReviewCard({ name, avatar, date, rating, comment }: ReviewProps) {
+export default function ReviewCard({
+  name,
+  avatar,
+  date,
+  rating,
+  comment,
+  canEdit,
+  onEdit,
+}: ReviewProps) {
   return (
-    <div className="bg-[#0D1117] rounded-lg p-6 shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200">
+    <div className="bg-[#0D1117] rounded-lg p-6 shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
+      {canEdit && (
+        <button onClick={onEdit} className="absolute top-4 right-4 text-white/60 hover:text-white">
+          <FaPen />
+        </button>
+      )}
+
       <div className="flex items-center gap-4 mb-4">
         <img
           src={avatar}
@@ -21,9 +35,7 @@ export default function ReviewCard({ name, avatar, date, rating, comment }: Revi
         />
         <div>
           <p className="text-white font-semibold">{name}</p>
-          <p className="text-sm text-gray-400">
-            {new Date(date).toLocaleDateString("pt-BR")}
-          </p>
+          <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString("pt-BR")}</p>
         </div>
       </div>
 
@@ -31,9 +43,7 @@ export default function ReviewCard({ name, avatar, date, rating, comment }: Revi
         {[...Array(5)].map((_, i) => (
           <FaStar
             key={i}
-            className={`text-xl ${
-              i < rating ? "text-[var(--color-lightgreen)]" : "text-gray-700"
-            }`}
+            className={`text-xl ${i < rating ? "text-[var(--color-lightgreen)]" : "text-gray-700"}`}
           />
         ))}
       </div>

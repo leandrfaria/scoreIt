@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchNowPlayingMovies } from "@/services/movie/now_playing";
+import { fetchMovieById } from "@/services/movie/fetch_movie_by_id";
 import { Movie } from "@/types/Movie";
 import { MovieCarousel } from "./MovieCarousel";
 import { useTranslations } from "next-intl";
@@ -21,9 +22,9 @@ const NowPlayingCarouselSection = () => {
         return;
       }
 
-      const data = await fetchNowPlayingMovies(token);
+      const basicData = await fetchNowPlayingMovies(token);
 
-      if (!data || data.length === 0) {
+      if (!basicData || basicData.length === 0) {
         console.warn(t("emptyListWarning"));
         setMovies([
           {
@@ -37,10 +38,22 @@ const NowPlayingCarouselSection = () => {
             genre: "Drama",
           },
         ]);
-      } else {
-        setMovies(data);
+        setLoading(false);
+        return;
       }
 
+      // 🔥 Enriquecer com o gênero real usando fetchMovieById
+      const enrichedMovies: Movie[] = await Promise.all(
+        basicData.map(async (movie) => {
+          const fullMovie = await fetchMovieById(String(movie.id));
+          return {
+            ...movie,
+            genre: fullMovie?.genre || movie.genre || "Desconhecido",
+          };
+        })
+      );
+
+      setMovies(enrichedMovies);
       setLoading(false);
     };
 
@@ -48,17 +61,11 @@ const NowPlayingCarouselSection = () => {
   }, [t]);
 
   if (loading) {
-    return (
-      <div className="text-center py-10 text-white">{t("loading")}</div>
-    );
+    return <div className="text-center py-10 text-white">{t("loading")}</div>;
   }
 
   if (movies.length === 0) {
-    return (
-      <div className="text-center py-10 text-white">
-        {t("noMoviesFound")}
-      </div>
-    );
+    return <div className="text-center py-10 text-white">{t("noMoviesFound")}</div>;
   }
 
   return <MovieCarousel title={t("carouselTitle")} movies={movies} />;

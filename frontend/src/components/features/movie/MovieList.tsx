@@ -1,7 +1,9 @@
+// src/components/features/movie/MovieList.tsx
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
 import { fetchMoviesByPage, fetchGenres } from '@/services/movie/movies_list';
+import { fetchMovieById } from '@/services/movie/fetch_movie_by_id';
 import { Movie } from '@/types/Movie';
 import { useTranslations } from 'next-intl';
 import { MovieCard } from './MovieCard';
@@ -26,12 +28,10 @@ export function MovieList() {
     setSearchTerm(e.target.value);
   };
 
-  // Debounce para o searchTerm
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 1000); // 1000ms de debounce
-
+    }, 1000);
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
@@ -46,7 +46,29 @@ export function MovieList() {
           debouncedSearchTerm || undefined
         );
 
-        setMovies(moviesData);
+        // 🔥 Enriquecer com dados completos incluindo genre
+        const enrichedMovies: Movie[] = await Promise.all(
+          moviesData.map(async (movie) => {
+            const fullMovie = await fetchMovieById(String(movie.id));
+            return {
+              ...movie,
+              genre: fullMovie?.genre || movie.genre || 'Desconhecido',
+              genres: fullMovie?.genres || [],
+              runtime: fullMovie?.runtime,
+              language: fullMovie?.language,
+              certification: fullMovie?.certification,
+              status: fullMovie?.status,
+              budget: fullMovie?.budget,
+              revenue: fullMovie?.revenue,
+              cast: fullMovie?.cast || [],
+              directors: fullMovie?.directors || [],
+              recommendations: fullMovie?.recommendations || [],
+              similar: fullMovie?.similar || [],
+            };
+          })
+        );
+
+        setMovies(enrichedMovies);
       } catch (error) {
         console.error('Erro ao carregar filmes:', error);
       } finally {
@@ -88,7 +110,6 @@ export function MovieList() {
 
   return (
     <>
-      {/* 🔍 Barra de busca, filtro de ano e gênero */}
       <div className="relative flex items-center mb-6 gap-4">
         <button onClick={() => setIsSearchVisible(!isSearchVisible)} className="focus:outline-none">
           <FaSearch className="text-white w-5 h-5" />
@@ -111,9 +132,7 @@ export function MovieList() {
         >
           <option value="">{t('Years')}</option>
           {Array.from({ length: 100 }, (_, i) => 2025 - i).map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
+            <option key={year} value={year}>{year}</option>
           ))}
         </select>
 
@@ -131,7 +150,6 @@ export function MovieList() {
         </select>
       </div>
 
-      {/* 🎥 Lista de filmes */}
       {loading ? (
         <p className="text-center mt-10 text-white">{t('loading')}</p>
       ) : movies.length === 0 ? (
@@ -144,7 +162,6 @@ export function MovieList() {
         </section>
       )}
 
-      {/* 🔄 Paginação */}
       <div className="flex justify-center items-center gap-2 mt-10 mb-20 text-white">
         <span className="text-white text-base">{t('ChoosePage')}</span>
         <button
