@@ -14,7 +14,7 @@ import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { addFavouriteAlbum } from "@/services/album/add_fav_album";
-import { fetchMemberLists, addContentToList } from "@/services/movie/add_list_movie";
+import { fetchMemberLists, addContentToList } from "@/services/customList/add_content_list";
 
 interface AlbumCardProps extends Album {
   onRemoveAlbum?: (id: string) => void;
@@ -134,12 +134,12 @@ export function AlbumCard({
         }
 
       console.log("Id que será enviado para o backend:", id);
-      await addContentToList(token, {
-        memberId: member.id,
-        id: String(id), // garanta que 'id' seja o TMDB id correto
-        mediaType: "series",
-        listName: selectedList,
-      });
+        await addContentToList(token, {
+          memberId: member.id,
+          mediaId: String(id), // Convertido para string
+          mediaType: "album",
+          listName: selectedList,
+        });
 
         toast.success("Album adicionado à lista!");
       } catch (error) {
@@ -236,22 +236,20 @@ export function AlbumCard({
                   className="bg-neutral-800 text-white p-2 rounded flex-grow"
                   disabled={customLists.length === 0}
                 >
-                  {customLists.length === 0 ? (
-                    <option key="no-list" value="">
-                      Sem lista
+                  <option value="" disabled>
+                    Selecione uma lista
+                  </option>
+                  {customLists.map((listName) => (
+                    <option key={listName} value={listName}>
+                      {listName}
                     </option>
-                  ) : (
-                    customLists.map((listName) => (
-                      <option key={listName} value={listName}>
-                        {listName}
-                      </option>
-                    ))
-                  )}
+                  ))}
                 </select>
+
                 <button
                   onClick={handleAddToList}
-                  disabled={isAdding || customLists.length === 0}
-                  className="bg-green-600 px-4 py-2 rounded hover:bg-green-500 disabled:bg-green-900 disabled:cursor-not-allowed"
+                  disabled={isAdding || customLists.length === 0 || !selectedList}
+                  className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition"
                 >
                   {isAdding ? "Adicionando..." : "Adicionar"}
                 </button>

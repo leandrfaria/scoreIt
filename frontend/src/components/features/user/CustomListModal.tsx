@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useMember } from '@/context/MemberContext';
-import { Movie } from '@/types/Movie';
+import { MediaType } from'@/services/customList/add_content_list';
 import { CustomList } from '@/types/CustomList';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { updateCustomList, removeContentFromList, fetchListContent, deleteCustomList } from "@/services/movie/add_list_movie";
+import { updateCustomList, removeContentFromList, fetchListContent, deleteCustomList } from "@/services/customList/add_content_list";
 
 interface CustomListModalProps {
   isOpen?: boolean;
@@ -29,7 +29,7 @@ export function CustomListModal({
 }: CustomListModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
-  const [movies, setMovies] = useState<Movie[]>([]);
+const [mediaItems, setMediaItems] = useState<MediaType[]>([]);
   const [name, setName] = useState(listName ?? '');
   const [description, setDescription] = useState(listDescription ?? '');
   const [isEditing, setIsEditing] = useState(false);
@@ -37,34 +37,50 @@ export function CustomListModal({
 
   useOutsideClick(modalRef, onClose);
 
-useEffect(() => {
-  if (isOpen && member && listName && !onCreate) { // Use listName em vez de id
-    setName(listName);
-    setDescription(listDescription ?? '');
+  useEffect(() => {
+    if (isOpen && member && listName && !onCreate) {
+      setName(listName);
+      setDescription(listDescription ?? '');
 
-    // Passe listName (string) em vez de id (number)
-    fetchListContent(member.id, listName) // 👈 Corrigido aqui
-      .then((movies) => {
-        const normalized = movies.map((movie) => ({
-          ...movie,
-          internalId: movie.id,
-          posterUrl: movie.posterUrl 
-            ? (movie.posterUrl.startsWith('http') 
-                ? movie.posterUrl 
-                : `https://image.tmdb.org/t/p/w500${movie.posterUrl}`) 
-            : null,
-        })) as Movie[];
+      fetchListContent(member.id, listName)
+        .then((items) => {
+          // Normalize cada item garantindo o tipo MediaType
+          const normalizedItems = items.map((item) => {
+            // Para filmes
+            if ('title' in item) {
+              return {
+                ...item,
+                internalId: item.internalId, // Mantém o internalId original
+                posterUrl: item.posterUrl 
+                  ? (item.posterUrl.startsWith('http') 
+                      ? item.posterUrl 
+                      : `https://image.tmdb.org/t/p/w500${item.posterUrl}`)
+                  : null,
+              } as MediaType;
+            } 
+            // Para séries
+            else {
+              return {
+                ...item,
+                internalId: item.internalId, // Mantém o internalId original
+                posterUrl: item.posterUrl 
+                  ? (item.posterUrl.startsWith('http') 
+                      ? item.posterUrl 
+                      : `https://image.tmdb.org/t/p/w500${item.posterUrl}`)
+                  : null,
+              } as MediaType;
+            }
+          });
 
-        setMovies(normalized);
-      })
-      .catch(() => toast.error('Erro ao carregar filmes da lista'));
-  }
-}, [isOpen, listName, listDescription, member, onCreate]); // Atualize as dependências
+          setMediaItems(normalizedItems);
+        })
+        .catch(() => toast.error('Erro ao carregar conteúdo da lista'));
+    }
+  }, [isOpen, listName, listDescription, member, onCreate]);
 
 
-
-const handleRemoveMovie = async (internalId: number) => {
-  if (!member || !id || !listName) return; // Use listName prop
+const handleRemoveItem = async (item: MediaType) => {
+  if (!member || !listName) return;
 
   const token = localStorage.getItem("authToken");
   if (!token) {
@@ -73,18 +89,20 @@ const handleRemoveMovie = async (internalId: number) => {
   }
 
   try {
-  await removeContentFromList(token, {
-    id: internalId,
-    memberId: member.id,
-    mediaId: internalId,
-    mediaType: 'movie',
-    listName // Use o nome original da lista
-  });
+    const mediaType = 'title' in item ? 'movie' : 'series';
+    
+    await removeContentFromList(token, {
+      id: item.internalId, // Use o internalId aqui
+      memberId: member.id,
+      mediaId: item.id.toString(),
+      mediaType: mediaType,
+      listName: listName
+    });
 
-    setMovies(prevMovies => prevMovies.filter(movie => movie.internalId !== internalId));
-    toast.success('Filme removido da lista');
-  } catch {
-    toast.error('Erro ao remover filme da lista');
+    setMediaItems(prev => prev.filter(i => i.internalId !== item.internalId));
+    toast.success('Item removido da lista');
+  } catch (error) {
+    toast.error('Erro ao remover item da lista');
   }
 };
 
@@ -138,7 +156,7 @@ const handleUpdateList = async () => {
     try {
       await deleteCustomList(id);
       toast.success("Lista deletada com sucesso!");
-      onClose(); // fecha o modal após deletar
+      onClose();
     } catch (error) {
       console.error("Erro ao deletar lista:", error);
       toast.error("Erro ao deletar lista");
@@ -254,41 +272,47 @@ const handleUpdateList = async () => {
                     <div className="flex justify-end mt-6">
                       <button
                         onClick={handleDeleteList}
-                        className="text-red-400 hover:text-red-300 hover:underline"
+                        className="text-red-400 hover:text-red-300 hover:underline mb-3"
                       >
                         Deletar lista
                       </button>
                     </div>
-                    {movies.length === 0 ? (
-                      <p className="text-gray-400 text-center">Nenhum filme nesta lista.</p>
+                    {mediaItems.length === 0 ? (
+                      <p className="text-gray-400 text-center">Nenhum item nesta lista.</p>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {movies.map((movie) => (
-                          <div key={movie.internalId} className="relative aspect-[2/3] rounded overflow-hidden group">
-                            {movie.posterUrl && movie.posterUrl !== 'null' ? (
-                              <div className="relative w-full h-full">
-                                <Image
-                                  src={movie.posterUrl}
-                                  alt={movie.title || 'Capa do filme'}
-                                  fill
-                                  className="object-cover"
-                                />
+                      <div className='relative'>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {mediaItems.map((item) => (
+                            <div key={item.internalId} className="relative">
+                              <button
+                                onClick={() => handleRemoveItem(item)}
+                                className="absolute -top-6 -right-5 text-red-500 text-xl font-bold w-8 h-8 flex items-center justify-center shadow-lg z-20"
+                                aria-label={`Remover ${'title' in item ? item.title : item.name}`}
+                              >
+                                × 
+                              </button>
+
+                              <div className="aspect-[2/3] rounded overflow-hidden group">
+                                {item.posterUrl && item.posterUrl !== 'null' ? (
+                                  <div className="relative w-full h-full">
+                                    <Image
+                                      src={item.posterUrl}
+                                      alt={'title' in item ? item.title || 'Capa do filme' : item.name || 'Capa da série'}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded text-gray-400 text-xs text-center">
+                                    Sem imagem
+                                  </div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded text-gray-400 text-xs text-center">
-                                Sem imagem
-                              </div>
-                            )}
-                            <button
-                              onClick={() => handleRemoveMovie(movie.internalId)}
-                              className="absolute top-2 right-2 text-red-400 hover:text-red-300 z-10"
-                              aria-label={`Remover ${movie.title}`}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
+
                     )}
                   </>
                 )}

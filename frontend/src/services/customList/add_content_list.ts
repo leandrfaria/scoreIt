@@ -1,14 +1,17 @@
-import { CustomList } from "@/types/CustomList";
+import { fetchMovieById } from "@/services/movie/fetch_movie_by_id";
+import { fetchSerieById } from "@/services/series/fetch_series_by_id";
 import { Movie } from "@/types/Movie";
+import { CustomList } from "@/types/CustomList";
+import { Series } from "@/types/Series";
+
+export type MediaType = (Movie | Series) & { internalId: number };
 
 export const fetchListContent = async (
   memberId: number,
   listName: string
-): Promise<Movie[]> => {
+): Promise<MediaType[]> => {
   const token = localStorage.getItem("authToken");
   if (!token) throw new Error("Token não encontrado");
-
-  console.log(`Fetching list: memberId=${memberId}, listName=${listName}`);
 
   try {
     const res = await fetch(
@@ -21,41 +24,50 @@ export const fetchListContent = async (
       }
     );
 
-    if (!res.ok) {
-      // ... código de erro existente
-      throw new Error("Erro ao buscar conteúdo");
-    }
+    if (!res.ok) throw new Error("Erro ao buscar conteúdo");
 
-    const data = await res.json();
-    console.log("📦 Dados da lista:", data);
+    const listItems: CustomList[] = await res.json();
 
-    // Adicione AQUI a lógica de transformação
-    const results = data.results || data.data?.results || data || [];
+    // Filtra itens inválidos para TODOS os tipos de mídia
+    const validItems = listItems.filter(item => {
+      if (!item.mediaId || item.mediaId === "null") {
+        return false;
+      }
+      
+      // Verificação adicional apenas para séries
+      if (item.mediaType === "series" && isNaN(Number(item.mediaId))) {
+        return false;
+      }
+      
+      return true;
+    });
 
-    if (!Array.isArray(results)) {
-      console.warn("⚠️ 'results' não é um array:", results);
-      return []; // Retorna array vazio
-    }
+    const promises = validItems.map(async (item) => {
+      try {
+        if (item.mediaType === "movie") {
+          // Não precisa mais do .toString() pois mediaId já é string
+          const movie = await fetchMovieById(item.mediaId);
+          return movie ? { ...movie, internalId: item.id } : null;
+          
+        } else if (item.mediaType === "series") {
+          const serie = await fetchSerieById(item.mediaId);
+          return serie ? { ...serie, internalId: item.id } : null;
+        }
+        
+        console.warn(`Tipo de mídia desconhecido: ${item.mediaType}`, item);
+        return null;
+      } catch (error) {
+        console.error(`Erro ao processar item ${item.id}:`, error);
+        return null;
+      }
+    });
 
-    const transformed: Movie[] = results.map((movie: any) => ({
-      id: movie.externalId || movie.tmdb_id || movie.id,
-      internalId: movie.id,
-      title: movie.title,
-      posterUrl: movie.posterPath 
-        ? `https://image.tmdb.org/t/p/w500${movie.posterPath}` 
-        : "",
-      backdropUrl: movie.backdropUrl || "",
-      vote_average: movie.vote_average,
-      release_date: movie.release_date,
-      overview: movie.overview || "Sem descrição disponível.",
-      genre: movie.genre || "Desconhecido",
-    }));
-
-    return transformed; // 👈 RETORNO ESSENCIAL
+    const mediaItems = await Promise.all(promises);
+    return mediaItems.filter(Boolean) as MediaType[];
 
   } catch (error) {
-    console.error("Erro na requisição:", error);
-    throw error;
+    console.error("Erro ao buscar conteúdo da lista:", error);
+    return [];
   }
 };
 
@@ -87,6 +99,11 @@ export const removeContentFromList = async (
   token: string,
   data: CustomList
 ): Promise<void> => {
+  // Validação crítica: verifica se mediaId é válido
+  if (!data.mediaId || data.mediaId === "null") {
+    throw new Error(`ID inválido: ${data.mediaId}`);
+  }
+
   try {
     const res = await fetch(`http://localhost:8080/customList/deleteContent`, {
       method: "DELETE",
@@ -191,8 +208,3 @@ export const updateCustomList = async (
     throw error;
   }
 };
-
-
-
-
-

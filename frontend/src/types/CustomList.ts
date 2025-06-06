@@ -1,8 +1,8 @@
 export interface CustomList {
   id: number;
   memberId: number;
-  mediaId: number;
+  mediaId: string; // Alterado de number para string
   mediaType: 'movie' | 'album' | 'series';
   listName: string;
-  list_description?: string; // opcional, se você tiver descrição
+  list_description?: string;
 }

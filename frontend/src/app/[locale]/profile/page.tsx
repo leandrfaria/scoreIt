@@ -18,7 +18,7 @@ import FavouriteSeriesCarouselSection from "@/components/features/serie/Favourit
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 import { CustomListModal } from "@/components/features/user/CustomListModal";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
-import { fetchMemberLists } from "@/services/movie/add_list_movie";
+import { fetchMemberLists } from "@/services/customList/add_content_list";
 import { CustomList } from "@/types/CustomList";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 
@@ -179,15 +179,15 @@ export default function Profile() {
                 onClick={() => setIsCreateListModalOpen(true)}
                 className="bg-darkgreen text-white px-4 py-2 rounded hover:brightness-110"
               >
-                + cria lista
+                + Criar Lista
               </button>
             </div>
 
             <section className="mt-6">
-              <h2 className="text-xl font-semibold mb-4 text-white">listas</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Listas</h2>
 
               {customLists.length === 0 ? (
-                <p className="text-gray-400">nao tem lista</p>
+                <p className="text-gray-400">Você não possui nenhuma lista!</p>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   {customLists.map((list) => (
