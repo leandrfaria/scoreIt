@@ -6,7 +6,7 @@
     "senha": "Password",
     "botao": "Register",
     "possui_conta": "Already have an account?",
-    "cadastro_sucesso": "User registered successfully!",
+    "cadastro_sucesso": "User registered successfully! Please check your email to see if you received your confirmation.",
     "cadastro_erro": "Error registering, check the information entered",
     "birthday": "Birthday Date",
     "M_Gender": "Male",

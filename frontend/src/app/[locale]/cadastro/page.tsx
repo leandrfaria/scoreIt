@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import PageTransition from "@/components/layout/PageTransition";
 import toast from 'react-hot-toast';
 import IMask from 'imask';
+import { sendVerificaEmail } from "@/services/user/verifica_email";
 
 export default function Cadastro() {
   const [name, setName] = useState("");
@@ -104,8 +105,9 @@ export default function Cadastro() {
     const response = await registerUser(name, email, senha, birthDate, gender);
 
     if (response.success) {
+      const emailResult = await sendVerificaEmail(email);
       toast.success(t("cadastro_sucesso"));
-      router.push("/");
+      router.push(`/`);
     } else {
       toast.error(t("cadastro_erro"));
     }
