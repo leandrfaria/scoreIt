@@ -102,7 +102,7 @@ export function SeriesList() {
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Buscar Series..."
-                className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none w-full"
+                className="px-4 py-2 rounded-md border border-darkgreen focus:outline-none w-full text-lightgreen appearance-none"
               />
             </div>
     

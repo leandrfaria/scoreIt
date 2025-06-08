@@ -10,23 +10,32 @@ import { useMember } from "@/context/MemberContext";
 import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
-import { fetchMembers, updateMember } from "@/services/user/member";
+import { updateMember } from "@/services/user/member";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
 import { useTabContext } from "@/context/TabContext";
 import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
+import { CustomListModal } from "@/components/features/user/CustomListModal";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
+import { fetchMemberLists } from "@/services/customList/add_content_list";
+import { CustomList } from "@/types/CustomList";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function Profile() {
   const { member, setMember } = useMember();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateListModalOpen, setIsCreateListModalOpen] = useState(false);
+  const [customLists, setCustomLists] = useState<CustomList[]>([]);
+  const [isListsOpen, setIsListsOpen] = useState(false);
+  const [selectedList, setSelectedList] = useState<CustomList | null>(null);
   const { activeTab } = useTabContext();
   const t = useTranslations("profile");
   const [followers, setFollowers] = useState<number>(0);
   const [following, setFollowing] = useState<number>(0);
 
+  // Atualiza dados do membro (perfil)
   const handleUpdateMember = async (
     formData: { name: string; bio: string; birthDate: string; gender: string },
     imageFile: File | null
@@ -64,15 +73,66 @@ export default function Profile() {
       setMember(updated);
 
       toast.success(t("success_updating_profile"));
-      setIsModalOpen(false);
+      setIsEditModalOpen(false);
     } catch (err) {
       console.error("Erro ao atualizar perfil:", err);
       toast.error(t("error_updating_profile"));
     }
   };
 
+  // Cria uma nova lista customizada
+  const handleCreateList = async (formData: { name: string; description: string }) => {
+    if (!member) return;
+
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    try {
+      const payload = {
+        memberId: member.id,
+        listName: formData.name,
+        description: formData.description,
+      };
+
+      const res = await fetch("http://localhost:8080/customList/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Erro ao criar lista");
+
+      toast.success("lista criada");
+      setIsCreateListModalOpen(false);
+
+      await loadCustomLists();
+    } catch (error) {
+      toast.error("erro ao criar lista");
+      console.error(error);
+    }
+  };
+
+  // Busca listas customizadas do membro
+  const loadCustomLists = async () => {
+    if (!member) return;
+
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    try {
+      const lists = await fetchMemberLists(token, member.id);
+      setCustomLists(lists);
+    } catch (error) {
+      console.error("Erro ao carregar listas personalizadas:", error);
+      toast.error("erro ao carregar lista");
+    }
+  };
+
   useEffect(() => {
-    const fetchCounts = async () => {
+    const fetchStats = async () => {
       try {
         const token = localStorage.getItem("authToken");
         if (!token || !member) return;
@@ -89,21 +149,88 @@ export default function Profile() {
       }
     };
 
-    fetchCounts();
+    fetchStats();
+    loadCustomLists();
   }, [member]);
+
+  // Abre modal da lista customizada passando objeto completo
+  const handleOpenListModal = (list: CustomList) => {
+    setSelectedList(list);
+  };
+
+  // Fecha modal da lista
+  const handleCloseListModal = () => {
+    setSelectedList(null);
+  };
 
   return (
     <ProtectedRoute>
       <main className="w-full">
         <Container>
-          <div className="mt-5">
+          <div className="mt-5 space-y-4">
             <ProfileHeader
               member={member}
-              onEditClick={() => setIsModalOpen(true)}
+              onEditClick={() => setIsEditModalOpen(true)}
               t={t}
               followers={followers}
               following={following}
             />
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsCreateListModalOpen(true)}
+                className="bg-darkgreen text-white px-4 py-2 rounded hover:brightness-110"
+              >
+                + Criar Lista
+              </button>
+            </div>
+
+<section className="mt-6">
+  <div className="mb-4">
+    <button
+      className="flex items-center justify-between w-full text-xl font-semibold text-white"
+      onClick={() => setIsListsOpen(!isListsOpen)}
+    >
+      <span>Suas listas</span>
+      <svg
+        className={`w-5 h-5 transform transition-transform ${isListsOpen ? 'rotate-180' : ''}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  </div>
+
+    <AnimatePresence>
+      {isListsOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+          animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+          exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          {customLists.length === 0 ? (
+            <p className="text-gray-400 py-2">Você não possui nenhuma lista!</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {customLists.map((list) => (
+                <div
+                  key={list.id}
+                  className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700"
+                  onClick={() => handleOpenListModal(list)}
+                >
+                  <h3 className="text-lg font-semibold">{list.listName}</h3>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </section>
           </div>
         </Container>
 
@@ -116,14 +243,32 @@ export default function Profile() {
           {activeTab == "musicas" && <FavouriteAlbumCarouselSection />}
           {activeTab == "series" && <FavouriteSeriesCarouselSection />}
         </Container>
-        {isModalOpen && member && (
+
+        {isEditModalOpen && member && (
           <ProfileEditModal
             member={member}
             onUpdateMember={handleUpdateMember}
-            onClose={() => setIsModalOpen(false)}
+            onClose={() => setIsEditModalOpen(false)}
           />
         )}
-      </main>
+
+        {isCreateListModalOpen && (
+          <CustomListModal
+            onClose={() => setIsCreateListModalOpen(false)}
+            onCreate={handleCreateList}
+          />
+        )}
+
+        {selectedList && (
+          <CustomListModal
+            isOpen={true}
+            onClose={handleCloseListModal}
+            id={selectedList.id}
+            listName={selectedList.listName}
+            listDescription={selectedList.list_description}
+          />
+        )}
+      </main> 
     </ProtectedRoute>
   );
 }
@@ -161,9 +306,7 @@ const ProfileHeader = ({ member, onEditClick, t, followers, following }: Profile
             <FiEdit2 size={18} />
           </button>
         </div>
-        <p className="text-gray-400 text-sm max-w-md">
-          {member?.bio || t("no_bio")}
-        </p>
+        <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
       </div>
     </div>
     {member && <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()}/>}
