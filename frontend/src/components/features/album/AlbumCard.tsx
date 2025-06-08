@@ -128,23 +128,24 @@ export function AlbumCard({
         setIsAdding(true);
         const token = localStorage.getItem("authToken");
         if (!token || !member) {
-          toast.error('usuario não autenticado');
+          toast.error('Usuário não autenticado');
           setIsAdding(false);
           return;
         }
 
-      console.log("Id que será enviado para o backend:", id);
+        console.log("Id que será enviado para o backend:", id);
+        
+        // Payload simplificado e correto
         await addContentToList(token, {
           memberId: member.id,
-          mediaId: String(id), // Convertido para string
+          mediaId: id, 
           mediaType: "album",
           listName: selectedList,
         });
 
-        toast.success("Album adicionado à lista!");
+        toast.success("Álbum adicionado à lista com sucesso!");
       } catch (error) {
-        console.error(error);
-        toast.error("Erro ao adicionar album à lista");
+        console.error("Erro completo no handleAddToList:", error);
       } finally {
         setIsAdding(false);
       }

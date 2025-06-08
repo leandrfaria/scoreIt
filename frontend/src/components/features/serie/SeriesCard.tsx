@@ -140,7 +140,6 @@ export function SeriesCard({
 
   console.log("Id que será enviado para o backend:", id);
   await addContentToList(token, {
-    id,
     memberId: member.id,
     mediaId: String(id), // Convertido para string
     mediaType: "series",

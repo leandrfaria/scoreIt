@@ -13,9 +13,9 @@ import { updateCustomList, removeContentFromList, fetchListContent, deleteCustom
 interface CustomListModalProps {
   isOpen?: boolean;
   onClose: () => void;
-  id?: number;           // Id da lista customizada para update e fetch
+  id?: number;
   listName?: string;
-  listDescription?: string;  // Descrição inicial para preencher no modal
+  listDescription?: string;
   onCreate?: (data: { name: string; description: string }) => Promise<void>;
 }
 
@@ -29,54 +29,67 @@ export function CustomListModal({
 }: CustomListModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
-const [mediaItems, setMediaItems] = useState<MediaType[]>([]);
+  const [mediaItems, setMediaItems] = useState<MediaType[]>([]);
   const [name, setName] = useState(listName ?? '');
   const [description, setDescription] = useState(listDescription ?? '');
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
   useOutsideClick(modalRef, onClose);
 
-  useEffect(() => {
-    if (isOpen && member && listName && !onCreate) {
-      setName(listName);
-      setDescription(listDescription ?? '');
+useEffect(() => {
+  if (isOpen && member && listName && !onCreate) {
+    setName(listName);
+    setDescription(listDescription ?? '');
 
-      fetchListContent(member.id, listName)
-        .then((items) => {
-          // Normalize cada item garantindo o tipo MediaType
-          const normalizedItems = items.map((item) => {
-            // Para filmes
-            if ('title' in item) {
-              return {
-                ...item,
-                internalId: item.internalId, // Mantém o internalId original
-                posterUrl: item.posterUrl 
-                  ? (item.posterUrl.startsWith('http') 
-                      ? item.posterUrl 
-                      : `https://image.tmdb.org/t/p/w500${item.posterUrl}`)
-                  : null,
-              } as MediaType;
-            } 
-            // Para séries
-            else {
-              return {
-                ...item,
-                internalId: item.internalId, // Mantém o internalId original
-                posterUrl: item.posterUrl 
-                  ? (item.posterUrl.startsWith('http') 
-                      ? item.posterUrl 
-                      : `https://image.tmdb.org/t/p/w500${item.posterUrl}`)
-                  : null,
-              } as MediaType;
-            }
-          });
+    fetchListContent(member.id, listName)
+      .then((items) => {
+        // Normalize cada item garantindo o tipo MediaType
+        const normalizedItems = items.map((item) => {
+          // Para filmes
+          if ('title' in item) {
+            return {
+              ...item,
+              internalId: item.internalId,
+              posterUrl: item.posterUrl 
+                ? (item.posterUrl.startsWith('http') 
+                    ? item.posterUrl 
+                    : `https://image.tmdb.org/t/p/w500${item.posterUrl}`)
+                : null,
+            } as MediaType;
+          } 
+          // Para séries
+          else if ('name' in item && 'first_air_date' in item) {
+            return {
+              ...item,
+              internalId: item.internalId,
+              posterUrl: item.posterUrl 
+                ? (item.posterUrl.startsWith('http') 
+                    ? item.posterUrl 
+                    : `https://image.tmdb.org/t/p/w500${item.posterUrl}`)
+                : null,
+            } as MediaType;
+          }
+          // Para álbuns
+          else if ('artist' in item) {
+            return {
+              ...item,
+              internalId: item.internalId,
+              // Álbuns já têm imageUrl completa, não precisa modificar
+              imageUrl: item.imageUrl || null,
+            } as MediaType;
+          }
+          // Fallback para tipos desconhecidos
+          return {
+            ...item,
+            internalId: item.internalId,
+          } as MediaType;
+        });
 
-          setMediaItems(normalizedItems);
-        })
-        .catch(() => toast.error('Erro ao carregar conteúdo da lista'));
-    }
-  }, [isOpen, listName, listDescription, member, onCreate]);
+        setMediaItems(normalizedItems);
+      })
+      .catch(() => toast.error('Erro ao carregar conteúdo da lista'));
+  }
+}, [isOpen, listName, listDescription, member, onCreate]);
 
 
 const handleRemoveItem = async (item: MediaType) => {
@@ -89,19 +102,30 @@ const handleRemoveItem = async (item: MediaType) => {
   }
 
   try {
-    const mediaType = 'title' in item ? 'movie' : 'series';
+    // Determina o tipo de mídia corretamente
+    let mediaType: 'movie' | 'album' | 'series';
     
+    if ('title' in item) {
+      mediaType = 'movie';
+    } else if ('artist' in item) {
+      mediaType = 'album';
+    } else {
+      mediaType = 'series';
+    }
+
     await removeContentFromList(token, {
-      id: item.internalId, // Use o internalId aqui
+      id: item.internalId,
       memberId: member.id,
       mediaId: item.id.toString(),
       mediaType: mediaType,
       listName: listName
     });
 
+    // Atualiza a UI
     setMediaItems(prev => prev.filter(i => i.internalId !== item.internalId));
     toast.success('Item removido da lista');
   } catch (error) {
+    console.error('Erro ao remover item:', error);
     toast.error('Erro ao remover item da lista');
   }
 };
@@ -181,7 +205,7 @@ const handleUpdateList = async () => {
     }
   };
 
-  return (
+return (
     <AnimatePresence>
       {isOpen && (
         <>
@@ -193,9 +217,7 @@ const handleUpdateList = async () => {
           />
           <motion.div
             ref={modalRef}
-            className="fixed z-50 top-[10%] left-1/2 -translate-x-1/2 bg-neutral-900 text-white p-6 max-w-3xl w-full rounded-xl shadow-lg"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="fixed z-50 top-[10%] left-1/2 -translate-x-1/2 bg-neutral-900 text-white p-6 max-w-3xl w-full rounded-xl shadow-lg max-h-[85vh] flex flex-col"            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
           >
             <div className="flex justify-between items-center mb-4">
@@ -259,61 +281,76 @@ const handleUpdateList = async () => {
                   </div>
                 ) : (
                   <>
-                    <div className="flex justify-between items-center mb-4">
-                      <p className="text-gray-400 italic">{description || 'Sem descrição'}</p>
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="text-sm text-blue-400 hover:underline"
-                      >
-                        Editar
-                      </button>
-                    </div>
-
-                    <div className="flex justify-end mt-6">
-                      <button
-                        onClick={handleDeleteList}
-                        className="text-red-400 hover:text-red-300 hover:underline mb-3"
-                      >
-                        Deletar lista
-                      </button>
-                    </div>
-                    {mediaItems.length === 0 ? (
-                      <p className="text-gray-400 text-center">Nenhum item nesta lista.</p>
-                    ) : (
-                      <div className='relative'>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {mediaItems.map((item) => (
-                            <div key={item.internalId} className="relative">
-                              <button
-                                onClick={() => handleRemoveItem(item)}
-                                className="absolute -top-6 -right-5 text-red-500 text-xl font-bold w-8 h-8 flex items-center justify-center shadow-lg z-20"
-                                aria-label={`Remover ${'title' in item ? item.title : item.name}`}
-                              >
-                                × 
-                              </button>
-
-                              <div className="aspect-[2/3] rounded overflow-hidden group">
-                                {item.posterUrl && item.posterUrl !== 'null' ? (
-                                  <div className="relative w-full h-full">
-                                    <Image
-                                      src={item.posterUrl}
-                                      alt={'title' in item ? item.title || 'Capa do filme' : item.name || 'Capa da série'}
-                                      fill
-                                      className="object-cover"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded text-gray-400 text-xs text-center">
-                                    Sem imagem
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Container principal flexível */}
+                    <div className="flex flex-col flex-grow min-h-0">
+                      {/* Seção de descrição e botões */}
+                      <div className="flex justify-between items-center mb-4">
+                        <p className="text-gray-400 italic">{description || 'Sem descrição'}</p>
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="text-sm text-blue-400 hover:underline"
+                        >
+                          Editar
+                        </button>
                       </div>
 
-                    )}
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleDeleteList}
+                          className="text-red-400 hover:text-red-300 hover:underline mb-3"
+                        >
+                          Deletar lista
+                        </button>
+                      </div>
+                      
+                      {/* Container com scroll vertical */}
+                      <div className="flex-grow overflow-y-auto min-h-0">
+                        {mediaItems.length === 0 ? (
+                          <p className="text-gray-400 text-center">Nenhum item nesta lista.</p>
+                        ) : (
+                          <div className="flex flex-col w-full">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                              {mediaItems.map((item) => {
+                                const imageUrl = 'imageUrl' in item ? item.imageUrl : item.posterUrl;
+                                const title = 'title' in item ? item.title : item.name;
+                                const altText = `Capa de ${title}`;
+                                
+                                return (
+                                  <div key={item.internalId} className="relative">
+                                    {/* Botão de remoção - posicionado dentro do card */}
+                                    <button
+                                      onClick={() => handleRemoveItem(item)}
+                                      className="absolute top-2 right-2 bg-black/70 rounded-full w-8 h-8 flex items-center justify-center z-20 text-red-400 hover:text-red-300"
+                                      aria-label={`Remover ${title}`}
+                                    >
+                                      × 
+                                    </button>
+
+                                    <div className="aspect-[2/3] rounded overflow-hidden group">
+                                      {imageUrl && imageUrl !== 'null' ? (
+                                        <div className="relative w-full h-full">
+                                          <Image
+                                            src={imageUrl}
+                                            alt={altText}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                          />
+                                        </div>
+                                      ) : (
+                                        <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded text-gray-400 text-xs text-center">
+                                          Sem imagem
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </>
                 )}
               </>

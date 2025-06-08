@@ -1,11 +1,18 @@
 import { fetchMovieById } from "@/services/movie/fetch_movie_by_id";
 import { fetchSerieById } from "@/services/series/fetch_series_by_id";
+import { fetchAlbumById } from "@/services/album/fetch_album_by_id"; // Importação adicionada
 import { Movie } from "@/types/Movie";
-import { CustomList } from "@/types/CustomList";
+import { AddToCustomListRequest, CustomList } from "@/types/CustomList";
 import { Series } from "@/types/Series";
+import { Album } from "@/types/Album"; // Importação adicionada
 
-export type MediaType = (Movie | Series) & { internalId: number };
+export type MediaType = (Movie | Series | Album) & { 
+  internalId: number;
+  posterUrl?: string;       // Para filmes/séries
+  imageUrl?: string;        // Para álbuns
+};
 
+// Atualize a função fetchListContent
 export const fetchListContent = async (
   memberId: number,
   listName: string
@@ -24,18 +31,29 @@ export const fetchListContent = async (
       }
     );
 
-    if (!res.ok) throw new Error("Erro ao buscar conteúdo");
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Erro ao buscar conteúdo: ${errorText}`);
+    }
 
+    // Use a nova interface para os itens da lista
     const listItems: CustomList[] = await res.json();
 
-    // Filtra itens inválidos para TODOS os tipos de mídia
+    // Filtra itens inválidos
     const validItems = listItems.filter(item => {
       if (!item.mediaId || item.mediaId === "null") {
         return false;
       }
       
-      // Verificação adicional apenas para séries
+      // Verificação para séries (IDs devem ser numéricos)
       if (item.mediaType === "series" && isNaN(Number(item.mediaId))) {
+        console.warn("ID inválido para série:", item.mediaId);
+        return false;
+      }
+      
+      // Verificação para filmes (não devem ter IDs de álbum)
+      if (item.mediaType === "movie" && /^[a-zA-Z0-9]{22}$/.test(item.mediaId)) {
+        console.warn("Possível ID de álbum marcado como filme:", item.mediaId);
         return false;
       }
       
@@ -43,19 +61,26 @@ export const fetchListContent = async (
     });
 
     const promises = validItems.map(async (item) => {
+      console.log("Processando item:", item);
+
       try {
-        if (item.mediaType === "movie") {
-          // Não precisa mais do .toString() pois mediaId já é string
-          const movie = await fetchMovieById(item.mediaId);
-          return movie ? { ...movie, internalId: item.id } : null;
-          
-        } else if (item.mediaType === "series") {
-          const serie = await fetchSerieById(item.mediaId);
-          return serie ? { ...serie, internalId: item.id } : null;
+        switch (item.mediaType.toLowerCase()) {
+          case "movie":
+            const movie = await fetchMovieById(item.mediaId);
+            return movie ? { ...movie, internalId: item.id } : null;
+            
+          case "series":
+            const serie = await fetchSerieById(item.mediaId);
+            return serie ? { ...serie, internalId: item.id } : null;
+            
+          case "album":
+            const album = await fetchAlbumById(item.mediaId);
+            return album ? { ...album, internalId: item.id } : null;
+            
+          default:
+            console.warn(`Tipo de mídia desconhecido: ${item.mediaType}`, item);
+            return null;
         }
-        
-        console.warn(`Tipo de mídia desconhecido: ${item.mediaType}`, item);
-        return null;
       } catch (error) {
         console.error(`Erro ao processar item ${item.id}:`, error);
         return null;
@@ -74,7 +99,7 @@ export const fetchListContent = async (
 
 export const addContentToList = async (
   token: string,
-  data: CustomList
+  data: AddToCustomListRequest // Use a interface específica para adição
 ): Promise<void> => {
   try {
     const res = await fetch(`http://localhost:8080/customList/addContent`, {
@@ -87,7 +112,8 @@ export const addContentToList = async (
     });
 
     if (!res.ok) {
-      throw new Error("Erro ao adicionar conteúdo");
+      const errorResponse = await res.json();
+      throw new Error(errorResponse.message || "Erro ao adicionar conteúdo");
     }
   } catch (error) {
     console.error("Erro ao adicionar conteúdo à lista:", error);
@@ -99,11 +125,6 @@ export const removeContentFromList = async (
   token: string,
   data: CustomList
 ): Promise<void> => {
-  // Validação crítica: verifica se mediaId é válido
-  if (!data.mediaId || data.mediaId === "null") {
-    throw new Error(`ID inválido: ${data.mediaId}`);
-  }
-
   try {
     const res = await fetch(`http://localhost:8080/customList/deleteContent`, {
       method: "DELETE",
