@@ -29,6 +29,7 @@ export function Header() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Member[]>([]);
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false); // Estado para controlar a visibilidade
+  const showMediaTypeMenu = !pathname.endsWith('/feed');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -120,11 +121,11 @@ export function Header() {
         </div>
 
         {/* MENU DE TROCA DE ABA (DESKTOP) */}
-        {isLoggedIn && <TabSwitcherMediaType />
-        }
+                {isLoggedIn && showMediaTypeMenu && <TabSwitcherMediaType />}
+
 
         {/* MENU DE TROCA DE ABA (MOBILE) */}
-        {isLoggedIn && (
+        {isLoggedIn && showMediaTypeMenu && (
           <div className="flex md:hidden">
             <TabSwitcherMediaType />
           </div>
@@ -229,6 +230,14 @@ export function Header() {
                     className="block px-2 py-1 hover:bg-gray-900 rounded"
                   >
                     {t("perfil")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={`/${locale}/feed`}
+                    className="block px-2 py-1 hover:bg-gray-900 rounded"
+                  >
+                    Feed
                   </Link>
                 </DropdownMenuItem>
                 {/* <DropdownMenuItem asChild>
