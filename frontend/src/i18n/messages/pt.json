@@ -6,7 +6,7 @@
     "senha": "Senha",
     "botao": "Cadastrar",
     "possui_conta": "Já possui conta?",
-    "cadastro_sucesso": "Usuario cadastrado com sucesso!",
+    "cadastro_sucesso": "Usuario cadastrado com sucesso! Por favor cheque seu email para ver se recebeu a confirmação",
     "cadastro_erro": "Erro ao cadastrar, verifique as informações preenchidas",
     "birthday": "Data de Nascimento",
     "M_Gender": "Masculino",
