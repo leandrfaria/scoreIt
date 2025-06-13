@@ -135,12 +135,10 @@ const handleAddToList = async () => {
     const token = localStorage.getItem("authToken");
     if (!token || !member) {
       toast.error(t("userNotAuthenticated"));
-      setIsAdding(false);
       return;
     }
 
-  console.log("Id que será enviado para o backend:", id);
-    await addContentToList(token, {
+    const result = await addContentToList(token, {
       memberId: member.id,
       mediaId: String(id),
       mediaType: "movie",
@@ -148,10 +146,13 @@ const handleAddToList = async () => {
     });
 
 
-    toast.success("Filme adicionado à lista!");
-  } catch (error) {
-    console.error(error);
-    toast.error("Erro ao adicionar filme à lista");
+    if (result === "duplicate") {
+      toast.error("Este conteúdo já está na lista");
+    } else if (result === "success") {
+      toast.success("Filme adicionado à lista!");
+    } else {
+      toast.error("Erro ao adicionar à lista");
+    }
   } finally {
     setIsAdding(false);
   }
