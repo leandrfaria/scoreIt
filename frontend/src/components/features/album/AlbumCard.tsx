@@ -132,20 +132,22 @@ export function AlbumCard({
           setIsAdding(false);
           return;
         }
-
-        console.log("Id que será enviado para o backend:", id);
         
         // Payload simplificado e correto
-        await addContentToList(token, {
+        const result = await addContentToList(token, {
           memberId: member.id,
           mediaId: id, 
           mediaType: "album",
           listName: selectedList,
         });
 
-        toast.success("Álbum adicionado à lista com sucesso!");
-      } catch (error) {
-        console.error("Erro completo no handleAddToList:", error);
+        if (result === "duplicate") {
+          toast.error("Este conteúdo já está na lista");
+        } else if (result === "success") {
+          toast.success("Album adicionado à lista!");
+        } else {
+          toast.error("Erro ao adicionar à lista");
+        }
       } finally {
         setIsAdding(false);
       }

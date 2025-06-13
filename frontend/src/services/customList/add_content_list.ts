@@ -1,18 +1,17 @@
 import { fetchMovieById } from "@/services/movie/fetch_movie_by_id";
 import { fetchSerieById } from "@/services/series/fetch_series_by_id";
-import { fetchAlbumById } from "@/services/album/fetch_album_by_id"; // Importação adicionada
+import { fetchAlbumById } from "@/services/album/fetch_album_by_id"; 
 import { Movie } from "@/types/Movie";
 import { AddToCustomListRequest, CustomList } from "@/types/CustomList";
 import { Series } from "@/types/Series";
-import { Album } from "@/types/Album"; // Importação adicionada
+import { Album } from "@/types/Album"; 
 
 export type MediaType = (Movie | Series | Album) & { 
   internalId: number;
-  posterUrl?: string;       // Para filmes/séries
-  imageUrl?: string;        // Para álbuns
+  posterUrl?: string;
+  imageUrl?: string;
 };
 
-// Atualize a função fetchListContent
 export const fetchListContent = async (
   memberId: number,
   listName: string
@@ -36,10 +35,8 @@ export const fetchListContent = async (
       throw new Error(`Erro ao buscar conteúdo: ${errorText}`);
     }
 
-    // Use a nova interface para os itens da lista
     const listItems: CustomList[] = await res.json();
 
-    // Filtra itens inválidos
     const validItems = listItems.filter(item => {
       if (!item.mediaId || item.mediaId === "null") {
         return false;
@@ -99,8 +96,8 @@ export const fetchListContent = async (
 
 export const addContentToList = async (
   token: string,
-  data: AddToCustomListRequest // Use a interface específica para adição
-): Promise<void> => {
+  data: AddToCustomListRequest
+): Promise<"success" | "duplicate" | "error"> => {
   try {
     const res = await fetch(`http://localhost:8080/customList/addContent`, {
       method: "POST",
@@ -112,14 +109,21 @@ export const addContentToList = async (
     });
 
     if (!res.ok) {
-      const errorResponse = await res.json();
-      throw new Error(errorResponse.message || "Erro ao adicionar conteúdo");
+      const errorText = await res.text();
+      if (errorText.includes("already in your list")) {
+        return "duplicate";
+      }
+
+      return "error";
     }
-  } catch (error) {
-    console.error("Erro ao adicionar conteúdo à lista:", error);
-    throw error;
+
+    return "success";
+  } catch {
+    return "error";
   }
 };
+
+
 
 export const removeContentFromList = async (
   token: string,
@@ -146,7 +150,6 @@ export const removeContentFromList = async (
   }
 };
 
-// Função para deletar a lista
 export const deleteCustomList = async (listId: number): Promise<void> => {
   const token = localStorage.getItem("authToken");
   if (!token) throw new Error("Token não encontrado");
@@ -165,7 +168,6 @@ export const deleteCustomList = async (listId: number): Promise<void> => {
       throw new Error(errorText || "Erro ao deletar lista");
     }
 
-    // Verifica se a resposta tem conteúdo antes de tentar parsear
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
       const data = await response.json();
@@ -221,11 +223,10 @@ export const updateCustomList = async (
       throw new Error(errorText);
     }
     
-    // Aceita qualquer resposta de sucesso (JSON ou texto)
     console.log("✅ Atualização bem-sucedida");
     
   } catch (error) {
-    console.error("❌ Erro:", error);
+    console.error("Erro:", error);
     throw error;
   }
 };
