@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useMember } from '@/context/MemberContext';
 import { MediaType } from'@/services/customList/add_content_list';
-import { CustomList } from '@/types/CustomList';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { updateCustomList, removeContentFromList, fetchListContent, deleteCustomList } from "@/services/customList/add_content_list";
+import { useRouter } from "next/navigation";
+import { useLocale } from 'next-intl';
 
 interface CustomListModalProps {
   isOpen?: boolean;
@@ -33,6 +34,8 @@ export function CustomListModal({
   const [name, setName] = useState(listName ?? '');
   const [description, setDescription] = useState(listDescription ?? '');
   const [isEditing, setIsEditing] = useState(false);
+  const router = useRouter();
+  const locale = useLocale();
 
   useOutsideClick(modalRef, onClose);
 
@@ -43,7 +46,6 @@ useEffect(() => {
 
     fetchListContent(member.id, listName)
       .then((items) => {
-        // Normalize cada item garantindo o tipo MediaType
         const normalizedItems = items.map((item) => {
           // Para filmes
           if ('title' in item) {
@@ -74,11 +76,9 @@ useEffect(() => {
             return {
               ...item,
               internalId: item.internalId,
-              // Álbuns já têm imageUrl completa, não precisa modificar
               imageUrl: item.imageUrl || null,
             } as MediaType;
           }
-          // Fallback para tipos desconhecidos
           return {
             ...item,
             internalId: item.internalId,
@@ -90,6 +90,18 @@ useEffect(() => {
       .catch(() => toast.error('Erro ao carregar conteúdo da lista'));
   }
 }, [isOpen, listName, listDescription, member, onCreate]);
+
+
+
+  const handleViewDetails = (item: MediaType) => {
+    if ('title' in item) {
+      router.push(`/${locale}/movie/${item.id}`);
+    } else if ('artist' in item) {
+      router.push(`/${locale}/album/${item.id}`);
+    } else {
+      router.push(`/${locale}/series/${item.id}`);
+    }
+  };
 
 
 const handleRemoveItem = async (item: MediaType) => {
@@ -132,7 +144,7 @@ const handleRemoveItem = async (item: MediaType) => {
 
 
 const handleUpdateList = async () => {
-  console.log("🚀 Iniciando atualização da lista");
+  console.log(" Iniciando atualização da lista");
   
   if (!member || !id) {
     const errorMsg = "Dados incompletos: " + JSON.stringify({member, id});
@@ -149,7 +161,7 @@ const handleUpdateList = async () => {
   }
 
   try {
-    console.log("📤 Enviando dados para atualização:", {
+    console.log(" Enviando dados para atualização:", {
       id,
       listName: name.trim(),
       list_description: description.trim(),
@@ -161,12 +173,12 @@ const handleUpdateList = async () => {
       list_description: description.trim(),
     });
     
-    console.log("🎉 Lista atualizada com sucesso no backend");
+    console.log(" Lista atualizada com sucesso no backend");
     toast.success("Lista atualizada!");
     setIsEditing(false);
     
   } catch (error) {
-    console.error("🔥 ERRO na atualização:", error);
+    console.error(" ERRO na atualização:", error);
     toast.error(`Erro ao atualizar lista: ${error}`);
   }
 };
@@ -206,158 +218,163 @@ const handleUpdateList = async () => {
   };
 
 return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            className="fixed inset-0 bg-black/70 z-40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
-          <motion.div
-            ref={modalRef}
-            className="fixed z-50 top-[10%] left-1/2 -translate-x-1/2 bg-neutral-900 text-white p-6 max-w-3xl w-full rounded-xl shadow-lg max-h-[85vh] flex flex-col"            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">
-                {onCreate ? 'Criar nova lista' : isEditing ? 'Editar lista' : `Lista: ${listName}`}
-              </h2>
-              <button onClick={onClose} className="text-red-400 text-2xl">×</button>
-            </div>
+  <AnimatePresence>
+    {isOpen && (
+      <>
+        <motion.div
+          className="fixed inset-0 bg-black/70 z-40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+        <motion.div
+          ref={modalRef}
+          className="fixed z-50 top-[10%] left-1/2 -translate-x-1/2 bg-neutral-900 text-white p-6 max-w-3xl w-full rounded-xl shadow-lg max-h-[85vh] flex flex-col"
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 30 }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">
+              {onCreate ? 'Criar nova lista' : isEditing ? 'Editar lista' : `Lista: ${listName}`}
+            </h2>
+            <button onClick={onClose} className="text-red-400 text-2xl">×</button>
+          </div>
 
-            {onCreate ? (
-              <form onSubmit={handleCreateListSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Nome da lista"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full p-2 rounded bg-neutral-800 text-white"
-                />
-                <textarea
-                  name="description"
-                  placeholder="Descrição (opcional)"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-2 rounded bg-neutral-800 text-white"
-                />
-                <div className="flex justify-end gap-2">
-                  <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">Cancelar</button>
-                  <button type="submit" className="bg-green-600 px-4 py-2 rounded hover:bg-green-500">Criar</button>
+          {onCreate ? (
+            <form onSubmit={handleCreateListSubmit} className="space-y-4">
+              <input
+                type="text"
+                name="name"
+                placeholder="Nome da lista"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-2 rounded bg-neutral-800 text-white"
+              />
+              <textarea
+                name="description"
+                placeholder="Descrição (opcional)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full p-2 rounded bg-neutral-800 text-white"
+              />
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">Cancelar</button>
+                <button type="submit" className="bg-green-600 px-4 py-2 rounded hover:bg-green-500">Criar</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              {isEditing ? (
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full p-2 rounded bg-neutral-800 text-white"
+                  />
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full p-2 rounded bg-neutral-800 text-white"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleUpdateList}
+                      className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500"
+                    >
+                      Salvar alterações
+                    </button>
+                  </div>
                 </div>
-              </form>
-            ) : (
-              <>
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full p-2 rounded bg-neutral-800 text-white"
-                    />
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full p-2 rounded bg-neutral-800 text-white"
-                    />
-                    <div className="flex justify-end gap-2">
+              ) : (
+                <>
+                  {/* Container principal flexível */}
+                  <div className="flex flex-col flex-grow min-h-0">
+                    {/* Seção de descrição e botões */}
+                    <div className="flex justify-between items-center mb-4">
+                      <p className="text-gray-400 italic">{description || 'Sem descrição'}</p>
                       <button
-                        onClick={() => setIsEditing(false)}
-                        className="text-gray-400 hover:text-white"
+                        onClick={() => setIsEditing(true)}
+                        className="text-sm text-blue-400 hover:underline"
                       >
-                        Cancelar
+                        Editar
                       </button>
+                    </div>
+
+                    <div className="flex justify-end">
                       <button
-                        onClick={handleUpdateList}
-                        className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500"
+                        onClick={handleDeleteList}
+                        className="text-red-400 hover:text-red-300 hover:underline mb-3"
                       >
-                        Salvar alterações
+                        Deletar lista
                       </button>
+                    </div>
+                    
+                    {/* Container com scroll vertical */}
+                    <div className="flex-grow overflow-y-auto min-h-0">
+                      {mediaItems.length === 0 ? (
+                        <p className="text-gray-400 text-center">Nenhum item nesta lista.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {mediaItems.map((item) => {
+                            const isMovie = 'title' in item;
+                            const isAlbum = 'artist' in item;
+                            const isSeries = !isMovie && !isAlbum;
+                            const imageUrl = isMovie || isSeries ? item.posterUrl : item.imageUrl;
+                            const title = isMovie ? item.title : item.name;
+
+                            return (
+                              <div
+                                key={item.internalId}
+                                className="relative group aspect-[2/3] overflow-hidden rounded-md"
+                              >
+                                <button
+                                  onClick={() => handleRemoveItem(item)}
+                                  className="absolute top-2 right-2 bg-black/70 rounded-full w-8 h-8 flex items-center justify-center z-20 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  aria-label={`Remover ${title}`}
+                                >
+                                  ×
+                                </button>
+
+                                {/* Imagem clicável */}
+                                <button
+                                  onClick={() => handleViewDetails(item)}
+                                  className="w-full h-full"
+                                >
+                                  {imageUrl && imageUrl !== "null" ? (
+                                    <Image
+                                      src={imageUrl}
+                                      alt={title}
+                                      fill
+                                      className="object-cover"
+                                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                                      <span className="text-gray-500 text-sm">Sem imagem</span>
+                                    </div>
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <>
-                    {/* Container principal flexível */}
-                    <div className="flex flex-col flex-grow min-h-0">
-                      {/* Seção de descrição e botões */}
-                      <div className="flex justify-between items-center mb-4">
-                        <p className="text-gray-400 italic">{description || 'Sem descrição'}</p>
-                        <button
-                          onClick={() => setIsEditing(true)}
-                          className="text-sm text-blue-400 hover:underline"
-                        >
-                          Editar
-                        </button>
-                      </div>
-
-                      <div className="flex justify-end">
-                        <button
-                          onClick={handleDeleteList}
-                          className="text-red-400 hover:text-red-300 hover:underline mb-3"
-                        >
-                          Deletar lista
-                        </button>
-                      </div>
-                      
-                      {/* Container com scroll vertical */}
-                      <div className="flex-grow overflow-y-auto min-h-0">
-                        {mediaItems.length === 0 ? (
-                          <p className="text-gray-400 text-center">Nenhum item nesta lista.</p>
-                        ) : (
-                          <div className="flex flex-col w-full">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                              {mediaItems.map((item) => {
-                                const imageUrl = 'imageUrl' in item ? item.imageUrl : item.posterUrl;
-                                const title = 'title' in item ? item.title : item.name;
-                                const altText = `Capa de ${title}`;
-                                
-                                return (
-                                  <div key={item.internalId} className="relative">
-                                    {/* Botão de remoção - posicionado dentro do card */}
-                                    <button
-                                      onClick={() => handleRemoveItem(item)}
-                                      className="absolute top-2 right-2 bg-black/70 rounded-full w-8 h-8 flex items-center justify-center z-20 text-red-400 hover:text-red-300"
-                                      aria-label={`Remover ${title}`}
-                                    >
-                                      × 
-                                    </button>
-
-                                    <div className="aspect-[2/3] rounded overflow-hidden group">
-                                      {imageUrl && imageUrl !== 'null' ? (
-                                        <div className="relative w-full h-full">
-                                          <Image
-                                            src={imageUrl}
-                                            alt={altText}
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                          />
-                                        </div>
-                                      ) : (
-                                        <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded text-gray-400 text-xs text-center">
-                                          Sem imagem
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
+                </>
+              )}
+            </>
+          )}
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
+);
 }
