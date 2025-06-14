@@ -35,7 +35,6 @@ export default function Profile() {
   const [followers, setFollowers] = useState<number>(0);
   const [following, setFollowing] = useState<number>(0);
 
-  // Atualiza dados do membro (perfil)
   const handleUpdateMember = async (
     formData: { name: string; bio: string; birthDate: string; gender: string },
     imageFile: File | null
@@ -80,7 +79,6 @@ export default function Profile() {
     }
   };
 
-  // Cria uma nova lista customizada
   const handleCreateList = async (formData: { name: string; description: string }) => {
     if (!member) return;
 
@@ -115,21 +113,20 @@ export default function Profile() {
     }
   };
 
-  // Busca listas customizadas do membro
-  const loadCustomLists = async () => {
-    if (!member) return;
+    const loadCustomLists = async () => {
+      if (!member) return;
 
-    const token = localStorage.getItem("authToken");
-    if (!token) return;
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
 
-    try {
-      const lists = await fetchMemberLists(token, member.id);
-      setCustomLists(lists);
-    } catch (error) {
-      console.error("Erro ao carregar listas personalizadas:", error);
-      toast.error("erro ao carregar lista");
-    }
-  };
+      try {
+        const lists = await fetchMemberLists(token, member.id);
+        setCustomLists(lists);
+      } catch (error) {
+        console.error("Erro ao carregar listas personalizadas:", error);
+        toast.error("erro ao carregar lista");
+      }
+    };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -153,12 +150,10 @@ export default function Profile() {
     loadCustomLists();
   }, [member]);
 
-  // Abre modal da lista customizada passando objeto completo
   const handleOpenListModal = (list: CustomList) => {
     setSelectedList(list);
   };
 
-  // Fecha modal da lista
   const handleCloseListModal = () => {
     setSelectedList(null);
   };
@@ -185,24 +180,24 @@ export default function Profile() {
               </button>
             </div>
 
-<section className="mt-6">
-  <div className="mb-4">
-    <button
-      className="flex items-center justify-between w-full text-xl font-semibold text-white"
-      onClick={() => setIsListsOpen(!isListsOpen)}
-    >
-      <span>Suas listas</span>
-      <svg
-        className={`w-5 h-5 transform transition-transform ${isListsOpen ? 'rotate-180' : ''}`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-  </div>
+            <section className="mt-6">
+              <div className="mb-4">
+                <button
+                  className="flex items-center justify-between w-full text-xl font-semibold text-white"
+                  onClick={() => setIsListsOpen(!isListsOpen)}
+                >
+                  <span>Suas listas</span>
+                  <svg
+                    className={`w-5 h-5 transform transition-transform ${isListsOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
 
     <AnimatePresence>
       {isListsOpen && (
@@ -266,6 +261,7 @@ export default function Profile() {
             id={selectedList.id}
             listName={selectedList.listName}
             listDescription={selectedList.list_description}
+            onListDeleted={loadCustomLists}
           />
         )}
       </main> 

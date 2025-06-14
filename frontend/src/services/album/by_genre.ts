@@ -49,7 +49,8 @@ export const fetchAlbumsByGenre = async (
     name: item.name,
     release_date: item.release_date || "", // tenta usar a data, senão deixa vazio
     imageUrl: item.imageUrl,
-    artistName: item.artistName || "Desconhecido",
+    artist: item.artistName || "Desconhecido",
+    total_tracks: item.total_tracks
   }));
 
   } catch (err) {
