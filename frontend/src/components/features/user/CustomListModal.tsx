@@ -18,6 +18,8 @@ interface CustomListModalProps {
   listName?: string;
   listDescription?: string;
   onCreate?: (data: { name: string; description: string }) => Promise<void>;
+  onListDeleted?: () => void; // Nova prop
+
 }
 
 export function CustomListModal({
@@ -26,7 +28,8 @@ export function CustomListModal({
   id,
   listName,
   listDescription,
-  onCreate
+  onCreate,
+  onListDeleted // Recebe o callback
 }: CustomListModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
@@ -34,6 +37,7 @@ export function CustomListModal({
   const [name, setName] = useState(listName ?? '');
   const [description, setDescription] = useState(listDescription ?? '');
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const router = useRouter();
   const locale = useLocale();
 
@@ -186,13 +190,15 @@ const handleUpdateList = async () => {
   const handleDeleteList = async () => {
     if (!id) return;
 
-    const confirmDelete = window.confirm("Tem certeza que deseja deletar esta lista?");
-    if (!confirmDelete) return;
-
     try {
       await deleteCustomList(id);
       toast.success("Lista deletada com sucesso!");
       onClose();
+      
+      // Chama o callback de atualização
+      if (onListDeleted) {
+        onListDeleted();
+      }
     } catch (error) {
       console.error("Erro ao deletar lista:", error);
       toast.error("Erro ao deletar lista");
@@ -307,14 +313,36 @@ return (
                       </button>
                     </div>
 
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleDeleteList}
-                        className="text-red-400 hover:text-red-300 hover:underline mb-3"
-                      >
-                        Deletar lista
-                      </button>
-                    </div>
+                      <div className="flex justify-end mb-3">
+                        {isDeleteConfirmOpen ? (
+                          <div className="flex gap-2 items-center">
+                            <span className="text-gray-300">Confirmar exclusão?</span>
+                            <button
+                              onClick={async () => {
+                                await handleDeleteList();
+                                setIsDeleteConfirmOpen(false);
+                              }}
+                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
+                            >
+                              Confirmar
+                            </button>
+                            <button
+                              onClick={() => setIsDeleteConfirmOpen(false)}
+                              className="text-gray-400 hover:text-white"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setIsDeleteConfirmOpen(true)}
+                            className="text-red-400 hover:text-red-300 hover:underline"
+                          >
+                            Deletar lista
+                          </button>
+                        )}
+                      </div>
+
                     
                     {/* Container com scroll vertical */}
                     <div className="flex-grow overflow-y-auto min-h-0">
