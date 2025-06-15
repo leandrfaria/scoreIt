@@ -20,6 +20,7 @@ export default function MoviePage() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
 
   useEffect(() => {
@@ -143,10 +144,11 @@ export default function MoviePage() {
           onClose={() => setShowModal(false)}
           mediaId={movie.id}
           mediaType="movie"
+          onSuccess={() => setRefreshReviews((prev) => !prev)} // 👈 Avisa pra atualizar
         />
       </main>
 
-      <ReviewSection mediaId={String(movie.id)} />
+      <ReviewSection mediaId={String(movie.id)} refreshTrigger={refreshReviews} />
     </>
   );
 }

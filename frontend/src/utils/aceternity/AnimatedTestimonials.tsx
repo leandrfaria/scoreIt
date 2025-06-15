@@ -17,13 +17,11 @@ export type CarouselItem = {
 export const AnimatedCarousel = ({
   items,
   autoplay = false,
-  arrowButtonClass = "bg-gray-700 hover:bg-gray-600 text-white",
-  detailButtonClass = "bg-blue-500 hover:bg-blue-600 text-white",
+  arrowButtonClass = "bg-gray-700 hover:bg-gray-600 text-white"
 }: {
   items: CarouselItem[];
   autoplay?: boolean;
   arrowButtonClass?: string;
-  detailButtonClass?: string;
 }) => {
   const [active, setActive] = useState(0);
 
@@ -90,14 +88,6 @@ export const AnimatedCarousel = ({
 
           {/* CONTROLES FIXOS */}
           <div className="flex justify-between items-center mt-6">
-            {items[active].buttonLabel && (
-              <button
-                onClick={items[active].onClick}
-                className={`px-6 py-2 rounded-md ${detailButtonClass}`}
-              >
-                {items[active].buttonLabel}
-              </button>
-            )}
             <div className="flex gap-4">
               <button
                 onClick={handlePrev}

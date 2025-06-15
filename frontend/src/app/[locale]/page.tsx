@@ -58,7 +58,6 @@ export default function Home() {
             {activeTab === "musicas" ? (
               <>
                 <TopArtistsCarouselSection />
-                <RecentsAlbumCarousel />
                 <AlbumListByGenre />
               </>
             ) : activeTab === "series" ? (
