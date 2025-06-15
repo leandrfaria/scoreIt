@@ -20,6 +20,7 @@ export default function AlbumPage() {
   const [album, setAlbum] = useState<Album | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [refreshReviews, setRefreshReviews] = useState(false); // ✅
   const { member } = useMember();
 
   useEffect(() => {
@@ -121,9 +122,10 @@ export default function AlbumPage() {
         onClose={() => setShowModal(false)}
         mediaId={album.id}
         mediaType="album"
+        onSuccess={() => setRefreshReviews((prev) => !prev)} 
       />
 
-      {album && <ReviewSection mediaId={album.id.toString()} />}
+      <ReviewSection mediaId={album.id.toString()} refreshTrigger={refreshReviews} /> 
     </main>
   );
 }

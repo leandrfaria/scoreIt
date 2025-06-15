@@ -1,23 +1,18 @@
-// src/components/features/review/RatingModal.tsx
 "use client";
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
-import { FaStar, FaCheckCircle } from "react-icons/fa";
+import { FaStar } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "@/styles/react-datepicker-dark.css";
 import { postReview } from "@/services/review/post_review";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
+import { useRouter, usePathname } from "next/navigation";
 
 function formatDateTimeLocal(date: Date) {
   const pad = (n: number) => n.toString().padStart(2, "0");
-  const yyyy = date.getFullYear();
-  const mm = pad(date.getMonth() + 1);
-  const dd = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const min = pad(date.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export default function RatingModal({
@@ -25,12 +20,16 @@ export default function RatingModal({
   onClose,
   mediaId,
   mediaType,
+  onSuccess, // ✅ NOVA PROP
 }: {
   isOpen: boolean;
   onClose: () => void;
   mediaId: string | number;
   mediaType: "movie" | "series" | "album";
+  onSuccess?: () => void; // ✅ NOVA PROP DEFINIDA
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { member } = useMember();
   const [score, setScore] = useState(0);
   const [watchDate, setWatchDate] = useState<Date | null>(new Date());
@@ -71,6 +70,7 @@ export default function RatingModal({
       setMemberReview("");
       setSpoiler(false);
       onClose();
+      onSuccess?.(); // ✅ Notifica que teve avaliação nova
     } else {
       toast.error("Erro ao enviar avaliação.");
     }
@@ -83,7 +83,6 @@ export default function RatingModal({
         <Dialog.Panel className="w-full max-w-lg rounded-lg bg-[#02070A] text-white shadow-lg border border-white/10 p-6 space-y-6">
           <Dialog.Title className="text-2xl font-bold">Avaliar</Dialog.Title>
 
-          {/* Nota */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Sua nota</label>
             <div className="flex gap-1">
@@ -97,7 +96,6 @@ export default function RatingModal({
             </div>
           </div>
 
-          {/* Data */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Data que assistiu</label>
             <DatePicker
@@ -116,7 +114,6 @@ export default function RatingModal({
             />
           </div>
 
-          {/* Review */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">O que achou?</label>
             <textarea
@@ -132,7 +129,6 @@ export default function RatingModal({
             </span>
           </div>
 
-          {/* Spoiler */}
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -146,7 +142,6 @@ export default function RatingModal({
             </label>
           </div>
 
-          {/* Botões */}
           <div className="flex justify-end gap-4 pt-4">
             <button
               onClick={onClose}

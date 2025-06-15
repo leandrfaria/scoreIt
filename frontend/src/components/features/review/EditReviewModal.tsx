@@ -1,4 +1,3 @@
-// src/components/features/review/EditReviewModal.tsx
 "use client";
 
 import { Dialog } from "@headlessui/react";
@@ -18,6 +17,7 @@ function formatDateTimeLocal(date: Date) {
 interface EditReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void; // ✅ nova prop para atualizar a seção
   review: {
     id: number;
     score: number;
@@ -27,7 +27,7 @@ interface EditReviewModalProps {
   };
 }
 
-export default function EditReviewModal({ isOpen, onClose, review }: EditReviewModalProps) {
+export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: EditReviewModalProps) {
   const [score, setScore] = useState(review.score);
   const [watchDate, setWatchDate] = useState<Date | null>(new Date(review.watchDate));
   const [memberReview, setMemberReview] = useState(review.memberReview || "");
@@ -61,6 +61,7 @@ export default function EditReviewModal({ isOpen, onClose, review }: EditReviewM
     if (success) {
       toast.success("Avaliação atualizada com sucesso!");
       onClose();
+      onSuccess?.(); // ✅ chama o callback se definido
     } else {
       toast.error("Erro ao atualizar avaliação.");
     }

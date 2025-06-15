@@ -1,3 +1,4 @@
+// src/app/[locale]/series/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,9 +17,10 @@ import ReviewSection from "@/components/features/review/ReviewSection";
 
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();
-  const [serie, setSerie] = useState<any | null>(null);
+  const [serie, setSerie] = useState<Series | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [refreshReviews, setRefreshReviews] = useState(false); // ✅ novo state
   const { member } = useMember();
 
   useEffect(() => {
@@ -153,10 +155,16 @@ export default function SeriePage() {
           onClose={() => setShowModal(false)}
           mediaId={serie.id}
           mediaType="series"
+          onSuccess={() => setRefreshReviews(prev => !prev)} 
         />
       )}
 
-      {serie && <ReviewSection mediaId={serie.id.toString()} />}
+      {serie && (
+        <ReviewSection
+          mediaId={serie.id.toString()}
+          refreshTrigger={refreshReviews} 
+        />
+      )}
     </main>
   );
 }

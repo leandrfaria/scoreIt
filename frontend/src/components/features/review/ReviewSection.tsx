@@ -15,7 +15,13 @@ interface FullReview extends ReviewFromApi {
   memberAvatar: string;
 }
 
-export default function ReviewSection({ mediaId }: { mediaId: string }) {
+export default function ReviewSection({
+  mediaId,
+  refreshTrigger,
+}: {
+  mediaId: string;
+  refreshTrigger?: boolean;
+}) {
   const { member } = useMember();
   const [reviews, setReviews] = useState<FullReview[]>([]);
   const [visibleCount, setVisibleCount] = useState(6);
@@ -58,7 +64,7 @@ export default function ReviewSection({ mediaId }: { mediaId: string }) {
     };
 
     fetchReviewsWithAuthors();
-  }, [mediaId]);
+  }, [mediaId, refreshTrigger]); // ✅ agora escuta o refreshTrigger
 
   const toggleSort = (option: SortOption) => {
     if (sortOption === option) {
@@ -140,6 +146,7 @@ export default function ReviewSection({ mediaId }: { mediaId: string }) {
                 date={review.watchDate}
                 rating={review.score}
                 comment={review.memberReview}
+                spoiler={review.spoiler}
                 onEdit={() => setEditingReview(review)}
                 canEdit={!!member && review.memberId === member.id}
               />
