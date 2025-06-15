@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaStar, FaPen, FaTrash, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { FaStar, FaTrash, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { deleteReview } from "@/services/review/delete_review";
 
@@ -12,7 +12,6 @@ type ReviewProfileCardProps = {
   rating: number;
   comment?: string;
   canEdit?: boolean;
-  onEdit?: () => void;
   onDelete?: () => void;
   reviewId?: number;
 };
@@ -24,20 +23,16 @@ export default function ReviewProfileCard({
   rating,
   comment,
   canEdit,
-  onEdit,
   onDelete,
   reviewId,
 }: ReviewProfileCardProps) {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = async () => {
-    console.warn("🟡 Tentando deletar avaliação...");
     if (!reviewId) {
       console.error("❌ ID da review ausente.");
       return;
     }
-
-    console.log("🗑️ ID da review a ser deletada:", reviewId);
 
     const success = await deleteReview(reviewId);
     if (success) {
@@ -77,15 +72,9 @@ export default function ReviewProfileCard({
     <div className="relative">
       <div className="bg-[#0D1117] rounded-lg p-6 min-w-[360px] max-w-[360px] min-h-[260px] shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
         {canEdit && (
-          <div className="absolute top-4 right-4 flex gap-3">
-            <button onClick={onEdit} className="text-white/60 hover:text-white" title="Editar">
-              <FaPen />
-            </button>
+          <div className="absolute top-4 right-4 z-10">
             <button
-              onClick={() => {
-                console.warn("⚠️ Abrindo modal de confirmação de exclusão");
-                setShowConfirm(true);
-              }}
+              onClick={() => setShowConfirm(true)}
               className="text-white/60 hover:text-red-500"
               title="Excluir"
             >
@@ -94,14 +83,14 @@ export default function ReviewProfileCard({
           </div>
         )}
 
-        <div className="flex gap-4 mb-4">
+        <div className="flex gap-4 mb-4 pr-8">
           <img
             src={posterUrl}
             alt={title}
             className="w-16 h-24 object-cover rounded-md border border-white/10"
           />
           <div className="flex-1">
-            <h3 className="text-white font-semibold text-base line-clamp-2">{title}</h3>
+            <h3 className="text-white font-semibold text-base line-clamp-2 pr-4">{title}</h3>
             <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString("pt-BR")}</p>
           </div>
         </div>
