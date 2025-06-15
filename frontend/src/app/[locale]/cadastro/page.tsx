@@ -47,7 +47,7 @@ export default function Cadastro() {
     if (!dateRegex.test(date)) return false;
 
     const [day, month, year] = date.split("/").map(Number);
-      const parsedDate = new Date(`${year}-${month}-${day}`);
+    const parsedDate = new Date(year, month - 1, day);
 
       const birthDate = parsedDate
       const today = new Date();
