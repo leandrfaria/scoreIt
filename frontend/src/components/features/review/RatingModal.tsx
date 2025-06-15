@@ -1,3 +1,4 @@
+// src/components/features/review/RatingModal.tsx
 "use client";
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
@@ -37,8 +38,17 @@ export default function RatingModal({
   const [spoiler, setSpoiler] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isDateValid = (date: Date | null) => {
+    if (!date) return false;
+    const now = new Date();
+    const minDate = new Date("2020-01-01");
+    return date <= now && date >= minDate;
+  };
+
+  const isReviewValid = memberReview.trim().length <= 260;
+
   const handleSubmit = async () => {
-    if (!score || !watchDate || !member) return;
+    if (!score || !watchDate || !member || !isDateValid(watchDate) || !isReviewValid) return;
     setIsSubmitting(true);
 
     const payload = {
@@ -55,30 +65,9 @@ export default function RatingModal({
     setIsSubmitting(false);
 
     if (success) {
-      toast.custom((t) => (
-        <div
-          className={`${
-            t.visible ? "animate-enter" : "animate-leave"
-          } max-w-md w-full bg-neutral-900 text-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-white/10`}
-        >
-          <div className="flex-1 w-0 p-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0 pt-0.5">
-                <FaCheckCircle className="text-green-400 w-6 h-6" />
-              </div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-medium">Avaliação enviada!</p>
-                <p className="mt-1 text-sm text-gray-300">
-                  Sua opinião foi registrada com sucesso.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ));
-
+      toast.success("Avaliação enviada!");
       setScore(0);
-      setWatchDate(new Date()); // reset aqui é seguro
+      setWatchDate(new Date());
       setMemberReview("");
       setSpoiler(false);
       onClose();
@@ -101,9 +90,7 @@ export default function RatingModal({
               {[1, 2, 3, 4, 5].map((i) => (
                 <FaStar
                   key={i}
-                  className={`cursor-pointer text-2xl transition ${
-                    i <= score ? "text-[var(--color-lightgreen)]" : "text-gray-600"
-                  }`}
+                  className={`cursor-pointer text-2xl transition ${i <= score ? "text-[var(--color-lightgreen)]" : "text-gray-600"}`}
                   onClick={() => setScore(i)}
                 />
               ))}
@@ -124,6 +111,8 @@ export default function RatingModal({
               className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none"
               calendarClassName="react-datepicker"
               popperClassName="z-50"
+              maxDate={new Date()}
+              minDate={new Date("2020-01-01")}
             />
           </div>
 
@@ -133,10 +122,14 @@ export default function RatingModal({
             <textarea
               value={memberReview}
               onChange={(e) => setMemberReview(e.target.value)}
+              maxLength={260}
               rows={4}
               className="bg-zinc-800 text-white p-2 rounded border border-white/10 focus:outline-none resize-none"
               placeholder="Compartilhe sua opinião..."
             />
+            <span className="text-sm text-gray-400">
+              {memberReview.trim().length} / 260 caracteres
+            </span>
           </div>
 
           {/* Spoiler */}
@@ -164,8 +157,8 @@ export default function RatingModal({
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!score || !watchDate || isSubmitting}
-              className="px-6 py-2 rounded bg-[var(--color-darkgreen)] hover:brightness-110 transition font-semibold disabled:opacity-40 flex items-center gap-2"
+              disabled={!score || !watchDate || isSubmitting || !isDateValid(watchDate) || !isReviewValid}
+              className="px-6 py-2 rounded bg-[var(--color-darkgreen)] hover:brightness-110 transition font-semibold disabled:opacity-40"
             >
               {isSubmitting ? (
                 <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
