@@ -29,42 +29,42 @@ export default function ReviewSection({
   const [ascending, setAscending] = useState(false);
   const [editingReview, setEditingReview] = useState<FullReview | null>(null);
 
+  const fetchReviewsWithAuthors = async () => {
+    try {
+      const reviewList = await getReviewsByMediaId(mediaId);
+
+      const reviewsWithAuthors: FullReview[] = await Promise.all(
+        reviewList.map(async (review) => {
+          try {
+            const member = await fetchMemberById(String(review.memberId));
+            return {
+              ...review,
+              memberName: member.name,
+              memberAvatar:
+                member.profileImageUrl ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  member.name
+                )}&background=random&color=fff`,
+            };
+          } catch (error) {
+            return {
+              ...review,
+              memberName: "Usuário desconhecido",
+              memberAvatar: `https://ui-avatars.com/api/?name=Anônimo&background=555&color=fff`,
+            };
+          }
+        })
+      );
+
+      setReviews(reviewsWithAuthors);
+    } catch (error) {
+      console.error("Erro ao buscar avaliações:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchReviewsWithAuthors = async () => {
-      try {
-        const reviewList = await getReviewsByMediaId(mediaId);
-
-        const reviewsWithAuthors: FullReview[] = await Promise.all(
-          reviewList.map(async (review) => {
-            try {
-              const member = await fetchMemberById(String(review.memberId));
-              return {
-                ...review,
-                memberName: member.name,
-                memberAvatar:
-                  member.profileImageUrl ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    member.name
-                  )}&background=random&color=fff`,
-              };
-            } catch (error) {
-              return {
-                ...review,
-                memberName: "Usuário desconhecido",
-                memberAvatar: `https://ui-avatars.com/api/?name=Anônimo&background=555&color=fff`,
-              };
-            }
-          })
-        );
-
-        setReviews(reviewsWithAuthors);
-      } catch (error) {
-        console.error("Erro ao buscar avaliações:", error);
-      }
-    };
-
     fetchReviewsWithAuthors();
-  }, [mediaId, refreshTrigger]); // ✅ agora escuta o refreshTrigger
+  }, [mediaId, refreshTrigger]);
 
   const toggleSort = (option: SortOption) => {
     if (sortOption === option) {
@@ -149,6 +149,8 @@ export default function ReviewSection({
                 spoiler={review.spoiler}
                 onEdit={() => setEditingReview(review)}
                 canEdit={!!member && review.memberId === member.id}
+                reviewId={review.id} // ✅ ISSO AQUI FALTAVA, PORRA
+                onDelete={fetchReviewsWithAuthors} // opcional: recarrega após exclusão
               />
             ))}
           </div>
@@ -169,6 +171,7 @@ export default function ReviewSection({
               isOpen={!!editingReview}
               onClose={() => setEditingReview(null)}
               review={editingReview}
+              onSuccess={fetchReviewsWithAuthors} // atualiza ao editar
             />
           )}
         </>

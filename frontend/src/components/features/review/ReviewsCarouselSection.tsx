@@ -33,40 +33,40 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
   const [reviews, setReviews] = useState<ReviewWithMediaData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchReviews = async () => {
+    const token = localStorage.getItem("authToken");
+    const idToUse = memberId || member?.id;
+
+    if (!token || !idToUse) return;
+
+    try {
+      const res = await getReviewsByMemberId(Number(idToUse), token);
+
+      const reviewsWithMedia: ReviewWithMediaData[] = await Promise.all(
+        res.map(async (review) => {
+          const media = await fetchMediaById(review.mediaId, review.mediaType);
+          if (!media) return null;
+          return {
+            ...review,
+            title: media.title,
+            posterUrl: media.posterUrl,
+          };
+        })
+      ).then((results) => results.filter((r): r is ReviewWithMediaData => r !== null));
+
+      const sorted = reviewsWithMedia.sort(
+        (a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime()
+      );
+
+      setReviews(sorted);
+    } catch (error) {
+      console.error("Erro ao buscar reviews:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchReviews = async () => {
-      const token = localStorage.getItem("authToken");
-      const idToUse = memberId || member?.id;
-
-      if (!token || !idToUse) return;
-
-      try {
-        const res = await getReviewsByMemberId(Number(idToUse), token);
-
-        const reviewsWithMedia: ReviewWithMediaData[] = await Promise.all(
-          res.map(async (review) => {
-            const media = await fetchMediaById(review.mediaId, review.mediaType);
-            if (!media) return null;
-            return {
-              ...review,
-              title: media.title,
-              posterUrl: media.posterUrl,
-            };
-          })
-        ).then((results) => results.filter((r): r is ReviewWithMediaData => r !== null));
-
-        const sorted = reviewsWithMedia.sort(
-          (a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime()
-        );
-
-        setReviews(sorted);
-      } catch (error) {
-        console.error("Erro ao buscar reviews:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchReviews();
   }, [memberId, member]);
 
@@ -118,6 +118,9 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
               date={review.reviewDate}
               rating={review.score}
               comment={review.memberReview}
+              canEdit={!!member && member.id === review.memberId} // ✅ PERMITE EXCLUIR SÓ SE FOR DONO
+              reviewId={review.id} // ✅ ID DA REVIEW PRA EXCLUIR
+              onDelete={fetchReviews} // ✅ REFRESCA DEPOIS DE EXCLUIR
             />
           ))}
         </div>
