@@ -29,7 +29,7 @@ export function CustomListModal({
   listName,
   listDescription,
   onCreate,
-  onListDeleted // Recebe o callback
+  onListDeleted 
 }: CustomListModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
@@ -319,7 +319,7 @@ return (
                             <span className="text-gray-300">Confirmar exclusão?</span>
                             <button
                               onClick={async () => {
-                                await handleDeleteList();
+                                await handleDeleteList(); 
                                 setIsDeleteConfirmOpen(false);
                               }}
                               className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
