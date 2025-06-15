@@ -53,7 +53,6 @@ export const RandomSeriesCarousel = () => {
       items={items}
       autoplay={true}
       arrowButtonClass="bg-[var(--color-darkgreen)] hover:brightness-110 text-white"
-      detailButtonClass="bg-[var(--color-darkgreen)] hover:brightness-110 text-white"
     />
   );
 };

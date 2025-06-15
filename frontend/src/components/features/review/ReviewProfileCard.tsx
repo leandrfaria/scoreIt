@@ -75,14 +75,10 @@ export default function ReviewProfileCard({
 
   return (
     <div className="relative">
-      <div className="bg-[#0D1117] rounded-lg p-6 min-w-[320px] max-w-[320px] shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
+      <div className="bg-[#0D1117] rounded-lg p-6 min-w-[360px] max-w-[360px] min-h-[260px] shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
         {canEdit && (
           <div className="absolute top-4 right-4 flex gap-3">
-            <button
-              onClick={onEdit}
-              className="text-white/60 hover:text-white"
-              title="Editar"
-            >
+            <button onClick={onEdit} className="text-white/60 hover:text-white" title="Editar">
               <FaPen />
             </button>
             <button
@@ -120,7 +116,9 @@ export default function ReviewProfileCard({
       {showConfirm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
           <div className="bg-[#0D1117] p-6 rounded-lg shadow-md border border-white/10 w-[90%] max-w-md">
-            <h2 className="text-white text-lg font-semibold mb-4">Tem certeza que deseja excluir esta avaliação?</h2>
+            <h2 className="text-white text-lg font-semibold mb-4">
+              Tem certeza que deseja excluir esta avaliação?
+            </h2>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowConfirm(false)}
