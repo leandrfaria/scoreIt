@@ -229,9 +229,6 @@ export default function Profile() {
         </Container>
 
         <Container>
-                <ReviewsCarouselSection />
-              </Container>
-        <Container>
           
           {activeTab == "filmes" && <FavouriteMoviesCarouselSection />}
           {activeTab == "musicas" && <FavouriteAlbumCarouselSection />}
@@ -264,6 +261,10 @@ export default function Profile() {
             onListUpdated={loadCustomLists}
           />
         )}
+
+        <Container>
+          <ReviewsCarouselSection />
+        </Container>
       </main> 
     </ProtectedRoute>
   );

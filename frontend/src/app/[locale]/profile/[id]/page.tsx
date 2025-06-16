@@ -97,10 +97,6 @@ export default function PublicProfilePage() {
       </Container>
 
       <Container>
-        <ReviewsCarouselSection memberId={id as string} />
-      </Container>
-
-      <Container>
         {activeTab == "filmes" && (
           <FavouriteMoviesCarouselSection memberId={id as string} />
         )}
@@ -110,6 +106,10 @@ export default function PublicProfilePage() {
         {activeTab == "series" && (
           <FavouriteSeriesCarouselSection memberId={id as string} />
         )}
+      </Container>
+
+      <Container>
+        <ReviewsCarouselSection memberId={id as string} />
       </Container>
     </main>
   );
