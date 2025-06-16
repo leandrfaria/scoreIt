@@ -111,7 +111,7 @@ export default function ReviewCard({
         <div className="flex items-center gap-1 mb-3">{renderStars()}</div>
 
         {comment?.trim() && (
-          <div className="text-sm text-gray-300 leading-relaxed">
+          <div className="text-sm text-gray-300 leading-relaxed break-words whitespace-pre-wrap">
             {spoiler && !showSpoiler ? (
               <>
                 <p className="blur-sm select-none transition duration-300">{comment}</p>
@@ -157,4 +157,5 @@ export default function ReviewCard({
       )}
     </div>
   );
+
 }

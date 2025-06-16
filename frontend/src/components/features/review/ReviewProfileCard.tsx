@@ -91,14 +91,18 @@ export default function ReviewProfileCard({
           />
           <div className="flex-1">
             <h3 className="text-white font-semibold text-base line-clamp-2 pr-4">{title}</h3>
-            <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString("pt-BR")}</p>
+            <p className="text-sm text-gray-400">
+              {new Date(date).toLocaleDateString("pt-BR")}
+            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1 mb-3">{renderStars()}</div>
 
         {comment?.trim() && (
-          <p className="text-gray-300 text-sm leading-relaxed">{comment}</p>
+          <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">
+            {comment}
+          </p>
         )}
       </div>
 
@@ -131,4 +135,5 @@ export default function ReviewProfileCard({
       )}
     </div>
   );
+
 }

@@ -131,8 +131,8 @@ const ProfileHeader = ({
   following,
   setFollowers,
 }: ProfileHeaderProps) => (
-  <div className="flex justify-between items-center">
-    <div className="flex items-center gap-4">
+  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
       <div className="w-16 h-16 rounded-full bg-gray-400 overflow-hidden relative">
         <Image
           src={
@@ -144,7 +144,8 @@ const ProfileHeader = ({
           className="object-cover"
         />
       </div>
-      <div className="flex flex-col text-white space-y-1">
+
+      <div className="flex-1 flex flex-col text-white space-y-1">
         <div className="flex items-center gap-2">
           <span className="text-lg font-medium">{member?.name}</span>
         </div>
@@ -152,7 +153,8 @@ const ProfileHeader = ({
           {member?.bio || t("no_bio")}
         </p>
       </div>
-      <div className="flex ml-6">
+
+      <div className="sm:ml-auto">
         <FollowButton
           targetId={member.id.toString()}
           onFollow={() => setFollowers((prev) => prev + 1)}
@@ -160,6 +162,14 @@ const ProfileHeader = ({
         />
       </div>
     </div>
-    <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()}/>
+
+    <div className="w-full md:w-auto">
+      <ProfileStats
+        t={t}
+        followers={followers}
+        following={following}
+        memberId={member.id.toString()}
+      />
+    </div>
   </div>
 );

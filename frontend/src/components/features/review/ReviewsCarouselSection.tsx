@@ -96,20 +96,22 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
 
   return (
     <section className="relative py-10">
-      <h2 className="text-2xl font-bold text-white mb-6 px-4 md:px-10 lg:px-20">
+      <h2 className="text-2xl font-bold text-white mb-6 px-4 sm:px-6 lg:px-20">
         {memberId ? "Últimas avaliações do usuário" : "Suas últimas avaliações"}
       </h2>
 
+      {/* Botão esquerda */}
       <button
         onClick={() => scrollContainer("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition"
+        className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition"
       >
         <FaChevronLeft className="text-white" />
       </button>
 
+      {/* Carrossel */}
       <div
         id="review-carousel"
-        className="ml-10 mr-10 flex overflow-x-auto gap-6 scroll-smooth py-2"
+        className="px-4 sm:px-6 lg:px-20 flex overflow-x-auto gap-6 scroll-smooth py-2"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         <style>{`
@@ -133,12 +135,14 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
         ))}
       </div>
 
+      {/* Botão direita */}
       <button
         onClick={() => scrollContainer("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition"
+        className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition"
       >
         <FaChevronRight className="text-white" />
       </button>
     </section>
+
   );
 }

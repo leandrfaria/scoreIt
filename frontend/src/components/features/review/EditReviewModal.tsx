@@ -41,7 +41,7 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
     return date <= now && date >= minDate;
   };
 
-  const isReviewValid = memberReview.trim().length <= 260;
+  const isReviewValid = memberReview.trim().length <= 250;
 
   const handleSubmit = async () => {
     if (!score || !watchDate || !isDateValid(watchDate) || !isReviewValid) return;
@@ -112,13 +112,13 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
             <textarea
               value={memberReview}
               onChange={(e) => setMemberReview(e.target.value)}
-              maxLength={260}
+              maxLength={250}
               rows={4}
               className="bg-zinc-800 text-white p-2 rounded border border-white/10 resize-none"
               placeholder="Atualize sua opinião..."
             />
             <span className="text-sm text-gray-400">
-              {memberReview.trim().length} / 260 caracteres
+              {memberReview.trim().length} / 250 caracteres
             </span>
           </div>
 
