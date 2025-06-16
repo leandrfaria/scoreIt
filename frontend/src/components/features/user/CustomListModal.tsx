@@ -123,7 +123,6 @@ const handleRemoveItem = async (item: MediaType) => {
   }
 
   try {
-    // Determina o tipo de mídia corretamente
     let mediaType: 'movie' | 'album' | 'series';
     
     if ('title' in item) {
@@ -196,11 +195,10 @@ const handleUpdateList = async () => {
       onListUpdated();
     }
   } catch (error) {
-    console.error(" ERRO na atualização:", error);
+    console.error(" erro na atualização:", error);
     toast.error(`Erro ao atualizar lista: ${error}`);
   }
 };
-
   const handleDeleteList = async () => {
     if (!id) return;
 
