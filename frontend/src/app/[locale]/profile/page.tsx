@@ -261,6 +261,7 @@ export default function Profile() {
             listName={selectedList.listName}
             listDescription={selectedList.list_description}
             onListDeleted={loadCustomLists}
+            onListUpdated={loadCustomLists}
           />
         )}
       </main> 

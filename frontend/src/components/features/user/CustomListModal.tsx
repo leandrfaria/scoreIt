@@ -19,6 +19,7 @@ interface CustomListModalProps {
   listDescription?: string;
   onCreate?: (data: { name: string; description: string }) => Promise<void>;
   onListDeleted?: () => void; // Nova prop
+  onListUpdated?: () => void; // Nova prop para atualizações
 
 }
 
@@ -29,7 +30,8 @@ export function CustomListModal({
   listName,
   listDescription,
   onCreate,
-  onListDeleted 
+  onListDeleted,
+  onListUpdated
 }: CustomListModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
@@ -38,6 +40,7 @@ export function CustomListModal({
   const [description, setDescription] = useState(listDescription ?? '');
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [charCount, setCharCount] = useState(0);
   const router = useRouter();
   const locale = useLocale();
 
@@ -47,6 +50,8 @@ useEffect(() => {
   if (isOpen && member && listName && !onCreate) {
     setName(listName);
     setDescription(listDescription ?? '');
+    setCharCount(listDescription?.length ?? 0); // Inicializa contagem de caracteres
+
 
     fetchListContent(member.id, listName)
       .then((items) => {
@@ -118,7 +123,6 @@ const handleRemoveItem = async (item: MediaType) => {
   }
 
   try {
-    // Determina o tipo de mídia corretamente
     let mediaType: 'movie' | 'album' | 'series';
     
     if ('title' in item) {
@@ -157,6 +161,12 @@ const handleUpdateList = async () => {
     return;
   }
 
+  // Validação de caracteres
+  if (description.length > 50) {
+    toast.error('A descrição deve ter no máximo 50 caracteres');
+    return;
+  }
+
   const token = localStorage.getItem("authToken");
   if (!token) {
     console.error("Token não encontrado no localStorage");
@@ -181,12 +191,14 @@ const handleUpdateList = async () => {
     toast.success("Lista atualizada!");
     setIsEditing(false);
     
+    if (onListUpdated) {
+      onListUpdated();
+    }
   } catch (error) {
-    console.error(" ERRO na atualização:", error);
+    console.error(" erro na atualização:", error);
     toast.error(`Erro ao atualizar lista: ${error}`);
   }
 };
-
   const handleDeleteList = async () => {
     if (!id) return;
 
@@ -210,6 +222,12 @@ const handleUpdateList = async () => {
     e.preventDefault();
     if (!name.trim()) {
       toast.error('O nome da lista é obrigatório');
+      return;
+    }
+
+    // Validação de caracteres
+    if (description.length > 50) {
+      toast.error('A descrição deve ter no máximo 50 caracteres');
       return;
     }
 
@@ -246,61 +264,81 @@ return (
             <button onClick={onClose} className="text-red-400 text-2xl">×</button>
           </div>
 
-          {onCreate ? (
-            <form onSubmit={handleCreateListSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Nome da lista"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full p-2 rounded bg-neutral-800 text-white"
-              />
-              <textarea
-                name="description"
-                placeholder="Descrição (opcional)"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-2 rounded bg-neutral-800 text-white"
-              />
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">Cancelar</button>
-                <button type="submit" className="bg-green-600 px-4 py-2 rounded hover:bg-green-500">Criar</button>
-              </div>
-            </form>
-          ) : (
-            <>
-              {isEditing ? (
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full p-2 rounded bg-neutral-800 text-white"
-                  />
+          {/* Área flexível com scroll */}
+          <div className="flex flex-col flex-grow min-h-0 overflow-hidden">
+            {onCreate ? (
+              <form onSubmit={handleCreateListSubmit} className="space-y-4 flex flex-col">
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Nome da lista"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full p-2 rounded bg-neutral-800 text-white"
+                />
+                <div className="flex flex-col flex-grow min-h-0">
                   <textarea
+                    name="description"
+                    placeholder="Descrição (opcional)"
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full p-2 rounded bg-neutral-800 text-white"
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      setCharCount(e.target.value.length);
+                    }}
+                    maxLength={50}
+                    className="w-full p-2 rounded bg-neutral-800 text-white flex-grow"
+                    rows={4}
                   />
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleUpdateList}
-                      className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500"
-                    >
-                      Salvar alterações
-                    </button>
+                  <div className={`text-xs mt-1 text-right ${charCount === 50 ? 'text-red-500' : 'text-gray-400'}`}>
+                    {charCount}/50 caracteres
                   </div>
                 </div>
-              ) : (
-                <>
-                  {/* Container principal flexível */}
+                <div className="flex justify-end gap-2 mt-4">
+                  <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">Cancelar</button>
+                  <button type="submit" className="bg-green-600 px-4 py-2 rounded hover:bg-green-500">Criar</button>
+                </div>
+              </form>
+            ) : (
+              <>
+                {isEditing ? (
+                  <div className="space-y-4 flex flex-col flex-grow min-h-0">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full p-2 rounded bg-neutral-800 text-white"
+                    />
+                    <div className="flex flex-col flex-grow min-h-0">
+                      <textarea
+                        value={description}
+                        onChange={(e) => {
+                          setDescription(e.target.value);
+                          setCharCount(e.target.value.length);
+                        }}
+                        maxLength={50}
+                        className="w-full p-2 rounded bg-neutral-800 text-white flex-grow"
+                        rows={4}
+                      />
+                      <div className={`text-xs mt-1 text-right ${charCount === 50 ? 'text-red-500' : 'text-gray-400'}`}>
+                        {charCount}/50 caracteres
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleUpdateList}
+                        className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500"
+                      >
+                        Salvar alterações
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <div className="flex flex-col flex-grow min-h-0">
                     {/* Seção de descrição e botões */}
                     <div className="flex justify-between items-center mb-4">
@@ -313,37 +351,36 @@ return (
                       </button>
                     </div>
 
-                      <div className="flex justify-end mb-3">
-                        {isDeleteConfirmOpen ? (
-                          <div className="flex gap-2 items-center">
-                            <span className="text-gray-300">Confirmar exclusão?</span>
-                            <button
-                              onClick={async () => {
-                                await handleDeleteList(); 
-                                setIsDeleteConfirmOpen(false);
-                              }}
-                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
-                            >
-                              Confirmar
-                            </button>
-                            <button
-                              onClick={() => setIsDeleteConfirmOpen(false)}
-                              className="text-gray-400 hover:text-white"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        ) : (
+                    <div className="flex justify-end mb-3">
+                      {isDeleteConfirmOpen ? (
+                        <div className="flex gap-2 items-center">
+                          <span className="text-gray-300">Confirmar exclusão?</span>
                           <button
-                            onClick={() => setIsDeleteConfirmOpen(true)}
-                            className="text-red-400 hover:text-red-300 hover:underline"
+                            onClick={async () => {
+                              await handleDeleteList(); 
+                              setIsDeleteConfirmOpen(false);
+                            }}
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
                           >
-                            Deletar lista
+                            Confirmar
                           </button>
-                        )}
-                      </div>
+                          <button
+                            onClick={() => setIsDeleteConfirmOpen(false)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setIsDeleteConfirmOpen(true)}
+                          className="text-red-400 hover:text-red-300 hover:underline"
+                        >
+                          Deletar lista
+                        </button>
+                      )}
+                    </div>
 
-                    
                     {/* Container com scroll vertical */}
                     <div className="flex-grow overflow-y-auto min-h-0">
                       {mediaItems.length === 0 ? (
@@ -396,10 +433,10 @@ return (
                       )}
                     </div>
                   </div>
-                </>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </motion.div>
       </>
     )}
