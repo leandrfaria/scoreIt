@@ -186,7 +186,6 @@ export default function Profile() {
                   className="flex items-center justify-between w-full text-xl font-semibold text-white"
                   onClick={() => setIsListsOpen(!isListsOpen)}
                 >
-                  <span>Suas listas</span>
                   <svg
                     className={`w-5 h-5 transform transition-transform ${isListsOpen ? 'rotate-180' : ''}`}
                     fill="none"
@@ -262,6 +261,7 @@ export default function Profile() {
             listName={selectedList.listName}
             listDescription={selectedList.list_description}
             onListDeleted={loadCustomLists}
+            onListUpdated={loadCustomLists}
           />
         )}
       </main> 

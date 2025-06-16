@@ -19,6 +19,7 @@ interface CustomListModalProps {
   listDescription?: string;
   onCreate?: (data: { name: string; description: string }) => Promise<void>;
   onListDeleted?: () => void; // Nova prop
+  onListUpdated?: () => void; // Nova prop para atualizações
 
 }
 
@@ -29,7 +30,8 @@ export function CustomListModal({
   listName,
   listDescription,
   onCreate,
-  onListDeleted 
+  onListDeleted,
+  onListUpdated
 }: CustomListModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const { member } = useMember();
@@ -181,6 +183,9 @@ const handleUpdateList = async () => {
     toast.success("Lista atualizada!");
     setIsEditing(false);
     
+    if (onListUpdated) {
+      onListUpdated();
+    }
   } catch (error) {
     console.error(" ERRO na atualização:", error);
     toast.error(`Erro ao atualizar lista: ${error}`);
