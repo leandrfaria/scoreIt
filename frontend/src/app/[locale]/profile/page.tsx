@@ -243,14 +243,15 @@ export default function Profile() {
           />
         )}
 
-        {isCreateListModalOpen && (
+        {isCreateListModalOpen && member &&(
           <CustomListModal
             onClose={() => setIsCreateListModalOpen(false)}
             onCreate={handleCreateList}
+            member={member}
           />
         )}
 
-        {selectedList && (
+        {selectedList && member && (
           <CustomListModal
             isOpen={true}
             onClose={handleCloseListModal}
@@ -259,6 +260,7 @@ export default function Profile() {
             listDescription={selectedList.list_description}
             onListDeleted={loadCustomLists}
             onListUpdated={loadCustomLists}
+            member={member}
           />
         )}
 

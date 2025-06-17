@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { updateCustomList, removeContentFromList, fetchListContent, deleteCustomList } from "@/services/customList/add_content_list";
 import { useRouter } from "next/navigation";
 import { useLocale } from 'next-intl';
+import { Member } from '@/types/Member';
 
 interface CustomListModalProps {
   isOpen?: boolean;
@@ -20,7 +21,7 @@ interface CustomListModalProps {
   onCreate?: (data: { name: string; description: string }) => Promise<void>;
   onListDeleted?: () => void; // Nova prop
   onListUpdated?: () => void; // Nova prop para atualizações
-
+  member: Member;
 }
 
 export function CustomListModal({
@@ -31,10 +32,10 @@ export function CustomListModal({
   listDescription,
   onCreate,
   onListDeleted,
-  onListUpdated
+  onListUpdated,
+  member
 }: CustomListModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  const { member } = useMember();
   const [mediaItems, setMediaItems] = useState<MediaType[]>([]);
   const [name, setName] = useState(listName ?? '');
   const [description, setDescription] = useState(listDescription ?? '');

@@ -190,6 +190,7 @@ export const fetchMemberLists = async (token: string, memberId: number): Promise
     },
   });
 
+  console.log("Response lista:" , res);
   if (!res.ok) throw new Error("Erro ao buscar listas");
   return await res.json();
 };

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { Member } from "@/types/Member";
-import Image from "next/image";
 import { Container } from "@/components/layout/Container";
 import { useLocale, useTranslations } from "next-intl";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
@@ -12,18 +12,23 @@ import FavouriteSeriesCarouselSection from "@/components/features/serie/Favourit
 import { fetchMemberById } from "@/services/user/member";
 import { useTabContext } from "@/context/TabContext";
 import { useMember } from "@/context/MemberContext";
-import { FollowButton } from "@/components/features/follow/FollowButton";
-import { ProfileStats } from "@/components/features/user/ProfileStats";
+import { CustomList } from "@/types/CustomList"; // ajuste o caminho conforme necessário
 import {
   countFollowers,
   countFollowing,
 } from "@/services/followers/countStats";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
+import { AnimatePresence, motion } from "framer-motion";
+import { CustomListModal } from "@/components/features/user/CustomListModal";
+import { fetchMemberLists } from "@/services/customList/add_content_list"; // ajuste o caminho conforme seu projeto
+import { FollowButton } from "@/components/features/follow/FollowButton";
+import { ProfileStats } from "@/components/features/user/ProfileStats";
 
 export default function PublicProfilePage() {
   const [otherMember, setOtherMember] = useState<Member | null>(null);
-  const { member } = useMember();
   const [loading, setLoading] = useState(true);
+
+  const { member } = useMember();
   const { id } = useParams();
   const t = useTranslations("profile");
   const { activeTab } = useTabContext();
@@ -31,6 +36,12 @@ export default function PublicProfilePage() {
   const locale = useLocale();
   const [followers, setFollowers] = useState<number>(0);
   const [following, setFollowing] = useState<number>(0);
+
+
+  // Estado para listas customizadas
+  const [customLists, setCustomLists] = useState<CustomList[]>([]);
+  const [isListsOpen, setIsListsOpen] = useState(false);
+  const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
   // Buscar o membro
   useEffect(() => {
@@ -70,16 +81,42 @@ export default function PublicProfilePage() {
     fetchCounts();
   }, [id]);
 
+  // Redirecionar para perfil próprio caso o id seja do usuário logado
   useEffect(() => {
     if (member?.id && String(member.id) === id) {
       router.replace(`/${locale}/profile`);
     }
-  }, [member, id, router]);
+  }, [member, id, router, locale]);
+
+  useEffect(() => {
+    const fetchLists = async () => {
+      if (!id) return;
+      try {
+        const token = localStorage.getItem("authToken"); // <-- Agora está declarado corretamente
+        if (!token) return;
+        console.log("ID MEMBRO LISTA: ", id)
+        const lists = await fetchMemberLists(token, Number(id));
+        setCustomLists(lists);
+      } catch (err) {
+        console.error("Erro ao buscar listas customizadas:", err);
+      }
+    };
+
+    fetchLists();
+  }, [id]);
+
 
   if (member?.id && String(member.id) === id) return null;
   if (loading) return <p className="text-white">Carregando...</p>;
-  if (!otherMember)
-    return <p className="text-white">Usuário não encontrado.</p>;
+  if (!otherMember) return <p className="text-white">Usuário não encontrado.</p>;
+
+  function handleOpenListModal(list: CustomList) {
+  setSelectedList(list);
+}
+
+  function handleCloseListModal() {
+    setSelectedList(null);
+  }
 
   return (
     <main className="w-full">
@@ -94,6 +131,64 @@ export default function PublicProfilePage() {
             setFollowers={setFollowers}
           />
         </div>
+
+        {/* Seção das Listas Customizadas */}
+        <section className="mt-6">
+          <div className="mb-4">
+            <button
+              className="flex items-center justify-between w-full text-xl font-semibold text-white"
+              onClick={() => setIsListsOpen(!isListsOpen)}
+              aria-expanded={isListsOpen}
+            >
+              <span>Listas Personalizadas</span>
+              <svg
+                className={`w-5 h-5 transform transition-transform ${
+                  isListsOpen ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {isListsOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+                animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+                exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                {customLists.length === 0 ? (
+                  <p className="text-gray-400 py-2">
+                    Este usuário não possui listas personalizadas!
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {customLists.map((list) => (
+                      <div
+                        key={list.id}
+                        className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700"
+                        onClick={() => handleOpenListModal(list)}
+                      >
+                        <h3 className="text-lg font-semibold">{list.listName}</h3>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
       </Container>
 
       <Container>
@@ -111,9 +206,22 @@ export default function PublicProfilePage() {
       <Container>
         <ReviewsCarouselSection memberId={id as string} />
       </Container>
+
+      {selectedList && (
+        <CustomListModal
+          isOpen={true}
+          onClose={handleCloseListModal}
+          id={selectedList.id}
+          listName={selectedList.listName}
+          listDescription={selectedList.list_description}
+          member={otherMember}
+          // Bloqueia edição pois é perfil público (outro usuário)
+        />
+      )}
     </main>
   );
 }
+
 
 interface ProfileHeaderProps {
   member: Member;
