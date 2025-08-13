@@ -82,6 +82,7 @@
     "logout": "Sair",
     "login": "Login",
     "deleteUser": "Deletar Usuário",
+    "changeLanguage": "Trocar idioma",
     "deleteModal": {
       "title": "Tem certeza que deseja deletar o usuário?",
       "description": "Essa ação é irreversível.",
@@ -116,7 +117,7 @@
   "NowPlayingCarousel": {
     "loading": "Carregando filmes em cartaz...",
     "noMoviesFound": "Nenhum filme em cartaz encontrado.",
-    "carouselTitle": "Filmes em Cartaz",  
+    "carouselTitle": "Filmes em Cartaz",
     "tokenNotFound": "Token não encontrado. Faça login primeiro.",
     "emptyListWarning": "🚨 Lista vazia! Adicionando mock...",
     "loadingFav": "Carregando filmes favoritos...",
@@ -141,23 +142,23 @@
     "loading": "Carregando filmes...",
     "noMoviesFound": "Nenhum filme encontrado.",
     "noFavSeries": "Nenhuma série encontrada",
-    "noFavAlbum":"Nenhum álbum encontrado.",
+    "noFavAlbum": "Nenhum álbum encontrado.",
     "ChoosePage": "Escolha a página:",
     "Genres": "Todos os generos",
     "Years": "Todos os anos",
-    "genreNames":{
-          "Action": "Ação",
-          "Adventure": "Aventura",
-          "Animation": "Animação",
-          "Comedy": "Comédia",
-          "Drama": "Drama",
-          "Fantasy": "Fantasia",
-          "Horror": "Terror",
-          "Romance": "Romance",
-          "Sci-Fi": "Ficção Científica",
-          "Thriller": "Suspense",
-          "Documentary": "Documentário",
-          "Mystery": "Mistério"
+    "genreNames": {
+      "Action": "Ação",
+      "Adventure": "Aventura",
+      "Animation": "Animação",
+      "Comedy": "Comédia",
+      "Drama": "Drama",
+      "Fantasy": "Fantasia",
+      "Horror": "Terror",
+      "Romance": "Romance",
+      "Sci-Fi": "Ficção Científica",
+      "Thriller": "Suspense",
+      "Documentary": "Documentário",
+      "Mystery": "Mistério"
     }
   },
   "MovieCard": {
@@ -219,7 +220,7 @@
     "noAlbumsFound": "Nenhum álbum encontrado.",
     "albunsAparecendo": "Álbuns aparecendo:"
   },
-  "ProtecLoading":{
+  "ProtecLoading": {
     "loading": "Carregando..."
   }
 }
