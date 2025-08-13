@@ -8,9 +8,9 @@ import { Album } from "@/types/Album";
 type MediaType = "movie" | "series" | "album";
 
 export type UnifiedMedia = {
-  id: number | string; // <- aqui tá a mudança
+  id: number | string;
   title: string;
-  posterUrl: string;
+  posterUrl: string; // precisa ser sempre string
 };
 
 export const fetchMediaById = async (
@@ -18,12 +18,10 @@ export const fetchMediaById = async (
   mediaType: MediaType
 ): Promise<UnifiedMedia | null> => {
   const token = localStorage.getItem("authToken");
-
   if (!token) {
     console.error("❌ Token JWT não encontrado.");
     return null;
   }
-
   if (!id || !mediaType) return null;
 
   switch (mediaType) {
@@ -33,30 +31,28 @@ export const fetchMediaById = async (
       return {
         id: movie.id,
         title: movie.title,
-        posterUrl: movie.posterUrl,
+        // 👇 evita o erro de tipo: se poster vier null, usa o backdrop (string)
+        posterUrl: movie.posterUrl ?? movie.backdropUrl,
       };
     }
-
     case "series": {
       const serie: Series | null = await fetchSerieById(id);
       if (!serie) return null;
       return {
         id: serie.id,
         title: serie.name,
-        posterUrl: serie.posterUrl,
+        posterUrl: serie.posterUrl, // já é string no tipo
       };
     }
-
     case "album": {
       const album: Album | null = await fetchAlbumById(id);
       if (!album) return null;
       return {
-        id: album.id, // agora pode ser string mesmo
+        id: album.id,
         title: album.name,
-        posterUrl: album.imageUrl,
+        posterUrl: album.imageUrl, // já retorna string ("" se faltar)
       };
     }
-
     default:
       console.error(`❌ Tipo de mídia inválido: ${mediaType}`);
       return null;
