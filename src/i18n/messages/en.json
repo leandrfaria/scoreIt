@@ -82,6 +82,7 @@
     "logout": "Leave",
     "login": "Login",
     "deleteUser": "Delete User",
+    "changeLanguage": "Change language",
     "deleteModal": {
       "title": "Are you sure you want to delete your account?",
       "description": "This action is irreversible.",
@@ -141,23 +142,23 @@
     "loading": "Loading movies...",
     "noMoviesFound": "No movies found.",
     "noFavSeries": "No serie found",
-    "noFavAlbum":"No albums found",
+    "noFavAlbum": "No albums found",
     "ChoosePage": "Choose the page:",
     "Genres": "All genres",
     "Years": "All years",
     "genreNames": {
-          "Action": "Action",
-          "Adventure": "Adventure",
-          "Animation": "Animation",
-          "Comedy": "Comedy",
-          "Drama": "Drama",
-          "Fantasy": "Fantasy",
-          "Horror": "Horror",
-          "Romance": "Romance",
-          "Sci-Fi": "Science Fiction",
-          "Thriller": "Thriller",
-          "Documentary": "Documentary",
-          "Mystery": "Mystery"
+      "Action": "Action",
+      "Adventure": "Adventure",
+      "Animation": "Animation",
+      "Comedy": "Comedy",
+      "Drama": "Drama",
+      "Fantasy": "Fantasy",
+      "Horror": "Horror",
+      "Romance": "Romance",
+      "Sci-Fi": "Science Fiction",
+      "Thriller": "Thriller",
+      "Documentary": "Documentary",
+      "Mystery": "Mystery"
     }
   },
   "MovieCard": {
@@ -219,7 +220,7 @@
     "noAlbumsFound": "No albums found.",
     "albunsAparecendo": "Albums appearing:"
   },
-  "ProtecLoading":{
+  "ProtecLoading": {
     "loading": "Loading..."
   }
 }
