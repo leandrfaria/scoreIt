@@ -1,38 +1,17 @@
-import "@/app/globals.css";
-import { Header } from "@/components/layout/Header/Header";
-import { MemberProvider } from "@/context/MemberContext";
-import { AuthProvider } from "@/context/AuthContext";
-import { TabProvider } from "@/context/TabContext";
-import { Toaster } from "react-hot-toast";
-import { IntlProvider } from "./intl-provider";
+import ClientProviders from "./ClientProviders";
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+
   return (
-    <MemberProvider>
-      <AuthProvider>
-        <IntlProvider locale={params.locale}>
-          <TabProvider>
-              <Header />
-              <Toaster
-                position="top-center"
-                toastOptions={{
-                  duration: 3000,
-                  style: {
-                    background: "#333",
-                    color: "#fff",
-                  },
-                }}
-              />
-              {children}
-          </TabProvider>
-        </IntlProvider>
-      </AuthProvider>
-    </MemberProvider>
+    <ClientProviders locale={locale}>
+      {children}
+    </ClientProviders>
   );
 }

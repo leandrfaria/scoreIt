@@ -1,19 +1,17 @@
-// Server Component
+"use client";
+
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { getLocale } from "next-intl/server";
 import LogoLateral from "@/assets/LogoLateral";
 
-// widgets client carregados dinamicamente (sem ssr:false)
-const SearchBar = dynamic(() => import("./SearchBar"));
-const UserMenu = dynamic(() => import("./UserMenu"));
-const LanguageSwitcher = dynamic(() => import("./LanguageSwitcher"));
-const MobileMenu = dynamic(() => import("./MobileMenu"));
-const TabSwitcherGuard = dynamic(() => import("./TabSwitcherGuard"));
+// widgets client carregados dinamicamente (sem SSR para atrasar carga)
+const SearchBar = dynamic(() => import("./SearchBar"), { ssr: false });
+const UserMenu = dynamic(() => import("./UserMenu"), { ssr: false });
+const LanguageSwitcher = dynamic(() => import("./LanguageSwitcher"), { ssr: false });
+const MobileMenu = dynamic(() => import("./MobileMenu"), { ssr: false });
+const TabSwitcherGuard = dynamic(() => import("./TabSwitcherGuard"), { ssr: false });
 
-export async function Header() {
-  const locale = await getLocale();
-
+export function Header({ locale }: { locale: string }) {
   return (
     <header className="w-full h-20 bg-black relative z-40">
       <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-6">
@@ -38,7 +36,7 @@ export async function Header() {
           <UserMenu />
         </div>
 
-        {/* MOBILE - BOTÕES (hambúrguer e busca ficam no MobileMenu) */}
+        {/* MOBILE */}
         <div className="flex lg:hidden items-center gap-2">
           <MobileMenu />
         </div>
