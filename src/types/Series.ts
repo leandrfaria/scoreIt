@@ -1,7 +1,7 @@
 export interface Series {
   id: number;
   name: string;
-  posterUrl: string;
+  posterUrl: string | null;
   backdropUrl: string;
   vote_average: number;
   release_date: string | null;
