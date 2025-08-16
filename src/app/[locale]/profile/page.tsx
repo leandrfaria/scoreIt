@@ -5,35 +5,108 @@ import Image from "next/image";
 import { Container } from "@/components/layout/Container";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { FiEdit2 } from "react-icons/fi";
-import ProfileEditModal from "@/components/features/user/ProfileEditModal";
-import { useMember } from "@/context/MemberContext";
-import { Member } from "@/types/Member";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
-import { updateMember } from "@/services/user/member";
+import { AnimatePresence, motion } from "framer-motion";
+
+import ProfileEditModal from "@/components/features/user/ProfileEditModal";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
-import { useTabContext } from "@/context/TabContext";
 import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
-import { ProfileStats } from "@/components/features/user/ProfileStats";
+import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 import { CustomListModal } from "@/components/features/user/CustomListModal";
+import { ProfileStats } from "@/components/features/user/ProfileStats";
+
+import { useMember } from "@/context/MemberContext";
+import { useTabContext } from "@/context/TabContext";
+
+import { updateMember } from "@/services/user/member";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
 import { fetchMemberLists } from "@/services/customList/add_content_list";
 import { CustomList } from "@/types/CustomList";
-import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
-import { AnimatePresence, motion } from "framer-motion";
+import { Member } from "@/types/Member";
+
+// ------------------- API HELPERS -------------------
+
+async function uploadProfileImage(token: string, memberId: number, imageFile: File) {
+  const formDataImage = new FormData();
+  formDataImage.append("file", imageFile);
+
+  const res = await fetch(`http://localhost:8080/api/images/upload/${memberId}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formDataImage,
+  });
+
+  if (!res.ok) throw new Error("Erro ao fazer upload da imagem");
+}
+
+async function createCustomList(token: string, memberId: number, name: string, description: string) {
+  const res = await fetch("http://localhost:8080/customList/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ memberId, listName: name, description }),
+  });
+
+  if (!res.ok) throw new Error("Erro ao criar lista");
+}
+
+// ------------------- COMPONENT -------------------
+
+type ModalType = "edit" | "createList" | "viewList" | null;
 
 export default function Profile() {
   const { member, setMember } = useMember();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateListModalOpen, setIsCreateListModalOpen] = useState(false);
-  const [customLists, setCustomLists] = useState<CustomList[]>([]);
-  const [isListsOpen, setIsListsOpen] = useState(false);
-  const [selectedList, setSelectedList] = useState<CustomList | null>(null);
   const { activeTab } = useTabContext();
   const t = useTranslations("profile");
-  const [followers, setFollowers] = useState<number>(0);
-  const [following, setFollowing] = useState<number>(0);
+
+  const [followers, setFollowers] = useState(0);
+  const [following, setFollowing] = useState(0);
+  const [customLists, setCustomLists] = useState<CustomList[]>([]);
+  const [isListsOpen, setIsListsOpen] = useState(false);
+
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [selectedList, setSelectedList] = useState<CustomList | null>(null);
+
+  // ----------- Data Fetching -----------
+  const loadCustomLists = async (token: string, memberId: number) => {
+    try {
+      const lists = await fetchMemberLists(token, memberId);
+      setCustomLists(lists);
+    } catch (err) {
+      console.error("Erro ao carregar listas:", err);
+      toast.error("Erro ao carregar listas");
+    }
+  };
+
+  const fetchStats = async (token: string, memberId: number) => {
+    try {
+      const [followerCount, followingCount] = await Promise.all([
+        countFollowers(memberId.toString(), token),
+        countFollowing(memberId.toString(), token),
+      ]);
+      setFollowers(followerCount);
+      setFollowing(followingCount);
+    } catch (err) {
+      console.error("Erro ao buscar contadores:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!member) return;
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    Promise.all([
+      fetchStats(token, member.id),
+      loadCustomLists(token, member.id),
+    ]).catch(console.error);
+  }, [member]);
+
+  // ----------- Handlers -----------
 
   const handleUpdateMember = async (
     formData: { name: string; bio: string; birthDate: string; gender: string },
@@ -42,6 +115,13 @@ export default function Profile() {
     if (!member) return;
 
     try {
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
+
+      if (imageFile) {
+        await uploadProfileImage(token, member.id, imageFile);
+      }
+
       const payload = {
         id: member.id,
         name: formData.name,
@@ -51,28 +131,11 @@ export default function Profile() {
         gender: formData.gender,
       };
 
-      if (imageFile) {
-        const formDataImage = new FormData();
-        formDataImage.append("file", imageFile);
-
-        const token = localStorage.getItem("authToken");
-        const uploadRes = await fetch(
-          `http://localhost:8080/api/images/upload/${member.id}`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: formDataImage,
-          }
-        );
-
-        if (!uploadRes.ok) throw new Error(t("error_uploading_image"));
-      }
-
       const updated = await updateMember(member.id.toString(), payload);
       setMember(updated);
 
       toast.success(t("success_updating_profile"));
-      setIsEditModalOpen(false);
+      setActiveModal(null);
     } catch (err) {
       console.error("Erro ao atualizar perfil:", err);
       toast.error(t("error_updating_profile"));
@@ -82,81 +145,21 @@ export default function Profile() {
   const handleCreateList = async (formData: { name: string; description: string }) => {
     if (!member) return;
 
-    const token = localStorage.getItem("authToken");
-    if (!token) return;
-
     try {
-      const payload = {
-        memberId: member.id,
-        listName: formData.name,
-        description: formData.description,
-      };
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
 
-      const res = await fetch("http://localhost:8080/customList/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("Erro ao criar lista");
-
-      toast.success("lista criada");
-      setIsCreateListModalOpen(false);
-
-      await loadCustomLists();
+      await createCustomList(token, member.id, formData.name, formData.description);
+      toast.success("Lista criada");
+      setActiveModal(null);
+      await loadCustomLists(token, member.id);
     } catch (error) {
-      toast.error("erro ao criar lista");
+      toast.error("Erro ao criar lista");
       console.error(error);
     }
   };
 
-    const loadCustomLists = async () => {
-      if (!member) return;
-
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-
-      try {
-        const lists = await fetchMemberLists(token, member.id);
-        setCustomLists(lists);
-      } catch (error) {
-        console.error("Erro ao carregar listas personalizadas:", error);
-        toast.error("erro ao carregar lista");
-      }
-    };
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token || !member) return;
-
-        const [followerCount, followingCount] = await Promise.all([
-          countFollowers(member.id.toString(), token),
-          countFollowing(member.id.toString(), token),
-        ]);
-
-        setFollowers(followerCount);
-        setFollowing(followingCount);
-      } catch (err) {
-        console.error("Erro ao buscar contadores:", err);
-      }
-    };
-
-    fetchStats();
-    loadCustomLists();
-  }, [member]);
-
-  const handleOpenListModal = (list: CustomList) => {
-    setSelectedList(list);
-  };
-
-  const handleCloseListModal = () => {
-    setSelectedList(null);
-  };
+  // ----------- Render -----------
 
   return (
     <ProtectedRoute>
@@ -165,7 +168,7 @@ export default function Profile() {
           <div className="mt-5 space-y-4">
             <ProfileHeader
               member={member}
-              onEditClick={() => setIsEditModalOpen(true)}
+              onEditClick={() => setActiveModal("edit")}
               t={t}
               followers={followers}
               following={following}
@@ -173,104 +176,76 @@ export default function Profile() {
 
             <div className="flex justify-end">
               <button
-                onClick={() => setIsCreateListModalOpen(true)}
+                onClick={() => setActiveModal("createList")}
                 className="bg-darkgreen text-white px-4 py-2 rounded hover:brightness-110"
               >
                 + Criar Lista
               </button>
             </div>
 
-            <section className="mt-6">
-              <div className="mb-4">
-                <button
-                  className="flex items-center justify-between w-full text-xl font-semibold text-white"
-                  onClick={() => setIsListsOpen(!isListsOpen)}
-                >
-                  <svg
-                    className={`w-5 h-5 transform transition-transform ${isListsOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-
-    <AnimatePresence>
-      {isListsOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-          animate={{ opacity: 1, height: "auto", overflow: "visible" }}
-          exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          {customLists.length === 0 ? (
-            <p className="text-gray-400 py-2">Você não possui nenhuma lista!</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {customLists.map((list) => (
-                <div
-                  key={list.id}
-                  className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700"
-                  onClick={() => handleOpenListModal(list)}
-                >
-                  <h3 className="text-lg font-semibold">{list.listName}</h3>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </section>
+            <CustomListsSection
+              isOpen={isListsOpen}
+              onToggle={() => setIsListsOpen(!isListsOpen)}
+              lists={customLists}
+              onSelect={(list) => {
+                setSelectedList(list);
+                setActiveModal("viewList");
+              }}
+            />
           </div>
         </Container>
 
         <Container>
-          
-          {activeTab == "filmes" && <FavouriteMoviesCarouselSection />}
-          {activeTab == "musicas" && <FavouriteAlbumCarouselSection />}
-          {activeTab == "series" && <FavouriteSeriesCarouselSection />}
+          {activeTab === "filmes" && <FavouriteMoviesCarouselSection />}
+          {activeTab === "musicas" && <FavouriteAlbumCarouselSection />}
+          {activeTab === "series" && <FavouriteSeriesCarouselSection />}
         </Container>
 
-        {isEditModalOpen && member && (
+        <Container>
+          <ReviewsCarouselSection />
+        </Container>
+
+        {/* ----------- Modals ----------- */}
+        {activeModal === "edit" && member && (
           <ProfileEditModal
             member={member}
             onUpdateMember={handleUpdateMember}
-            onClose={() => setIsEditModalOpen(false)}
+            onClose={() => setActiveModal(null)}
           />
         )}
 
-        {isCreateListModalOpen && member &&(
+        {activeModal === "createList" && member && (
           <CustomListModal
-            onClose={() => setIsCreateListModalOpen(false)}
+            onClose={() => setActiveModal(null)}
             onCreate={handleCreateList}
             member={member}
           />
         )}
 
-        {selectedList && member && (
+        {activeModal === "viewList" && selectedList && member && (
           <CustomListModal
-            isOpen={true}
-            onClose={handleCloseListModal}
+            isOpen
+            onClose={() => setActiveModal(null)}
             id={selectedList.id}
             listName={selectedList.listName}
             listDescription={selectedList.list_description}
-            onListDeleted={loadCustomLists}
-            onListUpdated={loadCustomLists}
+            onListDeleted={() => {
+              const token = localStorage.getItem("authToken");
+              if (token) loadCustomLists(token, member.id);
+            }}
+            onListUpdated={() => {
+              const token = localStorage.getItem("authToken");
+              if (token) loadCustomLists(token, member.id);
+            }}
             member={member}
           />
         )}
-
-        <Container>
-          <ReviewsCarouselSection />
-        </Container>
-      </main> 
+      </main>
     </ProtectedRoute>
   );
 }
+
+// ------------------- SUBCOMPONENTS -------------------
 
 interface ProfileHeaderProps {
   member: Member | null;
@@ -308,6 +283,61 @@ const ProfileHeader = ({ member, onEditClick, t, followers, following }: Profile
         <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
       </div>
     </div>
-    {member && <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()}/>}
+    {member && <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()} />}
   </div>
+);
+
+interface CustomListsSectionProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  lists: CustomList[];
+  onSelect: (list: CustomList) => void;
+}
+
+const CustomListsSection = ({ isOpen, onToggle, lists, onSelect }: CustomListsSectionProps) => (
+  <section className="mt-6">
+    <div className="mb-4">
+      <button
+        className="flex items-center justify-between w-full text-xl font-semibold text-white"
+        onClick={onToggle}
+      >
+        <svg
+          className={`w-5 h-5 transform transition-transform ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    </div>
+
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+          animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+          exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          {lists.length === 0 ? (
+            <p className="text-gray-400 py-2">Você não possui nenhuma lista!</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {lists.map((list) => (
+                <div
+                  key={list.id}
+                  className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700"
+                  onClick={() => onSelect(list)}
+                >
+                  <h3 className="text-lg font-semibold">{list.listName}</h3>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </section>
 );
