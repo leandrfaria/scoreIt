@@ -34,15 +34,12 @@ export function LocaleProvider({ locale, children }: Props) {
       timeZone="America/Sao_Paulo"
       now={new Date()}
     >
-      <Header />
+      <Header locale={locale} /> {/* <- AQUI */}
       <Toaster
         position="top-center"
         toastOptions={{
           duration: 3000,
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
+          style: { background: "#333", color: "#fff" },
         }}
       />
       {children}
