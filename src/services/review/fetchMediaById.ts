@@ -41,9 +41,10 @@ export const fetchMediaById = async (
       return {
         id: serie.id,
         title: serie.name,
-        posterUrl: serie.posterUrl, // já é string no tipo
+        posterUrl: serie.posterUrl ?? serie.backdropUrl, // <- garante string
       };
     }
+
     case "album": {
       const album: Album | null = await fetchAlbumById(id);
       if (!album) return null;
