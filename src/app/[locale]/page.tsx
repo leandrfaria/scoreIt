@@ -14,7 +14,7 @@ import RecentsAlbumCarousel from "@/components/features/album/RecentsAlbumCarous
 import TopArtistsCarouselSection from "@/components/features/artist/TopArtistsCarousel";
 import OnAirSeriesCarouselSection from "@/components/features/serie/OnAirSeriesCarouselSection";
 import NowPlayingCarouselSection from "@/components/features/movie/NowPlayingCarouselSection";
-import { SeriesList } from "@/components/features/serie/SeriesList"; // 👈 Importei a SeriesList certinho
+import { SeriesList } from "@/components/features/serie/SeriesList";
 import { MovieList } from "@/components/features/movie/MovieList";
 
 export default function Home() {
@@ -67,7 +67,7 @@ export default function Home() {
                 <h2 className="text-white text-xl font-bold mt-10 mb-4">
                   {t("todas_series")}
                 </h2>
-                <SeriesList /> {/* 👈 AGORA CHAMANDO A LISTA DE SÉRIES! */}
+                <SeriesList />
               </>
             ) : (
               <>
@@ -98,7 +98,7 @@ export default function Home() {
                   {t("mensagem_login")}
                 </h1>
                 <Link
-                  href={`/${locale}/login`}
+                  href={`/${locale}/auth?tab=login`}
                   className="px-6 py-3 bg-darkgreen text-white rounded-md hover:brightness-110 transition"
                 >
                   {t("botao_login")}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import LogoLateral from "@/assets/LogoLateral";
 
 // widgets client carregados dinamicamente (sem SSR para atrasar carga)
@@ -12,8 +13,18 @@ const MobileMenu = dynamic(() => import("./MobileMenu"), { ssr: false });
 const TabSwitcherGuard = dynamic(() => import("./TabSwitcherGuard"), { ssr: false });
 
 export function Header({ locale }: { locale: string }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname?.includes("/auth");
+
   return (
-    <header className="w-full h-20 bg-black relative z-40">
+    <header
+      className={[
+        "w-full h-20 relative z-40", // <- volta ao fluxo normal (nada de fixed)
+        isAuthPage
+          ? "bg-black/30 backdrop-blur-md border-b border-white/10"
+          : "bg-black",
+      ].join(" ")}
+    >
       <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-6">
         {/* LOGO */}
         <div className="flex-1">

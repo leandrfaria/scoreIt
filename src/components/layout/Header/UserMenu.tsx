@@ -27,7 +27,7 @@ export default function UserMenu() {
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     setIsLoggedIn(false);
-    window.location.href = `/${locale}/login`;
+    window.location.href = `/${locale}/auth`;
   };
 
   const deleteUser = async () => {
@@ -48,7 +48,7 @@ export default function UserMenu() {
       if (response.ok) {
         localStorage.removeItem("authToken");
         setIsLoggedIn(false);
-        window.location.href = `/${locale}/login`;
+        window.location.href = `/${locale}/auth`;
       } else {
         console.error("Erro ao deletar usuário:", response.statusText);
       }
@@ -61,7 +61,7 @@ export default function UserMenu() {
   if (!isLoggedIn) {
     return (
       <Link
-        href={`/${locale}/login`}
+        href={`/${locale}/auth`}
         className="text-white bg-darkgreen px-6 py-2 rounded-md hover:brightness-110 transition-all"
       >
         {t("login")}
