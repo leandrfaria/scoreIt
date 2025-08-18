@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/services/user/login";
 import PageTransition from "@/components/layout/PageTransition";
 import { Container } from "@/components/layout/Container";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
+import { loginUser } from "@/services/user/auth"; // <- novo
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -15,22 +15,13 @@ export default function Login() {
   const [senha, setSenha] = useState("");
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const [mensagem, setMensagem] = useState("");
-  const { setIsLoggedIn, loadMemberData } = useAuthContext();
-
+  const { loadMemberData } = useAuthContext(); // setIsLoggedIn geralmente fica dentro do load
   const router = useRouter();
   const t = useTranslations("login");
   const locale = useLocale();
 
   useEffect(() => {
-    const posters = [
-      "poster1.png",
-      "poster2.png",
-      "poster3.png",
-      "poster4.png",
-      "poster5.png",
-      "poster6.png",
-      "poster7.png",
-    ];
+    const posters = ["poster1.png","poster2.png","poster3.png","poster4.png","poster5.png","poster6.png","poster7.png"];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
@@ -40,18 +31,19 @@ export default function Login() {
     setMensagem("");
     setLoading(true);
 
-    const response = await loginUser(email, senha);
-
-    if (response.success) {
-      localStorage.setItem("authToken", response.token);
-      await loadMemberData();
-      toast.success(t("login_sucesso"));
-      router.push("/");
-    } else {
+    try {
+      const { success } = await loginUser(email.trim(), senha);
+      if (success) {
+        await loadMemberData(); // puxa dados do usuário logado (usa o token do localStorage)
+        toast.success(t("login_sucesso"));
+        router.push("/");
+      }
+    } catch (e: any) {
       toast.error(t("login_erro"));
+      setMensagem(e?.message || "Erro ao fazer login.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -60,11 +52,7 @@ export default function Login() {
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
             <div className="w-full md:w-1/2 mb-10 md:mb-0">
-              <img
-                src={randomImage}
-                alt="Poster aleatório"
-                className="w-full h-[400px] object-cover rounded-lg shadow-lg"
-              />
+              <img src={randomImage} alt="Poster aleatório" className="w-full h-[400px] object-cover rounded-lg shadow-lg" />
             </div>
 
             <div className="w-full md:w-1/2 p-8 text-center md:text-left">
@@ -94,33 +82,22 @@ export default function Login() {
                   {loading ? t("carregando") : t("botao")}
                 </button>
 
-                {mensagem && (
-                  <p className="text-red-400 text-sm text-center mt-2">{mensagem}</p>
-                )}
+                {mensagem && <p className="text-red-400 text-sm text-center mt-2">{mensagem}</p>}
 
                 <div className="text-center">
-                <span
-                  onClick={() => router.push(`/${locale}/cadastro`)}
-                  className="text-emerald-400 hover:underline mt-4 cursor-pointer"
-                >
-                  {t("cadastro")}
-                </span>
+                  <span onClick={() => router.push(`/${locale}/cadastro`)} className="text-emerald-400 hover:underline mt-4 cursor-pointer">
+                    {t("cadastro")}
+                  </span>
                 </div>
                 <div className="text-center">
-                <span
-                  onClick={() => router.push(`/${locale}/envia_email`)}
-                  className="text-emerald-400 hover:underline mt-4 cursor-pointer"
-                >
-                  {t("esqueceu_senha")}
-                </span>
+                  <span onClick={() => router.push(`/${locale}/envia_email`)} className="text-emerald-400 hover:underline mt-4 cursor-pointer">
+                    {t("esqueceu_senha")}
+                  </span>
                 </div>
                 <div className="text-center">
-                  <span
-                    onClick={() => router.push(`/${locale}/refaz_email`)}
-                    className="text-emerald-400 hover:underline mt-4 cursor-pointer"
-                  >
+                  <span onClick={() => router.push(`/${locale}/refaz_email`)} className="text-emerald-400 hover:underline mt-4 cursor-pointer">
                     {t("mudar_email")}
-                  </span>  
+                  </span>
                 </div>
               </form>
             </div>
@@ -130,4 +107,3 @@ export default function Login() {
     </PageTransition>
   );
 }
-

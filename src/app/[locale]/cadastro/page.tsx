@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { registerUser } from "@/services/user/register";
 import { Container } from "@/components/layout/Container";
 import { useRouter } from "next/navigation";
 import PageTransition from "@/components/layout/PageTransition";
 import toast from 'react-hot-toast';
 import IMask from 'imask';
-import { sendVerificaEmail } from "@/services/user/verifica_email";
+import { registerUser } from "@/services/user/auth"; // <- novo
 
 export default function Cadastro() {
   const [name, setName] = useState("");
@@ -19,20 +18,12 @@ export default function Cadastro() {
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const [mensagem, setMensagem] = useState("");
 
-  const router = useRouter(); // Hook para redirecionamento
+  const router = useRouter();
   const t = useTranslations("cadastro");
   const locale = useLocale();
 
   useEffect(() => {
-    const posters = [
-      "poster1.png",
-      "poster2.png",
-      "poster3.png",
-      "poster4.png",
-      "poster5.png",
-      "poster6.png",
-      "poster7.png",
-    ];
+    const posters = ["poster1.png","poster2.png","poster3.png","poster4.png","poster5.png","poster6.png","poster7.png"];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
@@ -43,34 +34,28 @@ export default function Cadastro() {
 
   const isValidDate = (date: string): boolean => {
     const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/(\d{4})$/;
-
     if (!dateRegex.test(date)) return false;
 
     const [day, month, year] = date.split("/").map(Number);
     const parsedDate = new Date(year, month - 1, day);
 
-      const birthDate = parsedDate
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const isValidDate = birthDate instanceof Date && !isNaN(birthDate.getTime());
-      const isAdult = age > 18 || (age === 18 && today.getMonth() > birthDate.getMonth()) || (age === 18 && today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
-      const isUnder120 = age < 120;
+    const birthDate = parsedDate;
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const validDate = birthDate instanceof Date && !isNaN(birthDate.getTime());
+    const isAdult = age > 18 || (age === 18 && (today.getMonth() > birthDate.getMonth() ||
+                    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())));
+    const isUnder120 = age < 120;
 
-      if (!isValidDate || !isAdult || !isUnder120) {
-        return false;
-      }
+    if (!validDate || !isAdult || !isUnder120) return false;
 
-    return (
-      parsedDate.getFullYear() === year &&
-      parsedDate.getMonth() + 1 === month &&
-      parsedDate.getDate() === day
-    );
+    return parsedDate.getFullYear() === year &&
+           parsedDate.getMonth() + 1 === month &&
+           parsedDate.getDate() === day;
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const masked = IMask.createMask({
-      mask: '00/00/0000',
-    });
+    const masked = IMask.createMask({ mask: '00/00/0000' });
     masked.resolve(e.target.value);
     setDate(masked.value);
   };
@@ -82,34 +67,27 @@ export default function Cadastro() {
     const [day, month, year] = date.split('/');
     const birthDate = `${year}-${month}-${day}`;
 
-    if (!nameRegex.test(name)) {
-      toast.error(t("invalid_name"));
-      return;
-    }
+    if (!nameRegex.test(name)) { toast.error(t("invalid_name")); return; }
+    if (!emailRegex.test(email)) { toast.error(t("invalid_email")); return; }
+    if (!passwordRegex.test(senha)) { toast.error(t("invalid_senha")); return; }
+    if (!isValidDate(date)) { toast.error(t("invalid_date")); return; }
+    if (!gender) { toast.error(t("Select_Gender")); return; }
 
-    if (!emailRegex.test(email)) {
-      toast.error(t("invalid_email"));
-      return;
-    }
-
-    if (!passwordRegex.test(senha)) {
-      toast.error(t("invalid_senha"));
-      return;
-    }
-
-    if (!isValidDate(date)) {
-      toast.error(t("invalid_date"));
-      return;
-    }
-
-    const response = await registerUser(name, email, senha, birthDate, gender);
-
-    if (response.success) {
-      const emailResult = await sendVerificaEmail(email);
-      toast.success(t("cadastro_sucesso"));
-      router.push(`/`);
-    } else {
+    try {
+      const resp = await registerUser({
+        name: name.trim(),
+        email: email.trim(),
+        password: senha,
+        birthDate,
+        gender,
+      });
+      if (resp.success) {
+        toast.success(t("cadastro_sucesso")); // “Verifique seu e-mail”
+        router.push(`/`);
+      }
+    } catch (e: any) {
       toast.error(t("cadastro_erro"));
+      setMensagem(e?.message || "Falha no cadastro.");
     }
   };
 
@@ -119,45 +97,32 @@ export default function Cadastro() {
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
             <div className="w-1/2 h-1/2 flex items-center justify-center">
-              <img
-                src={randomImage}
-                alt="Poster aleatório"
-                className="w-full object-cover rounded-lg shadow-lg"
-              />
+              <img src={randomImage} alt="Poster aleatório" className="w-full object-cover rounded-lg shadow-lg" />
             </div>
             <div className="w-1/2 h-screen flex flex-col items-center justify-center">
               <p className="text-white text-4xl mb-6">{t("titulo")}</p>
               <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-4 w-full">
                 <input
                   className="text-gray-400 border border-emerald-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 w-90"
-                  type="text"
-                  placeholder={t("nome")}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  type="text" placeholder={t("nome")}
+                  value={name} onChange={(e) => setName(e.target.value)}
                 />
                 <input
                   className="text-gray-400 border border-emerald-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 w-90"
-                  type="text"
-                  placeholder={t("email")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text" placeholder={t("email")}
+                  value={email} onChange={(e) => setEmail(e.target.value)}
                 />
                 <input
                   className="text-gray-400 border border-emerald-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 w-90"
-                  type="password"
-                  placeholder={t("senha")}
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
+                  type="password" placeholder={t("senha")}
+                  value={senha} onChange={(e) => setSenha(e.target.value)}
                 />
                 <input
                   className="text-gray-400 border border-emerald-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 w-90"
-                  placeholder={t("birthday")}
-                  value={date}
-                  onChange={handleDateChange}
+                  placeholder={t("birthday")} value={date} onChange={handleDateChange}
                 />
                 <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
+                  value={gender} onChange={(e) => setGender(e.target.value)}
                   className="text-gray-400 border border-emerald-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 w-90"
                 >
                   <option value="" disabled hidden>{t("Select_Gender")}</option>
@@ -165,20 +130,14 @@ export default function Cadastro() {
                   <option value="FEM" className="text-emerald-500 bg-black">{t("F_Gender")}</option>
                   <option value="OTHER" className="text-emerald-500 bg-black">{t("O_Gender")}</option>
                 </select>
-                <button
-                  type="submit"
-                  className="text-white- border border-emerald-500 rounded-md p-2 focus:outline-none w-80 bg-emerald-500 mt-4"
-                >
+                <button type="submit" className="text-white- border border-emerald-500 rounded-md p-2 focus:outline-none w-80 bg-emerald-500 mt-4">
                   {t("botao")}
                 </button>
-                <span
-                  onClick={() => router.push(`/${locale}/login`)}
-                  className="text-emerald-400 hover:underline mt-4 cursor-pointer"
-                >
-                  {t("possui_conta")}
-                </span>
               </form>
               {mensagem && <p className="text-gray-400 mt-2">{mensagem}</p>}
+              <span onClick={() => router.push(`/${locale}/login`)} className="text-emerald-400 hover:underline mt-4 cursor-pointer">
+                {t("possui_conta")}
+              </span>
             </div>
           </div>
         </Container>
