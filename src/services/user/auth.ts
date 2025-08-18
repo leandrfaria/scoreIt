@@ -1,17 +1,14 @@
 import { apiBase } from "@/lib/api";
 
-/** Garante que a base está configurada (evita fetch para undefined) */
 function assertApiBase() {
   if (!apiBase) {
     throw new Error("API base URL não configurada. Verifique suas envs NEXT_PUBLIC_API_BASE_URL_* e faça redeploy.");
   }
 }
 
-/** Helper para POST JSON com base do api.ts */
 async function postJson<T = any>(path: string, body: unknown): Promise<T> {
   assertApiBase();
   const url = `${apiBase}${path}`;
-  // console.log("[auth] POST", url); // habilite se quiser debugar
 
   const res = await fetch(url, {
     method: "POST",
@@ -36,7 +33,6 @@ async function postJson<T = any>(path: string, body: unknown): Promise<T> {
   return (payload as T) ?? ({} as T);
 }
 
-/** (Opcional) checar token no back quando app inicia/refresh */
 export async function verifyToken(token: string) {
   assertApiBase();
   const res = await fetch(`${apiBase}/auth/verifyToken`, {
@@ -48,9 +44,7 @@ export async function verifyToken(token: string) {
   return true;
 }
 
-/** LOGIN */
 export async function loginUser(email: string, password: string) {
-  // backend: POST /member/login -> { token }
   const data = await postJson<{ token?: string }>(`/member/login`, {
     email: email.trim(),
     password,
@@ -67,15 +61,13 @@ export async function loginUser(email: string, password: string) {
   return { success: true as const, token: data.token };
 }
 
-/** CADASTRO */
 export async function registerUser(payload: {
   name: string;
   email: string;
   password: string;
-  birthDate: string; // yyyy-mm-dd
-  gender: string;    // "MASC" | "FEM" | "OTHER"
+  birthDate: string;
+  gender: string;
 }) {
-  // backend: POST /member/post -> texto "Cadastro realizado. Verifique seu e-mail."
   await postJson(`/member/post`, {
     name: payload.name.trim(),
     email: payload.email.trim(),

@@ -5,9 +5,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { Container } from "@/components/layout/Container";
 import { useRouter } from "next/navigation";
 import PageTransition from "@/components/layout/PageTransition";
-import toast from 'react-hot-toast';
-import IMask from 'imask';
-import { registerUser } from "@/services/user/auth"; // <- novo
+import toast from "react-hot-toast";
+import IMask from "imask";
+import { registerUser } from "@/services/user/auth";
 
 export default function Cadastro() {
   const [name, setName] = useState("");
@@ -17,13 +17,22 @@ export default function Cadastro() {
   const [gender, setGender] = useState("");
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const [mensagem, setMensagem] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
   const t = useTranslations("cadastro");
   const locale = useLocale();
 
   useEffect(() => {
-    const posters = ["poster1.png","poster2.png","poster3.png","poster4.png","poster5.png","poster6.png","poster7.png"];
+    const posters = [
+      "poster1.png",
+      "poster2.png",
+      "poster3.png",
+      "poster4.png",
+      "poster5.png",
+      "poster6.png",
+      "poster7.png",
+    ];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
@@ -43,36 +52,46 @@ export default function Cadastro() {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const validDate = birthDate instanceof Date && !isNaN(birthDate.getTime());
-    const isAdult = age > 18 || (age === 18 && (today.getMonth() > birthDate.getMonth() ||
-                    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())));
+    const isAdult =
+      age > 18 ||
+      (age === 18 &&
+        (today.getMonth() > birthDate.getMonth() ||
+          (today.getMonth() === birthDate.getMonth() &&
+            today.getDate() >= birthDate.getDate())));
     const isUnder120 = age < 120;
 
     if (!validDate || !isAdult || !isUnder120) return false;
 
-    return parsedDate.getFullYear() === year &&
-           parsedDate.getMonth() + 1 === month &&
-           parsedDate.getDate() === day;
+    return (
+      parsedDate.getFullYear() === year &&
+      parsedDate.getMonth() + 1 === month &&
+      parsedDate.getDate() === day
+    );
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const masked = IMask.createMask({ mask: '00/00/0000' });
+    const masked = IMask.createMask({ mask: "00/00/0000" });
     masked.resolve(e.target.value);
     setDate(masked.value);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSubmitting) return; // evita duplo clique
     setMensagem("");
 
-    const [day, month, year] = date.split('/');
-    const birthDate = `${year}-${month}-${day}`;
-
+    // validações
     if (!nameRegex.test(name)) { toast.error(t("invalid_name")); return; }
     if (!emailRegex.test(email)) { toast.error(t("invalid_email")); return; }
     if (!passwordRegex.test(senha)) { toast.error(t("invalid_senha")); return; }
     if (!isValidDate(date)) { toast.error(t("invalid_date")); return; }
     if (!gender) { toast.error(t("Select_Gender")); return; }
 
+    // converte data
+    const [day, month, year] = date.split("/");
+    const birthDate = `${year}-${month}-${day}`;
+
+    setIsSubmitting(true);
     try {
       const resp = await registerUser({
         name: name.trim(),
@@ -81,6 +100,7 @@ export default function Cadastro() {
         birthDate,
         gender,
       });
+
       if (resp.success) {
         toast.success(t("cadastro_sucesso")); // “Verifique seu e-mail”
         router.push(`/`);
@@ -88,8 +108,12 @@ export default function Cadastro() {
     } catch (e: any) {
       toast.error(t("cadastro_erro"));
       setMensagem(e?.message || "Falha no cadastro.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const submitLabel = isSubmitting ? "Enviando..." : t("botao");
 
   return (
     <PageTransition>
@@ -97,7 +121,11 @@ export default function Cadastro() {
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
             <div className="w-1/2 h-1/2 flex items-center justify-center">
-              <img src={randomImage} alt="Poster aleatório" className="w-full object-cover rounded-lg shadow-lg" />
+              <img
+                src={randomImage}
+                alt="Poster aleatório"
+                className="w-full object-cover rounded-lg shadow-lg"
+              />
             </div>
             <div className="w-1/2 h-screen flex flex-col items-center justify-center">
               <p className="text-white text-4xl mb-6">{t("titulo")}</p>
@@ -130,12 +158,19 @@ export default function Cadastro() {
                   <option value="FEM" className="text-emerald-500 bg-black">{t("F_Gender")}</option>
                   <option value="OTHER" className="text-emerald-500 bg-black">{t("O_Gender")}</option>
                 </select>
-                <button type="submit" className="text-white- border border-emerald-500 rounded-md p-2 focus:outline-none w-80 bg-emerald-500 mt-4">
-                  {t("botao")}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="text-white- border border-emerald-500 rounded-md p-2 focus:outline-none w-80 bg-emerald-500 mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitLabel}
                 </button>
               </form>
               {mensagem && <p className="text-gray-400 mt-2">{mensagem}</p>}
-              <span onClick={() => router.push(`/${locale}/login`)} className="text-emerald-400 hover:underline mt-4 cursor-pointer">
+              <span
+                onClick={() => router.push(`/${locale}/login`)}
+                className="text-emerald-400 hover:underline mt-4 cursor-pointer"
+              >
                 {t("possui_conta")}
               </span>
             </div>

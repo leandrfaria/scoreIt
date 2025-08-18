@@ -13,18 +13,24 @@ export default function ConfirmaConta() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const posters = ["poster1.png","poster2.png","poster3.png","poster4.png","poster5.png","poster6.png","poster7.png"];
+    const posters = [
+      "poster1.png","poster2.png","poster3.png","poster4.png","poster5.png","poster6.png","poster7.png"
+    ];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
 
     (async () => {
-      const token = searchParams.get("token");
-      if (!token) { setStatusMsg("Token ausente."); return; }
+      const raw = searchParams.get("token");
+      if (!raw) {
+        setStatusMsg("Token ausente.");
+        return;
+      }
       try {
-        await confirmAccount(token);
-        setStatusMsg("Email confirmado com sucesso! Pode fechar esta página");
+        // importante: encodeURIComponent é aplicado no service
+        await confirmAccount(raw);
+        setStatusMsg("Email confirmado com sucesso! Você já pode fechar esta página.");
         toast.success("Conta confirmada!");
-      } catch {
+      } catch (err) {
         setStatusMsg("Token inválido ou expirado.");
         toast.error("Falha ao confirmar a conta.");
       }
