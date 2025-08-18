@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import PageTransition from "@/components/layout/PageTransition";
 import { Container } from "@/components/layout/Container";
 import toast from "react-hot-toast";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
-import { loginUser } from "@/services/user/auth"; // <- novo
+import { loginUser } from "@/services/user/auth";
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -15,8 +15,10 @@ export default function Login() {
   const [senha, setSenha] = useState("");
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
   const [mensagem, setMensagem] = useState("");
-  const { loadMemberData } = useAuthContext(); // setIsLoggedIn geralmente fica dentro do load
+
+  const { loadMemberData } = useAuthContext();
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations("login");
   const locale = useLocale();
 
@@ -31,11 +33,17 @@ export default function Login() {
     setMensagem("");
     setLoading(true);
 
+    // Evita ruído com token expirado no localStorage
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authToken");
+    }
+
     try {
       const { success } = await loginUser(email.trim(), senha);
       if (success) {
-        await loadMemberData(); // puxa dados do usuário logado (usa o token do localStorage)
+        await loadMemberData(); // usa o token recém-salvo
         toast.success(t("login_sucesso"));
+        // volta pra home (ou mantém rota anterior se quiser)
         router.push("/");
       }
     } catch (e: any) {

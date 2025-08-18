@@ -11,7 +11,7 @@ function assertApiBase() {
 async function postJson<T = any>(path: string, body: unknown): Promise<T> {
   assertApiBase();
   const url = `${apiBase}${path}`;
-  console.log("[auth] POST", url); // descomente se quiser debugar a URL
+  // console.log("[auth] POST", url); // habilite se quiser debugar
 
   const res = await fetch(url, {
     method: "POST",

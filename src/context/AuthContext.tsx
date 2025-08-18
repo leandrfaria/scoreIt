@@ -1,8 +1,9 @@
 "use client";
 
-import { fetchMembers } from "@/services/user/member";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useMember } from "./MemberContext";
+import { fetchMembers } from "@/services/user/member";
+import { verifyToken } from "@/services/user/auth";
 
 interface AuthContextType {
   isLoggedIn: boolean | null;
@@ -24,23 +25,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { setMember } = useMember();
 
   const loadMemberData = async () => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      try {
-        const data = await fetchMembers(true);
-        setMember(data);
-        setIsLoggedIn(true);
-      } catch (err) {
-        console.error("Erro ao carregar membro:", err);
-        setIsLoggedIn(false);
-        localStorage.removeItem("authToken");
-      }
+    const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
+    try {
+      const data = await fetchMembers(true); // seu service já injeta Authorization
+      setMember(data);
+      setIsLoggedIn(true);
+    } catch (err) {
+      console.error("Erro ao carregar membro:", err);
+      setIsLoggedIn(false);
+      localStorage.removeItem("authToken");
     }
   };
 
   useEffect(() => {
-    const validateToken = async () => {
-      const token = localStorage.getItem("authToken");
+    const init = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
       if (!token) {
         setIsLoggedIn(false);
         setIsLoading(false);
@@ -48,20 +52,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        const res = await fetch("http://localhost:8080/auth/verifyToken", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.ok) {
-          await loadMemberData();
-        } else {
-          localStorage.removeItem("authToken");
-          setIsLoggedIn(false);
-        }
+        // valida token na API correta (usa apiBase dentro do verifyToken)
+        await verifyToken(token);
+        await loadMemberData();
       } catch (error) {
-        console.error("Erro ao validar token:", error);
+        console.warn("Token inválido/expirado. Limpando storage.");
         localStorage.removeItem("authToken");
         setIsLoggedIn(false);
       } finally {
@@ -69,7 +64,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    validateToken();
+    init();
   }, []);
 
   return (
