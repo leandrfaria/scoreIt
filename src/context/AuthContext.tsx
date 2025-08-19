@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     try {
-      const data = await fetchMembers(true); // seu service já injeta Authorization
+      const data = await fetchMembers(true); // injeta Authorization normalizado
       setMember(data);
       setIsLoggedIn(true);
     } catch (err) {
@@ -52,9 +52,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        // valida token na API correta (usa apiBase dentro do verifyToken)
-        await verifyToken(token);
-        await loadMemberData();
+        await verifyToken(token);      // normaliza Bearer internamente
+        await loadMemberData();        // popula contexto
       } catch (error) {
         console.warn("Token inválido/expirado. Limpando storage.");
         localStorage.removeItem("authToken");

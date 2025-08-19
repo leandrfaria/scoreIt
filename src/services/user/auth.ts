@@ -55,9 +55,9 @@ export async function loginUser(email: string, password: string) {
     throw new Error("Token JWT não retornado pelo servidor");
   }
 
-  // Sempre salva com prefixo Bearer para padronizar TODOS os services
+  // Salva o token CRU (sem 'Bearer') no localStorage
   if (typeof window !== "undefined") {
-    localStorage.setItem("authToken", `Bearer ${data.token}`);
+    localStorage.setItem("authToken", data.token);
   }
 
   return { success: true as const, token: data.token };

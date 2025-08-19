@@ -18,8 +18,11 @@ function buildHeaders(withJson = true): Headers {
   const h = new Headers();
   if (withJson) h.set("Content-Type", "application/json");
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("authToken");
-    if (token) h.set("Authorization", `Bearer ${token}`);
+    const stored = localStorage.getItem("authToken"); // token CRU
+    if (stored) {
+      const auth = stored.startsWith("Bearer ") ? stored : `Bearer ${stored}`;
+      h.set("Authorization", auth);
+    }
   }
   return h;
 }
@@ -33,7 +36,8 @@ export const fetchMembers = async (useJwtId = false) => {
       typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
     if (token) {
       try {
-        const decoded = jwtDecode<CustomJwtPayload>(token);
+        const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
+        const decoded = jwtDecode<CustomJwtPayload>(raw);
         if (decoded?.id) path += `/${decoded.id}`;
       } catch {
         // se falhar o decode, segue sem o /{id}

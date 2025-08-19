@@ -8,7 +8,7 @@ import { Container } from "@/components/layout/Container";
 import toast from "react-hot-toast";
 import IMask from "imask";
 import { useAuthContext } from "@/context/AuthContext";
-import { loginUser, registerUser } from "@/services/user/auth";
+import { loginUser, registerUser, verifyToken } from "@/services/user/auth";
 
 type Tab = "login" | "signup";
 
@@ -37,7 +37,7 @@ export default function AuthPage() {
   const locale = useLocale();
   const tLogin = useTranslations("login");
   const tSign = useTranslations("cadastro");
-  const { loadMemberData } = useAuthContext();
+  const { loadMemberData, setIsLoggedIn } = useAuthContext();
 
   useEffect(() => {
     const q = (params.get("tab") || "").toLowerCase();
@@ -68,15 +68,20 @@ export default function AuthPage() {
     setMsgLogin("");
     setLoadingLogin(true);
 
+    // Limpa qualquer token antigo
     if (typeof window !== "undefined") localStorage.removeItem("authToken");
 
     try {
-      const { success } = await loginUser(emailLogin.trim(), senhaLogin);
+      const { success, token } = await loginUser(emailLogin.trim(), senhaLogin);
       if (success) {
+        // valida o token no backend e popula o contexto antes de navegar
+        await verifyToken(token);
         await loadMemberData();
+        setIsLoggedIn(true);
+
         toast.success(tLogin("login_sucesso"));
-        // Redireciona para a home com locale (evita cair numa rota sem locale em prod)
-        router.push(`/${locale}`);
+        // Evita voltar para a página de login no 'Back'
+        router.replace(`/${locale}`);
       }
     } catch (err: any) {
       toast.error(tLogin("login_erro"));
@@ -176,7 +181,7 @@ export default function AuthPage() {
         <span
           className={[
             "absolute top-1 bottom-1",
-            "w-[calc(50%-0.25rem)]", // 50% menos o padding (p-1 = 0.25rem)
+            "w-[calc(50%-0.25rem)]",
             "rounded-full bg-darkgreen shadow-[0_10px_30px_rgba(0,0,0,0.45)]",
             "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
             tab === "login" ? "left-1" : "left-[calc(50%+0.25rem)]",
@@ -276,13 +281,13 @@ export default function AuthPage() {
                     )}
                     <div className="mt-2 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
                       <span
-                        onClick={() => router.push(`/${locale}/envia_email`)}
+                        onClick={() => router.replace(`/${locale}/envia_email`)}
                         className="text-emerald-300 hover:text-emerald-200 transition cursor-pointer"
                       >
                         {tLogin("esqueceu_senha")}
                       </span>
                       <span
-                        onClick={() => router.push(`/${locale}/refaz_email`)}
+                        onClick={() => router.replace(`/${locale}/refaz_email`)}
                         className="text-emerald-300 hover:text-emerald-200 transition cursor-pointer"
                       >
                         {tLogin("mudar_email")}
