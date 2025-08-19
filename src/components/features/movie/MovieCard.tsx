@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import Image from "next/image";
@@ -20,92 +20,85 @@ interface MovieCardProps extends Movie {
   onRemoveMovie?: (id: number) => void;
 }
 
-  export function MovieCard({
-    id,
-    title,
-    posterUrl,
-    backdropUrl,
-    vote_average,
-    release_date,
-    overview,
-    genre = "Drama",
-    onRemoveMovie
-  }: MovieCardProps) {
+function MovieCardBase({
+  id,
+  title,
+  posterUrl,
+  backdropUrl,
+  vote_average,
+  release_date,
+  overview,
+  genre = "Drama",
+  onRemoveMovie,
+}: MovieCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
-  const [customLists, setCustomLists] = useState<string[]>([]);  // nomes únicos das listas
+  const [customLists, setCustomLists] = useState<string[]>([]);
   const [selectedList, setSelectedList] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const year = new Date(release_date).getFullYear();
+  const year = useMemo(() => new Date(release_date).getFullYear(), [release_date]);
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("MovieCard");
   const { member } = useMember();
 
-  const handleOpen = () => setIsOpen(true);
-  const handleClose = () => setIsOpen(false);
+  const handleOpen = useCallback(() => setIsOpen(true), []);
+  const handleClose = useCallback(() => setIsOpen(false), []);
   useOutsideClick(modalRef, handleClose);
 
+  // Esc para fechar somente quando aberto
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, handleClose]);
 
+  // checar favorito
   useEffect(() => {
-    const checkIfFavorited = async () => {
+    (async () => {
       try {
         const token = localStorage.getItem("authToken");
         if (!token || !member) return;
-
         const favorited = await isFavoritedMedia(member.id, id);
         setIsFavorited(favorited);
       } catch (error) {
         console.error(t("errorMovieFav"), error);
       }
-    };
-
-    checkIfFavorited();
+    })();
   }, [id, member, t]);
 
+  // carregar listas quando modal abrir
   useEffect(() => {
-    const loadLists = async () => {
+    if (!isOpen || !member) return;
+    (async () => {
       try {
         const token = localStorage.getItem("authToken");
-        if (!token || !member) return;
-
+        if (!token) return;
         const lists = await fetchMemberLists(token, member.id);
-        // Extrai nomes únicos das listas a partir do array de CustomList
         const uniqueListNames = Array.from(new Set(lists.map((item) => item.listName)));
         setCustomLists(uniqueListNames);
-        if (uniqueListNames.length > 0) setSelectedList(uniqueListNames[0]);
-      } catch (error) {
+        if (uniqueListNames.length > 0) setSelectedList((prev) => prev || uniqueListNames[0]);
+      } catch {
         toast.error("Erro carregando listas");
       }
-    };
-
-    if (isOpen) {
-      loadLists();
-    }
+    })();
   }, [isOpen, member]);
 
-  const handleFavorite = async () => {
+  const handleFavorite = useCallback(async () => {
     try {
       const token = localStorage.getItem("authToken");
       if (!token || !member) {
         toast.error(t("userNotAuthenticated"));
         return;
       }
-
       if (isFavorited) {
         const success = await removeFavouriteMedia(member.id, id, "movie");
         if (success) {
           toast.success(t("removedFromFavorites"));
           setIsFavorited(false);
-          if (onRemoveMovie) onRemoveMovie(id);
+          onRemoveMovie?.(id);
         } else {
           toast.error(t("errorRemovingFavorite"));
         }
@@ -122,52 +115,44 @@ interface MovieCardProps extends Movie {
       console.error(error);
       toast.error(t("errorUpdatingFavorites"));
     }
-  };
+  }, [id, isFavorited, member, onRemoveMovie, t]);
 
-const handleAddToList = async () => {
-  if (!selectedList) {
-    toast.error("Selecione uma lista");
-    return;
-  }
-
-  try {
-    setIsAdding(true);
-    const token = localStorage.getItem("authToken");
-    if (!token || !member) {
-      toast.error(t("userNotAuthenticated"));
+  const handleAddToList = useCallback(async () => {
+    if (!selectedList) {
+      toast.error("Selecione uma lista");
       return;
     }
-
-    const result = await addContentToList(token, {
-      memberId: member.id,
-      mediaId: String(id),
-      mediaType: "movie",
-      listName: selectedList,
-    });
-
-
-    if (result === "duplicate") {
-      toast.error("Este conteúdo já está na lista");
-    } else if (result === "success") {
-      toast.success("Filme adicionado à lista!");
-    } else {
-      toast.error("Erro ao adicionar à lista");
+    try {
+      setIsAdding(true);
+      const token = localStorage.getItem("authToken");
+      if (!token || !member) {
+        toast.error(t("userNotAuthenticated"));
+        return;
+      }
+      const result = await addContentToList(token, {
+        memberId: member.id,
+        mediaId: String(id),
+        mediaType: "movie",
+        listName: selectedList,
+      });
+      if (result === "duplicate") toast.error("Este conteúdo já está na lista");
+      else if (result === "success") toast.success("Filme adicionado à lista!");
+      else toast.error("Erro ao adicionar à lista");
+    } finally {
+      setIsAdding(false);
     }
-  } finally {
-    setIsAdding(false);
-  }
-};
+  }, [id, member, selectedList, t]);
 
-
-  const handleViewDetails = () => {
+  const handleViewDetails = useCallback(() => {
     router.push(`/${locale}/movie/${id}`);
-  };
+  }, [id, locale, router]);
 
   return (
     <>
       <div
         onClick={handleOpen}
         className="cursor-pointer w-full max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-all duration-300"
+        aria-label={`Abrir detalhes de ${title}`}
       >
         <div className="relative w-full h-[270px] bg-gray-800">
           {posterUrl && posterUrl !== "null" ? (
@@ -200,6 +185,7 @@ const handleAddToList = async () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              aria-hidden
             />
             <motion.div
               ref={modalRef}
@@ -207,10 +193,13 @@ const handleAddToList = async () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Detalhes de ${title}`}
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold">{title}</h2>
-                <button onClick={handleClose} className="text-red-400 text-xl">
+                <button onClick={handleClose} className="text-red-400 text-xl" aria-label="Fechar modal">
                   ×
                 </button>
               </div>
@@ -218,12 +207,12 @@ const handleAddToList = async () => {
               {backdropUrl && backdropUrl !== "null" ? (
                 <div className="relative w-full h-[250px] rounded-md overflow-hidden mb-6">
                   <Image src={backdropUrl} alt={title} fill className="object-cover rounded-md" />
-                  <button onClick={handleFavorite} className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full">
-                    {isFavorited ? (
-                      <FaHeart className="text-red-500 w-6 h-6" />
-                    ) : (
-                      <FiHeart className="text-white w-6 h-6" />
-                    )}
+                  <button
+                    onClick={handleFavorite}
+                    className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full"
+                    aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                  >
+                    {isFavorited ? <FaHeart className="text-red-500 w-6 h-6" /> : <FiHeart className="text-white w-6 h-6" />}
                   </button>
                 </div>
               ) : (
@@ -246,14 +235,11 @@ const handleAddToList = async () => {
                   onChange={(e) => setSelectedList(e.target.value)}
                   className="bg-neutral-800 text-white p-2 rounded flex-grow"
                   disabled={customLists.length === 0}
+                  aria-label="Selecionar lista"
                 >
-                  <option value="" disabled>
-                    Selecione uma lista
-                  </option>
+                  <option value="" disabled>Selecione uma lista</option>
                   {customLists.map((listName) => (
-                    <option key={listName} value={listName}>
-                      {listName}
-                    </option>
+                    <option key={listName} value={listName}>{listName}</option>
                   ))}
                 </select>
 
@@ -281,3 +267,5 @@ const handleAddToList = async () => {
     </>
   );
 }
+
+export const MovieCard = memo(MovieCardBase);

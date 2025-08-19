@@ -1,3 +1,4 @@
+// src/app/[locale]/movie/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -124,7 +125,7 @@ export default function MoviePage() {
             </button>
             <button
               onClick={handleFavoriteToggle}
-              className="bg-white/10 border border-white text-white px-6 py-3 rounded hover:bg-white hover:text-black transition flex items-center gap-2"
+              className="bg-white/10 border border-white text-white px-6 py-3 rounded hover:bg白 hover:text-black transition flex items-center gap-2"
             >
               {isFavorited ? (
                 <>
@@ -144,7 +145,7 @@ export default function MoviePage() {
           onClose={() => setShowModal(false)}
           mediaId={movie.id}
           mediaType="movie"
-          onSuccess={() => setRefreshReviews((prev) => !prev)} // 👈 Avisa pra atualizar
+          onSuccess={() => setRefreshReviews((prev) => !prev)}
         />
       </main>
 
