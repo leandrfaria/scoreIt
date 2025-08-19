@@ -46,7 +46,7 @@ export default function AuthPage() {
   }, [params]);
 
   useEffect(() => {
-    const posters = ["poster1.png","poster2.png","poster3.png","poster4.png","poster5.png","poster6.png","poster7.png"];
+    const posters = ["poster1.png","poster2.png","poster3.png","poster4.png","poster5.png","poster6.png","poster7.png","poster8.png","poster9.png","poster10.png"];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);

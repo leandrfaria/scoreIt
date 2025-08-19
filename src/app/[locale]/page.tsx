@@ -37,6 +37,10 @@ export default function Home() {
       "poster5.png",
       "poster6.png",
       "poster7.png",
+      "poster8.png",
+      "poster9.png",
+      "poster10.png",
+      "poster11.png",
     ];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
