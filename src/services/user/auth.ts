@@ -35,9 +35,10 @@ async function postJson<T = any>(path: string, body: unknown): Promise<T> {
 
 export async function verifyToken(token: string) {
   assertApiBase();
+  const bearer = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
   const res = await fetch(`${apiBase}/auth/verifyToken`, {
     method: "GET",
-    headers: { Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}` },
+    headers: { Authorization: bearer },
     cache: "no-store",
   });
   if (!res.ok) throw new Error("Token inválido/expirado");
@@ -54,8 +55,9 @@ export async function loginUser(email: string, password: string) {
     throw new Error("Token JWT não retornado pelo servidor");
   }
 
+  // Sempre salva com prefixo Bearer para padronizar TODOS os services
   if (typeof window !== "undefined") {
-    localStorage.setItem("authToken", data.token);
+    localStorage.setItem("authToken", `Bearer ${data.token}`);
   }
 
   return { success: true as const, token: data.token };
