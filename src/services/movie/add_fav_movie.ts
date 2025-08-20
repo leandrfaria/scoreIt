@@ -1,22 +1,15 @@
-export const addFavouriteMovie = async (token: string, userId: number, movieId: number): Promise<boolean> => {
-    try {
-      const response = await fetch(`http://localhost:8080/member/favorites/${userId}/${movieId}/movie`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Erro ao favoritar filme: ${response.status}`);
-      }
-  
-      return true;
-    } catch (error) {
-      console.error("❌ Erro ao adicionar filme aos favoritos:", error);
-      return false;
-    }
-  };
+// src/services/movie/add_fav_movie.ts
+import { apiFetch } from "@/lib/api";
 
-  
-  
+export const addFavouriteMovie = async (token: string, userId: number, movieId: number): Promise<boolean> => {
+  try {
+    await apiFetch(`/member/favorites/${userId}/${movieId}/movie`, {
+      method: "POST",
+      auth: true,
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ Erro ao adicionar filme aos favoritos:", error);
+    return false;
+  }
+};

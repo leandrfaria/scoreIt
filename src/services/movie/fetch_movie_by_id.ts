@@ -1,39 +1,30 @@
+import { apiFetch } from "@/lib/api";
 import { Movie } from "@/types/Movie";
 
 export const fetchMovieById = async (id: string): Promise<Movie | null> => {
-  const token = localStorage.getItem("authToken");
-
-  if (!token) {
-    console.error("Token não encontrado. Faça login primeiro.");
-    return null;
-  }
-
   try {
-    const response = await fetch(`http://localhost:8080/movie/${id}/details`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
+    const data: any = await apiFetch(`/movie/${id}/details`, { auth: true });
 
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar filme: ${response.status}`);
-    }
+    const poster = data.posterUrl ?? data.poster_path ?? null;
+    const backdrop = data.backdropUrl ?? data.backdrop_path ?? null;
 
-    const data = await response.json();
+    const genresFromArray =
+      Array.isArray(data.genres)
+        ? data.genres.map((g: any) => (typeof g === "string" ? g : g?.name)).filter(Boolean)
+        : [];
 
     return {
       id: data.id,
       title: data.title,
       overview: data.overview,
       release_date: data.release_date,
-      posterUrl: data.poster_path,
-      backdropUrl: data.backdrop_path,
+      posterUrl: poster,
+      backdropUrl: backdrop,
       vote_average: data.vote_average,
-      genre: data.genres?.[0]?.name || "Desconhecido",
-      genres: data.genres?.map((g: any) => g.name) || [],
+      genre: genresFromArray[0] || "Desconhecido",
+      genres: genresFromArray,
       runtime: data.runtime,
-      language: data.original_language,
+      language: data.original_language ?? data.language,
       certification: data.certification,
       status: data.status,
       budget: data.budget,

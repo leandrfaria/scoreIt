@@ -1,78 +1,96 @@
+// src/services/user/member.ts
 import { jwtDecode, JwtPayload } from "jwt-decode";
+import { apiBase } from "@/lib/api";
 
 interface CustomJwtPayload extends JwtPayload {
-    id: string; 
+  id?: string; // opcional para evitar crash se o claim faltar
 }
 
-const fetchMembers = async (useJwtId = false) => {
-    const token = localStorage.getItem('authToken'); 
-    let url = 'http://localhost:8080/member/get';
+function assertApiBase() {
+  if (!apiBase) {
+    throw new Error(
+      "API base URL não configurada. Verifique NEXT_PUBLIC_API_BASE_URL_* e faça redeploy."
+    );
+  }
+}
 
-    // Se useJwtId for true, tenta decodificar o ID do JWT
-    if (useJwtId && token) {
-        const decoded = jwtDecode<CustomJwtPayload>(token);
-        const memberId = decoded.id;
-        url += `/${memberId}`;
+function buildHeaders(withJson = true): Headers {
+  const h = new Headers();
+  if (withJson) h.set("Content-Type", "application/json");
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("authToken"); // token CRU
+    if (stored) {
+      const auth = stored.startsWith("Bearer ") ? stored : `Bearer ${stored}`;
+      h.set("Authorization", auth);
     }
+  }
+  return h;
+}
 
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
+export const fetchMembers = async (useJwtId = false) => {
+  assertApiBase();
 
-    if (!response.ok) {
-        throw new Error('Erro ao buscar membros');
+  let path = "/member/get";
+  if (useJwtId) {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+    if (token) {
+      try {
+        const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
+        const decoded = jwtDecode<CustomJwtPayload>(raw);
+        if (decoded?.id) path += `/${decoded.id}`;
+      } catch {
+        // se falhar o decode, segue sem o /{id}
+      }
     }
+  }
 
-    const data = await response.json();
-    return data;
+  const res = await fetch(`${apiBase}${path}`, {
+    method: "GET",
+    headers: buildHeaders(), // já inclui Content-Type + Authorization se existir
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(txt || "Erro ao buscar membros");
+  }
+
+  return res.json();
 };
 
-const fetchMemberById = async (id: string) => {
-    const token = localStorage.getItem('authToken'); 
-    let url = 'http://localhost:8080/member/get';
+export const fetchMemberById = async (id: string) => {
+  assertApiBase();
+  const path = id ? `/member/get/${id}` : "/member/get";
 
-    if (id && token) {
-        url += `/${id}`;
-    }
+  const res = await fetch(`${apiBase}${path}`, {
+    method: "GET",
+    headers: buildHeaders(),
+    cache: "no-store",
+  });
 
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(txt || `Erro ao buscar membro pelo id ${id}`);
+  }
 
-    if (!response.ok) {
-        throw new Error(`Erro ao buscar membro pelo id ${id}`);
-    }
-
-    const data = await response.json();
-    return data;
+  return res.json();
 };
 
-const updateMember = async (memberId: string, payload: any) => {
-    const token = localStorage.getItem('authToken');
+export const updateMember = async (_memberId: string, payload: any) => {
+  assertApiBase();
+  // sua API atualiza pelo body; memberId não é usado na URL
+  const res = await fetch(`${apiBase}/member/update`, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
 
-    const response = await fetch(`http://localhost:8080/member/update`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-    });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(txt || "Erro ao atualizar perfil");
+  }
 
-    if (!response.ok) {
-        throw new Error('Erro ao atualizar perfil');
-    }
-
-    const updatedMember = await response.json(); // Retorna o membro atualizado
-    return updatedMember;
+  return res.json();
 };
-
-export { fetchMembers, updateMember, fetchMemberById };

@@ -1,46 +1,71 @@
-import { Movie } from '@/types/Movie';
+// src/services/movie/popular.ts
+import { apiFetch } from "@/lib/api";
+import { Movie } from "@/types/Movie";
+
+type Json = Record<string, unknown>;
+const FALLBACK_IMG = "/fallback.jpg";
+
+function isRecord(v: unknown): v is Json {
+  return typeof v === "object" && v !== null;
+}
+
+function extractResults(payload: unknown): Json[] {
+  if (Array.isArray(payload)) return payload as Json[];
+  if (isRecord(payload) && Array.isArray((payload as Json).results)) {
+    return (payload as { results: unknown[] }).results as Json[];
+  }
+  if (
+    isRecord(payload) &&
+    isRecord((payload as Json).data) &&
+    Array.isArray(((payload as Json).data as Json).results)
+  ) {
+    return (((payload as Json).data as { results: unknown[] }).results) as Json[];
+  }
+  return [];
+}
 
 export const fetchMovies = async (): Promise<Movie[]> => {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    console.error('Token não encontrado. Faça login primeiro.');
-    return [];
-  }
-
   try {
-    const response = await fetch('http://localhost:8080/movie/get/page/1', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const data: unknown = await apiFetch(`/movie/get/page/1`, { auth: true });
+    const results = extractResults(data);
+
+    const transformed: Movie[] = results.map((m): Movie => {
+      const id = typeof m.id === "number" ? m.id : Number(m.id ?? 0);
+      const title = typeof m.title === "string" ? m.title : "";
+      const poster_path = typeof m.poster_path === "string" ? m.poster_path : null;
+      const posterUrlApi = typeof m.posterUrl === "string" ? m.posterUrl : null;
+      const backdrop_path = typeof m.backdrop_path === "string" ? m.backdrop_path : null;
+      const backdropUrlApi = typeof m.backdropUrl === "string" ? m.backdropUrl : null;
+      const vote_average = typeof m.vote_average === "number" ? m.vote_average : 0;
+      const release_date = typeof m.release_date === "string" ? m.release_date : "";
+      const overview = typeof m.overview === "string" ? m.overview : "";
+      const genre = typeof m.genre === "string" ? m.genre : "Desconhecido";
+
+      const posterUrl =
+        poster_path
+          ? `https://image.tmdb.org/t/p/w300${poster_path}`
+          : posterUrlApi ?? FALLBACK_IMG;
+
+      const backdropUrl =
+        backdrop_path
+          ? `https://image.tmdb.org/t/p/original${backdrop_path}`
+          : backdropUrlApi ?? FALLBACK_IMG;
+
+      return {
+        id,
+        title,
+        posterUrl,     // 🔒 sempre string
+        backdropUrl,   // 🔒 sempre string
+        vote_average,
+        release_date,
+        overview,
+        genre,
+      };
     });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar filmes: ${response.status}`);
-    }
-
-    const text = await response.text();
-
-    if (!text) {
-      throw new Error('Resposta da API vazia');
-    }
-
-    const data = JSON.parse(text);
-    const results = data.results || [];
-
-    const transformed: Movie[] = results.map((movie: any) => ({
-      id: movie.id,
-      title: movie.title,
-      posterUrl: `https://image.tmdb.org/t/p/w300${movie.poster_path}`,      // para exibir nos cards
-      backdropUrl: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`, // ✅ melhor qualidade para o modal
-      vote_average: movie.vote_average,
-      release_date: movie.release_date,
-      overview: movie.overview,
-      genre: movie.genre || 'Desconhecido',
-    }));
 
     return transformed;
   } catch (error) {
-    console.error('Erro ao buscar filmes:', error);
+    console.error("Erro ao buscar filmes:", error);
     return [];
   }
 };

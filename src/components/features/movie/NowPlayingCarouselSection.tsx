@@ -1,8 +1,8 @@
+// src/components/features/movie/NowPlayingCarouselSection.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { fetchNowPlayingMovies } from "@/services/movie/now_playing";
-import { fetchMovieById } from "@/services/movie/fetch_movie_by_id";
 import { Movie } from "@/types/Movie";
 import { MovieCarousel } from "./MovieCarousel";
 import { useTranslations } from "next-intl";
@@ -13,62 +13,30 @@ const NowPlayingCarouselSection = () => {
   const t = useTranslations("NowPlayingCarousel");
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadMovies = async () => {
-      const token = localStorage.getItem("authToken");
-
-      if (!token) {
-        console.error(t("tokenNotFound"));
-        setLoading(false);
-        return;
+      try {
+        const list = await fetchNowPlayingMovies();
+        if (!controller.signal.aborted) setMovies(list);
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          console.error(e);
+          setMovies([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-
-      const basicData = await fetchNowPlayingMovies(token);
-
-      if (!basicData || basicData.length === 0) {
-        console.warn(t("emptyListWarning"));
-        setMovies([
-          {
-            id: 999,
-            title: t("mockMovie.title"),
-            posterUrl: "https://image.tmdb.org/t/p/w300/6DrHO1jr3qVrViUO6s6kFiAGM7.jpg",
-            backdropUrl: "https://image.tmdb.org/t/p/original/rTh4K5uw9HypmpGslcKd4QfHl93.jpg",
-            vote_average: 7.5,
-            release_date: "2024-01-01",
-            overview: t("mockMovie.overview"),
-            genre: "Drama",
-          },
-        ]);
-        setLoading(false);
-        return;
-      }
-
-      // 🔥 Enriquecer com o gênero real usando fetchMovieById
-      const enrichedMovies: Movie[] = await Promise.all(
-        basicData.map(async (movie) => {
-          const fullMovie = await fetchMovieById(String(movie.id));
-          return {
-            ...movie,
-            genre: fullMovie?.genre || movie.genre || "Desconhecido",
-          };
-        })
-      );
-
-      setMovies(enrichedMovies);
-      setLoading(false);
     };
 
     loadMovies();
-  }, [t]);
+    return () => controller.abort();
+  }, []);
 
-  if (loading) {
-    return <div className="text-center py-10 text-white">{t("loading")}</div>;
-  }
+  if (loading) return <div className="text-center py-8 sm:py-10 text-white">{t("loading")}</div>;
+  if (movies.length === 0) return <div className="text-center py-8 sm:py-10 text-white">{t("noMoviesFound")}</div>;
 
-  if (movies.length === 0) {
-    return <div className="text-center py-10 text-white">{t("noMoviesFound")}</div>;
-  }
-
-  return <MovieCarousel title={t("carouselTitle")} movies={movies} />;
+  return <MovieCarousel title={t("carouselTitle")} movies={movies} autoScroll autoScrollInterval={6000} />;
 };
 
 export default NowPlayingCarouselSection;
