@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ArrowLeft as IconArrowLeft, ArrowRight as IconArrowRight } from "lucide-react";
 import { MovieCard } from "@/components/features/movie/MovieCard";
 import type { Movie } from "@/types/Movie";
@@ -124,16 +124,23 @@ export function MovieCarousel({
 
   const arrowButtonClass = "bg-darkgreen text-white hover:brightness-110 transition-all";
 
+  // Prioridade de imagem só para os 4 primeiros (melhor LCP)
+  const priorityIndices = useMemo(() => new Set([0, 1, 2, 3]), []);
+
   return (
-    <div className="w-full py-6">
-      <div className="mb-4">
-        <h2 className="text-xl md:text-xl font-bold text-white">{title}</h2>
+    <section className="w-full py-4 sm:py-6">
+      <div className="mb-3 sm:mb-4 px-2 sm:px-0">
+        <h2 className="text-lg sm:text-xl font-bold text-white">{title}</h2>
       </div>
 
       <div
         ref={carouselRef}
-        className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth px-4 select-none"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth px-3 sm:px-4 select-none snap-x snap-mandatory"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          WebkitOverflowScrolling: "touch",
+        }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleDragEnd}
@@ -141,22 +148,29 @@ export function MovieCarousel({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleDragEnd}
+        aria-label={title}
+        role="list"
       >
-        {movies.map((movie) => (
-          <div key={movie.id} className="flex-shrink-0" style={{ width: "190px", maxWidth: "190px" }}>
+        {movies.map((movie, idx) => (
+          <div
+            key={movie.id}
+            className="flex-shrink-0 snap-start"
+            style={{ width: "160px", maxWidth: "160px" }}
+            role="listitem"
+          >
             {/* se arrastar mais de 10px, suprime open por clique acidental */}
             <div onClick={(e) => movedPxRef.current > 10 && e.preventDefault()}>
-              <MovieCard {...movie} onRemoveMovie={onRemoveMovie} />
+              <MovieCard {...movie} onRemoveMovie={onRemoveMovie} priority={priorityIndices.has(idx)} />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex justify-center mt-6">
-        <div className="flex gap-4">
+      <div className="flex justify-center mt-5 sm:mt-6">
+        <div className="flex gap-3 sm:gap-4">
           <button
             onClick={() => scroll("left")}
-            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${
+            className={`group/button flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-full ${
               !showLeftButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
             }`}
             disabled={!showLeftButton}
@@ -166,7 +180,7 @@ export function MovieCarousel({
           </button>
           <button
             onClick={() => scroll("right")}
-            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${
+            className={`group/button flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-full ${
               !showRightButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
             }`}
             disabled={!showRightButton}
@@ -176,6 +190,6 @@ export function MovieCarousel({
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

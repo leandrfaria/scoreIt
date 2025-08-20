@@ -13,24 +13,30 @@ const NowPlayingCarouselSection = () => {
   const t = useTranslations("NowPlayingCarousel");
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadMovies = async () => {
       try {
         const list = await fetchNowPlayingMovies();
-        setMovies(list);
+        if (!controller.signal.aborted) setMovies(list);
       } catch (e) {
-        console.error(e);
-        setMovies([]);
+        if (!controller.signal.aborted) {
+          console.error(e);
+          setMovies([]);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
+
     loadMovies();
+    return () => controller.abort();
   }, []);
 
-  if (loading) return <div className="text-center py-10 text-white">{t("loading")}</div>;
-  if (movies.length === 0) return <div className="text-center py-10 text-white">{t("noMoviesFound")}</div>;
+  if (loading) return <div className="text-center py-8 sm:py-10 text-white">{t("loading")}</div>;
+  if (movies.length === 0) return <div className="text-center py-8 sm:py-10 text-white">{t("noMoviesFound")}</div>;
 
-  return <MovieCarousel title={t("carouselTitle")} movies={movies} />;
+  return <MovieCarousel title={t("carouselTitle")} movies={movies} autoScroll autoScrollInterval={6000} />;
 };
 
 export default NowPlayingCarouselSection;
