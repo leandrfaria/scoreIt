@@ -1,37 +1,51 @@
+import { apiFetch } from "@/lib/api";
 import { Album } from "@/types/Album";
 
-export const fetchAlbumById = async (id: string): Promise<Album | null> => {
-  const token = localStorage.getItem("authToken");
+type Json = Record<string, unknown>;
 
-  if (!token) {
-    console.error("Token não encontrado. Faça login primeiro.");
-    return null;
-  }
+function pickString(v: unknown, fallback = ""): string {
+  return typeof v === "string" ? v : fallback;
+}
 
+export async function fetchAlbumById(id: string): Promise<Album | null> {
   try {
-    const response = await fetch(`http://localhost:8080/spotify/api/album/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
+    const data = await apiFetch(`/spotify/api/album/${id}`, { auth: true });
+    if (typeof data !== "object" || data === null) return null;
+    const obj = data as Json;
 
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar álbum: ${response.status}`);
-    }
+    const images = (obj.images as unknown[]) || [];
+    const imageUrl =
+      Array.isArray(images) &&
+      typeof images[0] === "object" &&
+      images[0] !== null &&
+      typeof (images[0] as Json).url === "string"
+        ? ((images[0] as Json).url as string)
+        : "/fallback.jpg";
 
-    const data = await response.json();
+    const artists = (obj.artists as unknown[]) || [];
+    const artist =
+      Array.isArray(artists) &&
+      typeof artists[0] === "object" &&
+      artists[0] !== null &&
+      typeof (artists[0] as Json).name === "string"
+        ? ((artists[0] as Json).name as string)
+        : "Desconhecido";
 
-    return {
-      id: data.id,
-      name: data.name,
-      artist: data.artists?.[0]?.name || "Desconhecido",
-      release_date: data.release_date,
-      total_tracks: data.total_tracks,
-      imageUrl: data.images?.[0]?.url || "",
+    const album: Album = {
+      id: pickString(obj.id),
+      name: pickString(obj.name),
+      artist,
+      release_date: pickString(obj.release_date),
+      total_tracks: typeof obj.total_tracks === "number" ? (obj.total_tracks as number) : 0,
+      imageUrl,
     };
+
+    // Garante campos obrigatórios
+    if (!album.id || !album.name) return null;
+
+    return album;
   } catch (error) {
     console.error("Erro ao buscar álbum:", error);
     return null;
   }
-};
+}

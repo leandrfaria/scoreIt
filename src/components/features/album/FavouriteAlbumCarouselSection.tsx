@@ -18,22 +18,35 @@ const FavouriteAlbumCarouselSection = ({ memberId }: Props) => {
   const { member } = useMember();
 
   useEffect(() => {
+    let mounted = true;
+
     const loadAlbums = async () => {
-      const token = localStorage.getItem("authToken");
-      const idToUse = memberId ?? String(member?.id);
+      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      const idToUse = memberId ?? (member?.id ? String(member.id) : "");
 
       if (!token || !idToUse) {
+        // Mantém UX consistente sem disparar chamada desnecessária
         console.error(t("tokenNotFound"));
-        setLoading(false);
+        if (mounted) setLoading(false);
         return;
       }
 
-      const data = await fetchFavouriteAlbuns(idToUse);
-      setAlbums(data);
-      setLoading(false);
+      try {
+        const data = await fetchFavouriteAlbuns(idToUse);
+        if (mounted) {
+          setAlbums(data);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar álbuns favoritos:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
 
     loadAlbums();
+    return () => {
+      mounted = false;
+    };
   }, [memberId, member, t]);
 
   if (loading) {
@@ -45,7 +58,7 @@ const FavouriteAlbumCarouselSection = ({ memberId }: Props) => {
   }
 
   const handleRemoveAlbum = (id: string) => {
-    setAlbums((prevAlbums) => prevAlbums.filter((album) => album.id !== id));
+    setAlbums((prev) => prev.filter((album) => album.id !== id));
   };
 
   return (

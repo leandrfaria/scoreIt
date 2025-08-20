@@ -1,35 +1,51 @@
+import { apiFetch } from "@/lib/api";
 import { Album } from "@/types/Album";
 
-export const fetchFavouriteAlbuns = async (id: string): Promise<Album[]> => {
+type Json = Record<string, unknown>;
+
+function pickString(v: unknown, fallback = ""): string {
+  return typeof v === "string" ? v : fallback;
+}
+
+export async function fetchFavouriteAlbuns(memberId: string): Promise<Album[]> {
   try {
-    const token = localStorage.getItem("authToken");
+    const raw = await apiFetch(`/spotify/api/favorites/${memberId}`, { auth: true });
 
-    if (!token) {
-      console.error("Token não encontrado.");
-      return [];
-    }
+    if (!Array.isArray(raw)) return [];
 
-    const res = await fetch(`http://localhost:8080/spotify/api/favorites/${id}`, {
-        headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    return raw
+      .map((item: unknown) => {
+        if (typeof item !== "object" || item === null) return null;
+        const obj = item as Json;
 
-    if (!res.ok) {
-      throw new Error(`Erro ao buscar álbuns: ${res.status}`);
-    }
+        const images = (obj.images as unknown[]) || [];
+        const imageUrl =
+          Array.isArray(images) && typeof images[0] === "object" && images[0] !== null
+            ? pickString((images[0] as Json).url, "/fallback.jpg")
+            : "/fallback.jpg";
 
-    const raw = await res.json();
+        const artists = (obj.artists as unknown[]) || [];
+        const artist =
+          Array.isArray(artists) && typeof artists[0] === "object" && artists[0] !== null
+            ? pickString((artists[0] as Json).name, "Desconhecido")
+            : "Desconhecido";
 
-    return raw.map((item: any) => ({
-      id: item.id,
-      name: item.name,  
-      release_date: item.release_date,
-      imageUrl: item.images?.[0]?.url || "",
-      artistName: item.artists?.[0]?.name || "Desconhecido",
-    }));
+        const id = pickString(obj.id);
+        const name = pickString(obj.name);
+        if (!id || !name) return null;
+
+        return {
+          id,
+          name,
+          artist,
+          release_date: pickString(obj.release_date),
+          total_tracks: typeof obj.total_tracks === "number" ? (obj.total_tracks as number) : 0,
+          imageUrl,
+        } as Album;
+      })
+      .filter((a): a is Album => a !== null);
   } catch (err) {
-    console.error("Erro ao buscar álbuns:", err);
+    console.error("Erro ao buscar álbuns favoritos:", err);
     return [];
   }
-};
+}

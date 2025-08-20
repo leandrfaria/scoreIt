@@ -57,6 +57,17 @@ export default function AuthPage() {
       "poster8.png",
       "poster9.png",
       "poster10.png",
+      "poster11.png",
+      "poster12.png",
+      "poster13.png",
+      "poster14.png",
+      "poster15.png",
+      "poster16.png",
+      "poster17.png",
+      "poster18.png",
+      "poster19.png",
+      "poster20.png",
+      "poster21.png",
     ];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);

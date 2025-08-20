@@ -4,8 +4,8 @@ import { useRef, useState, useEffect } from "react";
 import { AlbumCard } from "@/components/features/album/AlbumCard";
 import { Album } from "@/types/Album";
 import {
-  ArrowLeftIcon as IconArrowLeft,
-  ArrowRightIcon as IconArrowRight,
+  ArrowLeft as IconArrowLeft,
+  ArrowRight as IconArrowRight,
 } from "lucide-react";
 
 interface AlbumCarouselProps {
@@ -57,38 +57,41 @@ export function AlbumCarousel({ title, albums, onRemoveAlbum }: AlbumCarouselPro
   }, []);
 
   return (
-    <div className="w-full py-6">
+    <section className="w-full py-6">
       <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
+
       <div
         ref={carouselRef}
         className="flex gap-6 overflow-x-auto px-4 scroll-smooth scrollbar-hide"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {albums.map((album) => (
-          <AlbumCard key={album.id} {...album} onRemoveAlbum={onRemoveAlbum}/>
+          <AlbumCard key={album.id} {...album} onRemoveAlbum={onRemoveAlbum} />
         ))}
       </div>
 
       <div className="flex justify-center mt-6 gap-4">
         <button
           onClick={() => scroll("left")}
-          className={`h-8 w-8 flex items-center justify-center rounded-full ${
-            !showLeftButton ? "opacity-50 cursor-not-allowed" : "bg-darkgreen text-white hover:brightness-110"
+          className={`h-9 w-9 flex items-center justify-center rounded-full ${
+            !showLeftButton ? "opacity-50 cursor-not-allowed ring-1 ring-white/10" : "bg-darkgreen text-white hover:brightness-110"
           }`}
           disabled={!showLeftButton}
+          aria-label="Scroll left"
         >
           <IconArrowLeft className="h-5 w-5" />
         </button>
         <button
           onClick={() => scroll("right")}
-          className={`h-8 w-8 flex items-center justify-center rounded-full ${
-            !showRightButton ? "opacity-50 cursor-not-allowed" : "bg-darkgreen text-white hover:brightness-110"
+          className={`h-9 w-9 flex items-center justify-center rounded-full ${
+            !showRightButton ? "opacity-50 cursor-not-allowed ring-1 ring-white/10" : "bg-darkgreen text-white hover:brightness-110"
           }`}
           disabled={!showRightButton}
+          aria-label="Scroll right"
         >
           <IconArrowRight className="h-5 w-5" />
         </button>
       </div>
-    </div>
+    </section>
   );
 }

@@ -6,20 +6,22 @@ import { fetchNewAlbumReleases } from "@/services/album/releases";
 import { AlbumCarousel } from "@/components/features/album/AlbumCarousel";
 import { useTranslations } from "next-intl";
 
-
 const RecentsAlbumCarousel = () => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("RecentAlbumListByGenre");
 
   useEffect(() => {
-    const loadAlbums = async () => {
-      const data = await fetchNewAlbumReleases();
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    (async () => {
+      const data = await fetchNewAlbumReleases(signal);
       setAlbums(data);
       setLoading(false);
-    };
+    })();
 
-    loadAlbums();
+    return () => controller.abort();
   }, []);
 
   if (loading) {

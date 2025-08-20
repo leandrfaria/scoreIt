@@ -10,8 +10,6 @@ import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
 import Link from "next/link";
 import PageTransition from "@/components/layout/PageTransition";
-import RecentsAlbumCarousel from "@/components/features/album/RecentsAlbumCarousel";
-import TopArtistsCarouselSection from "@/components/features/artist/TopArtistsCarousel";
 import OnAirSeriesCarouselSection from "@/components/features/serie/OnAirSeriesCarouselSection";
 import NowPlayingCarouselSection from "@/components/features/movie/NowPlayingCarouselSection";
 import { SeriesList } from "@/components/features/serie/SeriesList";
@@ -41,6 +39,16 @@ export default function Home() {
       "poster9.png",
       "poster10.png",
       "poster11.png",
+      "poster12.png",
+      "poster13.png",
+      "poster14.png",
+      "poster15.png",
+      "poster16.png",
+      "poster17.png",
+      "poster18.png",
+      "poster19.png",
+      "poster20.png",
+      "poster21.png",
     ];
     const random = Math.floor(Math.random() * posters.length);
     setRandomImage(`/postershorizont/${posters[random]}`);
@@ -61,7 +69,7 @@ export default function Home() {
           <>
             {activeTab === "musicas" ? (
               <>
-                <TopArtistsCarouselSection />
+                {/* TopArtists removido pelo back */}
                 <AlbumListByGenre />
               </>
             ) : activeTab === "series" ? (

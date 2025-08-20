@@ -1,86 +1,145 @@
+import { apiFetch } from "@/lib/api";
 import { Album } from "@/types/Album";
 
-const BASE_URL = "http://localhost:8080";
+type Json = Record<string, unknown>;
 
-const getAuthToken = (): string | null => {
-  return localStorage.getItem("authToken");
-};
+function isRecord(v: unknown): v is Json {
+  return typeof v === "object" && v !== null;
+}
 
-// Função genérica para fazer fetch com token de autorização
-const fetchWithAuth = async (url: string): Promise<any> => {
-  const token = getAuthToken();
+function pickString(v: unknown, fallback = ""): string {
+  return typeof v === "string" ? v : fallback;
+}
 
-  if (!token) {
-    console.error("Token não encontrado.");
-    return null;
+function normalizeAlbum(item: unknown): Album | null {
+  // Spotify-like
+  if (isRecord(item)) {
+    const id = pickString(item.id);
+    const name = pickString(item.name);
+    const release_date = pickString(item.release_date);
+    const images = (item.images as unknown[]) || [];
+    const imageUrl =
+      Array.isArray(images) && isRecord(images[0]) ? pickString(images[0].url, "/fallback.jpg") : "/fallback.jpg";
+    const artists = (item.artists as unknown[]) || [];
+    const artist =
+      Array.isArray(artists) && isRecord(artists[0]) ? pickString(artists[0].name, "Desconhecido") : "Desconhecido";
+    const total_tracksRaw = (item.total_tracks as number) ?? 0;
+
+    if (!id || !name) return null;
+
+    return {
+      id,
+      name,
+      artist,
+      release_date,
+      total_tracks: typeof total_tracksRaw === "number" ? total_tracksRaw : 0,
+      imageUrl,
+    };
   }
+  return null;
+}
 
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+function normalizeAlbumFromLastFm(item: unknown): Album | null {
+  // lastfm custom payload used by your API (/lastfm/albums-by-genre/*)
+  if (isRecord(item)) {
+    const id = pickString(item.id);
+    const name = pickString(item.name);
+    const imageUrl = pickString(item.imageUrl, "/fallback.jpg");
+    const artist = pickString(item.artistName, "Desconhecido");
+    const release_date = pickString(item.release_date);
+    const total_tracksRaw = (item.total_tracks as number) ?? 0;
 
-  if (!res.ok) {
-    throw new Error(`Erro na requisição: ${res.status}`);
+    if (!id || !name) return null;
+
+    return {
+      id,
+      name,
+      artist,
+      release_date,
+      total_tracks: typeof total_tracksRaw === "number" ? total_tracksRaw : 0,
+      imageUrl: imageUrl || "/fallback.jpg",
+    };
   }
-
-  return res.json();
-};
+  return null;
+}
 
 /**
  * 🎧 Busca álbuns por gênero
+ * Se o endpoint por gênero estiver indisponível (back removeu filtros), faz fallback para releases recentes.
  */
-export const fetchAlbumsByGenre = async (
+export async function fetchAlbumsByGenre(
   genre: string = "rap",
   page = 1,
-  limit = 20
-): Promise<Album[]> => {
+  limit = 20,
+  signal?: AbortSignal
+): Promise<Album[]> {
   try {
-    const data = await fetchWithAuth(`${BASE_URL}/lastfm/albums-by-genre/${genre}?page=${page}&limit=${limit}`);
+    // Tentativa 1: endpoint por gênero (LastFM wrapper do seu back)
+    const data = await apiFetch(`/lastfm/albums-by-genre/${genre}?page=${page}&limit=${limit}`, {
+      auth: true,
+      signal,
+    });
 
     if (!Array.isArray(data)) {
-      console.error("Resposta inesperada na busca por gênero:", data);
-      return [];
+      console.warn("[albums-by-genre] Resposta inesperada; caindo para releases recentes:", data);
+      return await fetchAlbumsFallbackReleases(limit, signal);
     }
 
-  return data.map((item: any) => ({
-    id: item.id,
-    name: item.name,
-    release_date: item.release_date || "", // tenta usar a data, senão deixa vazio
-    imageUrl: item.imageUrl,
-    artist: item.artistName || "Desconhecido",
-    total_tracks: item.total_tracks
-  }));
+    const mapped = data
+      .map(normalizeAlbumFromLastFm)
+      .filter((a): a is Album => a !== null);
 
+    // Garante tamanho
+    return mapped.slice(0, limit);
   } catch (err) {
-    console.error("Erro ao buscar álbuns por gênero:", err);
-    return [];
+    console.warn("[albums-by-genre] Falha na API; fallback releases:", err);
+    return await fetchAlbumsFallbackReleases(limit, signal);
   }
-};
+}
 
-export const fetchAlbumsByName = async (query: string, limit = 20): Promise<Album[]> => {
+/**
+ * 🔎 Busca álbuns por nome (Spotify search via back)
+ */
+export async function fetchAlbumsByName(query: string, limit = 20, signal?: AbortSignal): Promise<Album[]> {
+  if (!query.trim()) return [];
   try {
-    const data = await fetchWithAuth(
-      `${BASE_URL}/spotify/api/searchAlbum?query=${encodeURIComponent(query)}&limit=${limit}`
+    const data = await apiFetch(
+      `/spotify/api/searchAlbum?query=${encodeURIComponent(query)}&limit=${limit}`,
+      { auth: true, signal }
     );
 
-    const items = data?.albums?.items || [];
+    const items = isRecord(data) && isRecord(data.albums) && Array.isArray((data.albums as Json).items)
+      ? ((data.albums as Json).items as unknown[])
+      : [];
 
-    const filtered = items.filter((item: any) =>
-      item.name.toLowerCase().includes(query.toLowerCase())
-    );
+    const filtered = items.filter((item) => {
+      if (!isRecord(item)) return false;
+      const name = pickString(item.name).toLowerCase();
+      return name.includes(query.toLowerCase());
+    });
 
-    return filtered.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      release_date: item.release_date || "",
-      imageUrl: item.images && item.images.length > 0 ? item.images[0].url : "",
-      artistName: item.artists && item.artists.length > 0 ? item.artists[0].name : "Desconhecido",
-    }));
+    return filtered
+      .map(normalizeAlbum)
+      .filter((a): a is Album => a !== null)
+      .slice(0, limit);
   } catch (err) {
     console.error("Erro ao buscar álbuns por nome:", err);
     return [];
   }
-};
+}
 
+/** 🔁 Fallback: usa releases recentes quando o endpoint de gênero estiver indisponível */
+async function fetchAlbumsFallbackReleases(limit = 20, signal?: AbortSignal): Promise<Album[]> {
+  try {
+    const data = await apiFetch(`/spotify/api/newAlbumReleases`, { auth: true, signal });
+
+    if (!Array.isArray(data)) return [];
+    return data
+      .map(normalizeAlbum)
+      .filter((a): a is Album => a !== null)
+      .slice(0, limit);
+  } catch (err) {
+    console.error("[fallback releases] erro:", err);
+    return [];
+  }
+}
