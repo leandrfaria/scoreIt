@@ -7,7 +7,7 @@ import { useAuthContext } from "@/context/AuthContext";
 // carrega o TabSwitcher real (client isolado)
 const TabSwitcherMediaType = dynamic(
   () =>
-    import("../TabSwitcherMediaType").then(
+    import("../Others/TabSwitcherMediaType").then(
       (m) => m.TabSwitcherMediaType
     ),
 );

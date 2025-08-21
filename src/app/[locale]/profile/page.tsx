@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Container } from "@/components/layout/Container";
-import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { Container } from "@/components/layout/Others/Container";
+import { ProtectedRoute } from "@/components/layout/Others/ProtectedRoute";
 import { FiEdit2 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";

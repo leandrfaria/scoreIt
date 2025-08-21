@@ -58,16 +58,16 @@ export default function UserMenu() {
   };
 
   // Se não estiver logado, mostra o botão de login
-  if (!isLoggedIn) {
-    return (
-      <Link
-        href={`/${locale}/auth`}
-        className="text-white bg-darkgreen px-6 py-2 rounded-md hover:brightness-110 transition-all"
-      >
-        {t("login")}
-      </Link>
-    );
-  }
+if (!isLoggedIn) {
+  return (
+    <Link
+      href={`/${locale}/auth`}
+      className="text-white bg-darkgreen px-5 py-2 rounded-md hover:brightness-110 transition-all text-sm sm:text-base"
+    >
+      {t("login")}
+    </Link>
+  );
+}
 
   // Logado → avatar + dropdown
   return (

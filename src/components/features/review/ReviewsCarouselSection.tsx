@@ -6,7 +6,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import ReviewProfileCard from "./ReviewProfileCard";
 import { getReviewsByMemberId } from "@/services/review/get_member_review";
 import { fetchMediaById } from "@/services/review/fetchMediaById";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@/components/layout/Others/Container";
 
 interface Props {
   memberId?: string;

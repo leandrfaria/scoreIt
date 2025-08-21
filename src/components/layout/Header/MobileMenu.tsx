@@ -9,7 +9,7 @@ import { FaBars, FaTimes, FaSearch } from "react-icons/fa";
 
 import { useAuthContext } from "@/context/AuthContext";
 import { useMember } from "@/context/MemberContext";
-import { TabSwitcherMediaType } from "../TabSwitcherMediaType";
+import { TabSwitcherMediaType } from "../Others/TabSwitcherMediaType";
 import type { Member } from "@/types/Member";
 
 const DEBOUNCE_MS = 300;

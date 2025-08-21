@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@/components/layout/Others/Container";
 import { RandomMoviesCarousel } from "@/components/features/movie/RandomMoviesCarousel";
 import { RandomSeriesCarousel } from "@/components/features/serie/RandomSeriesCarousel";
 import { AlbumListByGenre } from "@/components/features/album/AlbumListByGenre";
@@ -9,7 +9,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
 import Link from "next/link";
-import PageTransition from "@/components/layout/PageTransition";
+import PageTransition from "@/components/layout/Others/PageTransition";
 import OnAirSeriesCarouselSection from "@/components/features/serie/OnAirSeriesCarouselSection";
 import NowPlayingCarouselSection from "@/components/features/movie/NowPlayingCarouselSection";
 import { SeriesList } from "@/components/features/serie/SeriesList";

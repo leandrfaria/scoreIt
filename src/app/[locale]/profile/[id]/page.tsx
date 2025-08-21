@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { Member } from "@/types/Member";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@/components/layout/Others/Container";
 import { useLocale, useTranslations } from "next-intl";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
 import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";

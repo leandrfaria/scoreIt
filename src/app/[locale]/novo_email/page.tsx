@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Container } from "@/components/layout/Container";
-import PageTransition from "@/components/layout/PageTransition";
+import { Container } from "@/components/layout/Others/Container";
+import PageTransition from "@/components/layout/Others/PageTransition";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { applyNewEmail } from "@/services/user/accountEmail";
