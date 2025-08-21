@@ -14,7 +14,7 @@ import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { addFavouriteAlbum } from "@/services/album/add_fav_album";
-import { fetchMemberLists, addContentToList } from "@/services/customList/add_content_list";
+import { fetchMemberLists, addContentToList } from "@/services/customList/list";
 
 interface AlbumCardProps extends Album {
   onRemoveAlbum?: (id: string) => void;

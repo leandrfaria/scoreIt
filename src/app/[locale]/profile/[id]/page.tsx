@@ -17,7 +17,7 @@ import { countFollowers, countFollowing } from "@/services/followers/countStats"
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 import { AnimatePresence, motion } from "framer-motion";
 import { CustomListModal } from "@/components/features/user/CustomListModal";
-import { fetchMemberLists } from "@/services/customList/add_content_list";
+import { fetchMemberLists } from "@/services/customList/list";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 

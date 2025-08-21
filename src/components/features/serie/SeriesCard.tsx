@@ -14,7 +14,7 @@ import toast from "react-hot-toast";
 import { addFavouriteSeries } from "@/services/series/add_fav_series";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
-import { fetchMemberLists, addContentToList } from "@/services/customList/add_content_list";
+import { fetchMemberLists, addContentToList } from "@/services/customList/list";
 
 interface SeriesCardProps extends Series {
   onRemoveSerie?: (id: number) => void;

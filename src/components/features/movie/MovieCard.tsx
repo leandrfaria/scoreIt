@@ -14,7 +14,7 @@ import toast from "react-hot-toast";
 import { addFavouriteMovie } from "@/services/movie/add_fav_movie";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
-import { fetchMemberLists, addContentToList } from "@/services/customList/add_content_list";
+import { fetchMemberLists, addContentToList } from "@/services/customList/list";
 
 interface MovieCardProps extends Movie {
   onRemoveMovie?: (id: number) => void;

@@ -22,7 +22,7 @@ import { useTabContext } from "@/context/TabContext";
 
 import { updateMember } from "@/services/user/member";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
-import { fetchMemberLists } from "@/services/customList/add_content_list";
+import { fetchMemberLists } from "@/services/customList/list";
 import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
 
