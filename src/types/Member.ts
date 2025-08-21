@@ -3,8 +3,8 @@ export interface Member {
   name: string;
   birthDate: string;
   email: string;
-  handle: string;   
+  handle: string;     // @ do usuário (sem o '@' armazenado)
   gender: string;
   bio: string;
-  profileImageUrl: string;    
+  profileImageUrl: string;
 }

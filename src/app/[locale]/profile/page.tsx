@@ -100,16 +100,15 @@ export default function Profile() {
     const token = localStorage.getItem("authToken");
     if (!token) return;
 
-    Promise.all([
-      fetchStats(token, member.id),
-      loadCustomLists(token, member.id),
-    ]).catch(console.error);
+    Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id)]).catch(
+      console.error
+    );
   }, [member]);
 
   // ----------- Handlers -----------
 
   const handleUpdateMember = async (
-    formData: { name: string; bio: string; birthDate: string; gender: string },
+    formData: { name: string; bio: string; birthDate: string; gender: string; handle: string },
     imageFile: File | null
   ) => {
     if (!member) return;
@@ -129,6 +128,7 @@ export default function Profile() {
         bio: formData.bio,
         birthDate: formData.birthDate,
         gender: formData.gender,
+        handle: formData.handle, // novo atributo
       };
 
       const updated = await updateMember(member.id.toString(), payload);
@@ -258,7 +258,7 @@ interface ProfileHeaderProps {
 const ProfileHeader = ({ member, onEditClick, t, followers, following }: ProfileHeaderProps) => (
   <div className="flex justify-between items-center">
     <div className="flex items-center gap-4">
-      <div className="w-16 h-16 rounded-full bg-gray-400 overflow-hidden relative">
+      <div className="w-16 h-16 rounded-full overflow-hidden relative ring-2 ring-white/10">
         <Image
           src={
             member?.profileImageUrl ||
@@ -270,11 +270,16 @@ const ProfileHeader = ({ member, onEditClick, t, followers, following }: Profile
         />
       </div>
       <div className="flex flex-col text-white space-y-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-lg font-medium">{member?.name}</span>
+          {member?.handle && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
+              @{member.handle}
+            </span>
+          )}
           <button
             onClick={onEditClick}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white ml-1"
             title={t("edit_profile")}
           >
             <FiEdit2 size={18} />
@@ -283,7 +288,9 @@ const ProfileHeader = ({ member, onEditClick, t, followers, following }: Profile
         <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
       </div>
     </div>
-    {member && <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()} />}
+    {member && (
+      <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()} />
+    )}
   </div>
 );
 
@@ -296,17 +303,17 @@ interface CustomListsSectionProps {
 
 const CustomListsSection = ({ isOpen, onToggle, lists, onSelect }: CustomListsSectionProps) => (
   <section className="mt-6">
-    <div className="mb-4">
+    <div className="mb-2">
       <button
         className="flex items-center justify-between w-full text-xl font-semibold text-white"
         onClick={onToggle}
       >
+        <span>Suas Listas</span>
         <svg
           className={`w-5 h-5 transform transition-transform ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
@@ -328,7 +335,7 @@ const CustomListsSection = ({ isOpen, onToggle, lists, onSelect }: CustomListsSe
               {lists.map((list) => (
                 <div
                   key={list.id}
-                  className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700"
+                  className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700 ring-1 ring-white/10"
                   onClick={() => onSelect(list)}
                 >
                   <h3 className="text-lg font-semibold">{list.listName}</h3>

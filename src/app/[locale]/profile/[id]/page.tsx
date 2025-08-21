@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { Member } from "@/types/Member";
@@ -12,15 +12,12 @@ import FavouriteSeriesCarouselSection from "@/components/features/serie/Favourit
 import { fetchMemberById } from "@/services/user/member";
 import { useTabContext } from "@/context/TabContext";
 import { useMember } from "@/context/MemberContext";
-import { CustomList } from "@/types/CustomList"; // ajuste o caminho conforme necessário
-import {
-  countFollowers,
-  countFollowing,
-} from "@/services/followers/countStats";
+import { CustomList } from "@/types/CustomList";
+import { countFollowers, countFollowing } from "@/services/followers/countStats";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 import { AnimatePresence, motion } from "framer-motion";
 import { CustomListModal } from "@/components/features/user/CustomListModal";
-import { fetchMemberLists } from "@/services/customList/add_content_list"; // ajuste o caminho conforme seu projeto
+import { fetchMemberLists } from "@/services/customList/add_content_list";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 
@@ -37,17 +34,16 @@ export default function PublicProfilePage() {
   const [followers, setFollowers] = useState<number>(0);
   const [following, setFollowing] = useState<number>(0);
 
-
-  // Estado para listas customizadas
   const [customLists, setCustomLists] = useState<CustomList[]>([]);
   const [isListsOpen, setIsListsOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
   // Buscar o membro
   useEffect(() => {
-    const fetchMember = async () => {
+    const controller = new AbortController();
+    const run = async () => {
       try {
-        const data = await fetchMemberById(id as string);
+        const data = await fetchMemberById(id as string, { signal: controller.signal });
         setOtherMember(data);
       } catch (error) {
         console.error("Erro ao buscar perfil:", error);
@@ -55,13 +51,13 @@ export default function PublicProfilePage() {
         setLoading(false);
       }
     };
-
-    fetchMember();
+    run();
+    return () => controller.abort();
   }, [id]);
 
   // Buscar contadores
   useEffect(() => {
-    const fetchCounts = async () => {
+    const run = async () => {
       try {
         const token = localStorage.getItem("authToken");
         if (!token || !id) return;
@@ -77,8 +73,7 @@ export default function PublicProfilePage() {
         console.error("Erro ao buscar contadores:", err);
       }
     };
-
-    fetchCounts();
+    run();
   }, [id]);
 
   // Redirecionar para perfil próprio caso o id seja do usuário logado
@@ -89,31 +84,29 @@ export default function PublicProfilePage() {
   }, [member, id, router, locale]);
 
   useEffect(() => {
-    const fetchLists = async () => {
+    const controller = new AbortController();
+    const run = async () => {
       if (!id) return;
       try {
-        const token = localStorage.getItem("authToken"); // <-- Agora está declarado corretamente
+        const token = localStorage.getItem("authToken");
         if (!token) return;
-        console.log("ID MEMBRO LISTA: ", id)
         const lists = await fetchMemberLists(token, Number(id));
         setCustomLists(lists);
       } catch (err) {
         console.error("Erro ao buscar listas customizadas:", err);
       }
     };
-
-    fetchLists();
+    run();
+    return () => controller.abort();
   }, [id]);
-
 
   if (member?.id && String(member.id) === id) return null;
   if (loading) return <p className="text-white">Carregando...</p>;
   if (!otherMember) return <p className="text-white">Usuário não encontrado.</p>;
 
   function handleOpenListModal(list: CustomList) {
-  setSelectedList(list);
-}
-
+    setSelectedList(list);
+  }
   function handleCloseListModal() {
     setSelectedList(null);
   }
@@ -148,14 +141,8 @@ export default function PublicProfilePage() {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
           </div>
@@ -177,7 +164,7 @@ export default function PublicProfilePage() {
                     {customLists.map((list) => (
                       <div
                         key={list.id}
-                        className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700"
+                        className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700 ring-1 ring-white/10"
                         onClick={() => handleOpenListModal(list)}
                       >
                         <h3 className="text-lg font-semibold">{list.listName}</h3>
@@ -192,15 +179,9 @@ export default function PublicProfilePage() {
       </Container>
 
       <Container>
-        {activeTab == "filmes" && (
-          <FavouriteMoviesCarouselSection memberId={id as string} />
-        )}
-        {activeTab == "musicas" && (
-          <FavouriteAlbumCarouselSection memberId={id as string} />
-        )}
-        {activeTab == "series" && (
-          <FavouriteSeriesCarouselSection memberId={id as string} />
-        )}
+        {activeTab == "filmes" && <FavouriteMoviesCarouselSection memberId={id as string} />}
+        {activeTab == "musicas" && <FavouriteAlbumCarouselSection memberId={id as string} />}
+        {activeTab == "series" && <FavouriteSeriesCarouselSection memberId={id as string} />}
       </Container>
 
       <Container>
@@ -215,13 +196,11 @@ export default function PublicProfilePage() {
           listName={selectedList.listName}
           listDescription={selectedList.list_description}
           member={otherMember}
-          // Bloqueia edição pois é perfil público (outro usuário)
         />
       )}
     </main>
   );
 }
-
 
 interface ProfileHeaderProps {
   member: Member;
@@ -241,7 +220,7 @@ const ProfileHeader = ({
 }: ProfileHeaderProps) => (
   <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-      <div className="w-16 h-16 rounded-full bg-gray-400 overflow-hidden relative">
+      <div className="w-16 h-16 rounded-full overflow-hidden relative ring-2 ring-white/10">
         <Image
           src={
             member?.profileImageUrl ||
@@ -254,8 +233,13 @@ const ProfileHeader = ({
       </div>
 
       <div className="flex-1 flex flex-col text-white space-y-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-lg font-medium">{member?.name}</span>
+          {member?.handle && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
+              @{member.handle}
+            </span>
+          )}
         </div>
         <p className="text-gray-400 text-sm max-w-md">
           {member?.bio || t("no_bio")}

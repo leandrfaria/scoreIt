@@ -1,96 +1,97 @@
-// src/services/user/member.ts
+import { apiFetch } from "@/lib/api";
 import { jwtDecode, JwtPayload } from "jwt-decode";
-import { apiBase } from "@/lib/api";
+import { Member } from "@/types/Member";
 
 interface CustomJwtPayload extends JwtPayload {
-  id?: string; // opcional para evitar crash se o claim faltar
+  id?: string | number;
 }
 
-function assertApiBase() {
-  if (!apiBase) {
-    throw new Error(
-      "API base URL não configurada. Verifique NEXT_PUBLIC_API_BASE_URL_* e faça redeploy."
-    );
-  }
+function cleanHandle(v: unknown): string {
+  const raw = String(v ?? "");
+  // remove @ iniciais, força minúsculas e limita a caracteres seguros
+  return raw.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
 }
 
-function buildHeaders(withJson = true): Headers {
-  const h = new Headers();
-  if (withJson) h.set("Content-Type", "application/json");
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("authToken"); // token CRU
-    if (stored) {
-      const auth = stored.startsWith("Bearer ") ? stored : `Bearer ${stored}`;
-      h.set("Authorization", auth);
-    }
-  }
-  return h;
+function toMember(u: any): Member {
+  const idNum = Number(u?.id ?? 0);
+  return {
+    id: Number.isFinite(idNum) ? idNum : 0,
+    name: String(u?.name ?? ""),
+    birthDate: String(u?.birthDate ?? ""),
+    email: String(u?.email ?? ""),
+    handle: cleanHandle(u?.handle),
+    gender: String(u?.gender ?? ""),
+    bio: String(u?.bio ?? ""),
+    // deixe vazio se não vier da API; os componentes já têm fallback visual
+    profileImageUrl: typeof u?.profileImageUrl === "string" ? u.profileImageUrl : "",
+  };
 }
 
-export const fetchMembers = async (useJwtId = false) => {
-  assertApiBase();
-
+// Lista ou "self" (caso o endpoint retorne o próprio quando autenticado)
+// useJwtId: tenta anexar o id do JWT em /member/get/{id}
+export async function fetchMembers(
+  useJwtId = false,
+  opts?: { signal?: AbortSignal }
+): Promise<Member | Member[] | null> {
   let path = "/member/get";
-  if (useJwtId) {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+  if (useJwtId && typeof window !== "undefined") {
+    const token = localStorage.getItem("authToken");
     if (token) {
       try {
         const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
         const decoded = jwtDecode<CustomJwtPayload>(raw);
         if (decoded?.id) path += `/${decoded.id}`;
       } catch {
-        // se falhar o decode, segue sem o /{id}
+        // se falhar o decode, segue sem id
       }
     }
   }
 
-  const res = await fetch(`${apiBase}${path}`, {
-    method: "GET",
-    headers: buildHeaders(), // já inclui Content-Type + Authorization se existir
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(txt || "Erro ao buscar membros");
+  const data: any = await apiFetch(path, { auth: true, signal: opts?.signal });
+  if (Array.isArray(data)) {
+    return data.map(toMember);
   }
+  if (data && typeof data === "object") {
+    return toMember(data);
+  }
+  return null;
+}
 
-  return res.json();
-};
-
-export const fetchMemberById = async (id: string) => {
-  assertApiBase();
+export async function fetchMemberById(
+  id: string | number,
+  opts?: { signal?: AbortSignal }
+): Promise<Member | null> {
   const path = id ? `/member/get/${id}` : "/member/get";
+  const data: any = await apiFetch(path, { auth: true, signal: opts?.signal });
+  if (!data || typeof data !== "object") return null;
+  return toMember(data);
+}
 
-  const res = await fetch(`${apiBase}${path}`, {
-    method: "GET",
-    headers: buildHeaders(),
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(txt || `Erro ao buscar membro pelo id ${id}`);
-  }
-
-  return res.json();
+type UpdatePayload = Partial<
+  Pick<Member, "name" | "bio" | "birthDate" | "gender" | "handle" | "email">
+> & {
+  id: number | string;
 };
 
-export const updateMember = async (_memberId: string, payload: any) => {
-  assertApiBase();
-  // sua API atualiza pelo body; memberId não é usado na URL
-  const res = await fetch(`${apiBase}/member/update`, {
+// sua API atualiza pelo body; o id vai no body (não na URL)
+export async function updateMember(
+  _memberId: string,
+  payload: UpdatePayload,
+  opts?: { signal?: AbortSignal }
+): Promise<Member> {
+  const jsonBody = {
+    ...payload,
+    handle: cleanHandle(payload.handle),
+  };
+
+  const data: any = await apiFetch("/member/update", {
     method: "PUT",
-    headers: buildHeaders(),
-    body: JSON.stringify(payload),
-    cache: "no-store",
+    auth: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(jsonBody), // <- fixa o erro de tipo
+    signal: opts?.signal,
   });
 
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(txt || "Erro ao atualizar perfil");
-  }
-
-  return res.json();
-};
+  return toMember(data);
+}

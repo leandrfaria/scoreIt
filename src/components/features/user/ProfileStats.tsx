@@ -16,13 +16,13 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
   const [followersList, setFollowersList] = useState<Member[]>([]);
-  const locale = useLocale();
   const [followingList, setFollowingList] = useState<Member[]>([]);
+  const locale = useLocale();
 
   const loadFollowers = async () => {
     try {
       const data = await fetchFollowersList(memberId);
-      setFollowersList(data);
+      setFollowersList(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao buscar seguidores:", error);
     }
@@ -31,7 +31,7 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
   const loadFollowing = async () => {
     try {
       const data = await fetchFollowingList(memberId);
-      setFollowingList(data);
+      setFollowingList(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao buscar seguindo:", error);
     }
@@ -45,24 +45,39 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
     if (showFollowing) loadFollowing();
   }, [showFollowing]);
 
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowFollowers(false);
+        setShowFollowing(false);
+      }
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, []);
+
   const renderMemberList = (list: Member[]) => (
-    <ul className="space-y-4 max-h-80 overflow-y-auto">
+    <ul className="space-y-4 max-h-80 overflow-y-auto pr-1">
       {list.map((user) => (
-        <li key={user.id} className="flex items-center gap-3 border-b border-gray-700 pb-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden relative">
+        <li key={user.id} className="flex items-center gap-3 border-b border-white/10 pb-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden relative ring-1 ring-white/10">
             <Image
               src={
                 user.profileImageUrl ||
                 "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
               }
-              alt="Foto"
+              alt="Foto de perfil"
               fill
               className="object-cover"
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">{user.name}</span>
-            <Link href={`/${locale}/profile/${user.id}`} className="text-xs text-blue-400 hover:underline">
+            <span className="text-sm font-medium text-white">{user.name}</span>
+            <span className="text-xs text-gray-400">@{user.handle}</span>
+            <Link
+              href={`/${locale}/profile/${user.id}`}
+              className="text-xs text-blue-400 hover:underline"
+            >
               Ver perfil
             </Link>
           </div>
@@ -71,44 +86,68 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
     </ul>
   );
 
-  return (
-    <div className="flex gap-6 text-center relative">
-      <div onClick={() => setShowFollowers(true)} className="cursor-pointer">
-        <p className="text-sm text-white">{t("followers")}</p>
-        <p className="text-lg font-semibold text-white">{followers}</p>
+  const Modal = ({
+    title,
+    onClose,
+    children,
+  }: {
+    title: string;
+    onClose: () => void;
+    children: React.ReactNode;
+  }) => (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="bg-zinc-900 rounded-xl p-6 w-full max-w-md text-white relative shadow-2xl ring-1 ring-white/10"
+      >
+        <button
+          aria-label="Fechar"
+          className="absolute top-2 right-3 text-xl hover:opacity-80"
+          onClick={onClose}
+        >
+          ×
+        </button>
+        <h2 className="text-lg font-semibold mb-4">{title}</h2>
+        {children}
       </div>
+    </div>
+  );
 
-      <div onClick={() => setShowFollowing(true)} className="cursor-pointer">
-        <p className="text-sm text-white">{t("following")}</p>
-        <p className="text-lg font-semibold text-white">{following}</p>
-      </div>
+  return (
+    <div className="flex gap-8 text-center relative">
+      <button onClick={() => setShowFollowers(true)} className="cursor-pointer group">
+        <p className="text-sm text-white/80">{t("followers")}</p>
+        <p className="text-2xl font-semibold text-white group-hover:text-darkgreen transition">
+          {followers}
+        </p>
+      </button>
+
+      <button onClick={() => setShowFollowing(true)} className="cursor-pointer group">
+        <p className="text-sm text-white/80">{t("following")}</p>
+        <p className="text-2xl font-semibold text-white group-hover:text-darkgreen transition">
+          {following}
+        </p>
+      </button>
 
       {showFollowers && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
-          <div className="bg-zinc-900 rounded-lg p-6 w-full max-w-md text-white relative">
-            <button className="absolute top-2 right-3 text-xl" onClick={() => setShowFollowers(false)}>×</button>
-            <h2 className="text-lg font-semibold mb-4">{t("followers")}</h2>
-            {followersList.length > 0 ? (
-              renderMemberList(followersList)
-            ) : (
-              <p className="text-gray-400">Você não possui seguidores para serem listados.</p>
-            )}
-          </div>
-        </div>
+        <Modal title={t("followers")} onClose={() => setShowFollowers(false)}>
+          {followersList.length > 0 ? (
+            renderMemberList(followersList)
+          ) : (
+            <p className="text-gray-400">Você não possui seguidores para serem listados.</p>
+          )}
+        </Modal>
       )}
 
       {showFollowing && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
-          <div className="bg-zinc-900 rounded-lg p-6 w-full max-w-md text-white relative">
-            <button className="absolute top-2 right-3 text-xl" onClick={() => setShowFollowing(false)}>×</button>
-            <h2 className="text-lg font-semibold mb-4">{t("following")}</h2>
-            {followingList.length > 0 ? (
-              renderMemberList(followingList)
-            ) : (
-              <p className="text-gray-400">Você ainda não segue outros usuários.</p>
-            )}
-          </div>
-        </div>
+        <Modal title={t("following")} onClose={() => setShowFollowing(false)}>
+          {followingList.length > 0 ? (
+            renderMemberList(followingList)
+          ) : (
+            <p className="text-gray-400">Você ainda não segue outros usuários.</p>
+          )}
+        </Modal>
       )}
     </div>
   );
