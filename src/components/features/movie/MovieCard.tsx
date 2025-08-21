@@ -101,7 +101,7 @@ function MovieCardBase({
     })();
   }, [id, member, t]);
 
-  // Carregar listas
+  // Carregar listas quando abrir o modal
   useEffect(() => {
     if (!isOpen || !member) return;
     (async () => {
@@ -160,7 +160,7 @@ function MovieCardBase({
 
   return (
     <>
-      {/* CARD */}
+      {/* CARD (sem botão de favorito) */}
       <div
         onClick={handleOpen}
         className="cursor-pointer w-full max-w-[180px] sm:max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-[1.03] transition-transform duration-300 relative"
@@ -185,33 +185,30 @@ function MovieCardBase({
             </div>
           )}
           {!posterLoaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
-          {/* Botão favorito no CARD */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleFavorite();
-            }}
-            className="absolute top-2 right-2 bg-black/60 p-2 rounded-full hover:scale-110 transition"
-            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-          >
-            {isFavorited ? <FaHeart className="text-red-500 w-5 h-5"/> : <FiHeart className="text-white w-5 h-5"/>}
-          </button>
           <div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded-full flex items-center gap-1">
             <FaStar size={12} />
             <span>{vote_average?.toFixed(1) ?? "0.0"}</span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2">
             <h3 className="text-white text-sm font-semibold line-clamp-2">{title}</h3>
-            <p className="text-gray-300 text-xs">{genre}{year ? ` • ${year}` : ""}</p>
+            <p className="text-gray-300 text-xs">
+              {genre}
+              {year ? ` • ${year}` : ""}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL (mantém botão de favorito) */}
       <AnimatePresence>
         {isOpen && (
           <>
-            <motion.div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}/>
+            <motion.div
+              className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
             <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 sm:p-6">
               <motion.div
                 ref={modalRef}
@@ -224,7 +221,9 @@ function MovieCardBase({
                 <div className="p-4 sm:p-6">
                   <div className="flex justify-between items-start mb-4">
                     <h2 className="text-xl font-bold">{title}</h2>
-                    <button onClick={handleClose} className="text-red-400 text-2xl" aria-label="Fechar">×</button>
+                    <button onClick={handleClose} className="text-red-400 text-2xl" aria-label="Fechar">
+                      ×
+                    </button>
                   </div>
                   {backdropUrl && backdropUrl !== "null" ? (
                     <div className="relative w-full h-[200px] sm:h-[250px] rounded-md overflow-hidden mb-6">
@@ -241,14 +240,20 @@ function MovieCardBase({
                         className="absolute bottom-2 right-2 bg-black/60 p-2 rounded-full"
                         aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                       >
-                        {isFavorited ? <FaHeart className="text-red-500 w-6 h-6"/> : <FiHeart className="text-white w-6 h-6"/>}
+                        {isFavorited ? (
+                          <FaHeart className="text-red-500 w-6 h-6" />
+                        ) : (
+                          <FiHeart className="text-white w-6 h-6" />
+                        )}
                       </button>
                     </div>
                   ) : (
                     <div className="w-full h-[200px] bg-gray-800 flex items-center justify-center text-gray-500">Sem imagem</div>
                   )}
                   <div className="space-y-3">
-                    <p className="text-gray-400 text-sm">{t("releaseDate")}: {new Date(release_date).toLocaleDateString()}</p>
+                    <p className="text-gray-400 text-sm">
+                      {t("releaseDate")}: {new Date(release_date).toLocaleDateString()}
+                    </p>
                     <p className="text-gray-300 text-sm">{overview?.trim() || t("noDescription")}</p>
                   </div>
                   <div className="mt-5 flex flex-col sm:flex-row gap-2">
@@ -259,7 +264,9 @@ function MovieCardBase({
                       disabled={customLists.length === 0}
                     >
                       <option value="">Selecione uma lista</option>
-                      {customLists.map((l) => <option key={l}>{l}</option>)}
+                      {customLists.map((l) => (
+                        <option key={l}>{l}</option>
+                      ))}
                     </select>
                     <button
                       onClick={handleAddToList}
@@ -270,7 +277,10 @@ function MovieCardBase({
                     </button>
                   </div>
                   <div className="mt-4 flex justify-end">
-                    <button onClick={handleViewDetails} className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition text-sm">
+                    <button
+                      onClick={handleViewDetails}
+                      className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition text-sm"
+                    >
                       {t("viewDetails")}
                     </button>
                   </div>

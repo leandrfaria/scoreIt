@@ -30,10 +30,9 @@ export function Header({ locale }: { locale: string }) {
           : "bg-black",
       ].join(" ")}
     >
-      <div className="max-w-screen-xl mx-auto flex items-center justify-between h-full px-4 sm:px-6">
-        
-        {/* LOGO */}
-        <div className="flex items-center flex-shrink-0">
+      <div className="max-w-screen-xl mx-auto h-full px-4 sm:px-6 flex items-center">
+        {/* COLUNA ESQUERDA (LOGO) */}
+        <div className="w-1/3 flex items-center">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             <Image
               src="/logo/scoreit.jpg"
@@ -46,12 +45,19 @@ export function Header({ locale }: { locale: string }) {
           </Link>
         </div>
 
-        {/* MENU DE TROCA DE ABA (DESKTOP) */}
-        <div className="hidden lg:block">
+        {/* COLUNA CENTRAL (TABS DESKTOP CENTRALIZADAS) */}
+        <div className="w-1/3 hidden lg:flex justify-center">
           <TabSwitcherGuard />
         </div>
 
-        {/* MOBILE — ícones centrais para abas (só aparecem se logado) */}
+        {/* COLUNA DIREITA (AÇÕES DESKTOP) */}
+        <div className="w-1/3 hidden lg:flex justify-end items-center gap-3 xl:gap-4">
+          <SearchBar />
+          <LanguageSwitcher />
+          <UserMenu />
+        </div>
+
+        {/* MOBILE — ÍCONES CENTRAIS (só aparecem se logado) */}
         {isLoggedIn && (
           <div className="flex lg:hidden items-center justify-center gap-6 absolute left-1/2 -translate-x-1/2">
             <button
@@ -84,14 +90,7 @@ export function Header({ locale }: { locale: string }) {
           </div>
         )}
 
-        {/* LADO DIREITO (DESKTOP) */}
-        <div className="hidden lg:flex flex-1 justify-end items-center gap-3 xl:gap-4">
-          <SearchBar />
-          <LanguageSwitcher />
-          <UserMenu />
-        </div>
-
-        {/* MOBILE — menu sanduíche no canto direito */}
+        {/* MOBILE — MENU SANDUÍCHE NO CANTO DIREITO */}
         <div className="flex lg:hidden items-center gap-2 ml-auto">
           <MobileMenu />
         </div>

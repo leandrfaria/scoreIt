@@ -109,7 +109,7 @@ function SeriesCardBase({
     })();
   }, [id, member]);
 
-  // Carregar listas
+  // Carregar listas ao abrir o modal
   useEffect(() => {
     if (!isOpen || !member) return;
     (async () => {
@@ -197,25 +197,14 @@ function SeriesCardBase({
             </div>
           )}
           {!posterLoaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
-          {/* Botão de favorito no CARD */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleFavorite();
-            }}
-            className="absolute top-2 right-2 bg-black/60 p-2 rounded-full hover:scale-110 transition"
-            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-          >
-            {isFavorited ? (
-              <FaHeart className="text-red-500 w-5 h-5" />
-            ) : (
-              <FiHeart className="text-white w-5 h-5" />
-            )}
-          </button>
+
+          {/* ⭐ nota */}
           <div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded-full flex items-center gap-1">
             <FaStar size={12} />
             <span>{vote_average?.toFixed(1) ?? "0.0"}</span>
           </div>
+
+          {/* título + meta */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2 sm:p-3">
             <h3 className="text-white text-[12px] sm:text-sm font-semibold line-clamp-2">{name}</h3>
             <p className="text-gray-300 text-[10px] sm:text-xs">{genre}{year ? ` • ${year}` : ""}</p>
@@ -244,6 +233,7 @@ function SeriesCardBase({
                     <h2 className="text-lg sm:text-2xl font-bold">{name}</h2>
                     <button onClick={handleClose} className="text-red-400 text-2xl" aria-label="Fechar">×</button>
                   </div>
+
                   {backdropUrl && backdropUrl !== "null" ? (
                     <div className="relative w-full h-[180px] sm:h-[250px] rounded-md overflow-hidden mb-6">
                       <Image
@@ -259,21 +249,25 @@ function SeriesCardBase({
                         draggable={false}
                       />
                       {!backdropLoaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
+
+                      {/* ❤️ favorito somente no MODAL */}
                       <button
                         onClick={handleFavorite}
                         className="absolute bottom-2 right-2 bg-black/60 p-2 rounded-full"
                         aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                       >
-                        {isFavorited ? <FaHeart className="text-red-500 w-6 h-6"/> : <FiHeart className="text-white w-6 h-6"/>}
+                        {isFavorited ? <FaHeart className="text-red-500 w-6 h-6" /> : <FiHeart className="text-white w-6 h-6" />}
                       </button>
                     </div>
                   ) : (
                     <div className="w-full h-[200px] bg-gray-800 flex items-center justify-center text-gray-500">Sem imagem</div>
                   )}
+
                   <div className="space-y-3">
                     {release_date && <p className="text-gray-400 text-sm">{t("releaseDate")}: {new Date(release_date).toLocaleDateString()}</p>}
                     <p className="text-gray-300 text-sm">{overview?.trim() || t("noDescription")}</p>
                   </div>
+
                   <div className="mt-5 flex flex-col sm:flex-row gap-2">
                     <select
                       value={selectedList}
@@ -286,6 +280,7 @@ function SeriesCardBase({
                         <option key={listName}>{listName}</option>
                       ))}
                     </select>
+
                     <button
                       onClick={handleAddToList}
                       disabled={isAdding || !selectedList}
@@ -294,6 +289,7 @@ function SeriesCardBase({
                       {isAdding ? "Adicionando..." : "Adicionar"}
                     </button>
                   </div>
+
                   <div className="mt-4 flex justify-end">
                     <button onClick={handleViewDetails} className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition text-sm">
                       {t("viewDetails")}

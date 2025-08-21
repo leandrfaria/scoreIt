@@ -167,21 +167,6 @@ export function AlbumCard({
             className="object-cover rounded-xl"
             onError={() => setImgSrc("/fallback.jpg")}
           />
-          {/* Botão favorito no card */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleFavorite();
-            }}
-            className="absolute top-2 right-2 bg-black/60 p-2 rounded-full hover:scale-110 transition"
-            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-          >
-            {isFavorited ? (
-              <FaHeart className="text-red-500 w-5 h-5" />
-            ) : (
-              <FiHeart className="text-white w-5 h-5" />
-            )}
-          </button>
         </div>
         <div className="p-2">
           <h3 className="text-white text-sm font-semibold line-clamp-1">{name}</h3>

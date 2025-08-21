@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
@@ -9,7 +9,6 @@ import { FaBars, FaTimes, FaSearch } from "react-icons/fa";
 
 import { useAuthContext } from "@/context/AuthContext";
 import { useMember } from "@/context/MemberContext";
-import { TabSwitcherMediaType } from "../Others/TabSwitcherMediaType";
 import type { Member } from "@/types/Member";
 
 const DEBOUNCE_MS = 300;
@@ -29,13 +28,6 @@ export default function MobileMenu() {
   const debouncedQ = useDebounced(q.trim(), DEBOUNCE_MS);
   const [results, setResults] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // mesmo critério do header antigo para mostrar o TabSwitcher
-  const showMediaTypeMenu =
-    !pathname.endsWith("/feed") &&
-    !pathname.includes("/series") &&
-    !pathname.includes("/album") &&
-    !pathname.includes("/movie");
 
   // fecha automaticamente se redimensionar para desktop
   useEffect(() => {
@@ -88,7 +80,7 @@ export default function MobileMenu() {
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     setIsLoggedIn(false);
-    window.location.href = `/${locale}/login`;
+    window.location.href = `/${locale}/auth?tab=login`;
   };
 
   const changeLanguage = async (newLocale: string) => {
@@ -133,7 +125,7 @@ export default function MobileMenu() {
       if (res.ok) {
         localStorage.removeItem("authToken");
         setIsLoggedIn(false);
-        window.location.href = `/${locale}/login`;
+        window.location.href = `/${locale}/auth?tab=login`;
       } else {
         console.error("Erro ao deletar usuário:", res.statusText);
       }
@@ -157,7 +149,7 @@ export default function MobileMenu() {
       {open && (
         <div className="lg:hidden absolute top-full left-0 right-0 bg-black border-t border-gray-700 shadow-lg z-30">
           <div className="p-4 space-y-4">
-            {/* Busca mobile */}
+            {/* Busca mobile (somente logado) */}
             {isLoggedIn && (
               <div>
                 <label className="sr-only" htmlFor="mobile-user-search">
@@ -178,7 +170,6 @@ export default function MobileMenu() {
                   />
                 </div>
 
-                {/* Resultados */}
                 {(loading || results.length > 0) && (
                   <div className="mt-2 bg-gray-800 rounded-md max-h-60 overflow-y-auto shadow-lg border border-gray-700">
                     {loading && (
@@ -219,12 +210,8 @@ export default function MobileMenu() {
               </div>
             )}
 
-            {/* Menu de abas mobile */}
-            {isLoggedIn && showMediaTypeMenu && (
-              <div className="border-b border-gray-700 pb-4">
-                <TabSwitcherMediaType />
-              </div>
-            )}
+            {/* (REMOVIDO) Menu de abas mobile dentro do sanduíche
+                Já temos os ícones no header mobile; não precisamos repetir aqui. */}
 
             {/* Seletor de idioma */}
             <div className="flex items-center justify-between">
@@ -312,7 +299,7 @@ export default function MobileMenu() {
               </div>
             ) : (
               <Link
-                href={`/${locale}/login`}
+                href={`/${locale}/auth?tab=login`}
                 className="block w-full text-center text-white bg-darkgreen px-4 py-3 rounded-md hover:brightness-110 transition-all"
                 onClick={() => setOpen(false)}
               >
@@ -355,7 +342,6 @@ export default function MobileMenu() {
   );
 }
 
-/** Debounce genérico */
 function useDebounced<T>(value: T, delay: number) {
   const [v, setV] = useState(value);
   useEffect(() => {
