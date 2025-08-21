@@ -320,7 +320,7 @@ export default function AuthPage() {
                       <input
                         className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         type="text"
-                        placeholder="@handle"
+                        placeholder="@ de usuário"
                         value={handle}
                         onChange={(e) => setHandle(e.target.value)}
                       />

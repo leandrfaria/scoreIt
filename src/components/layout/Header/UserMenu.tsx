@@ -25,10 +25,11 @@ export default function UserMenu() {
   if (isLoggedIn === null) return null;
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    setIsLoggedIn(false);
-    window.location.href = `/${locale}/auth`;
-  };
+  localStorage.removeItem("authToken");
+  setIsLoggedIn(false);
+  window.location.href = `/${locale}/auth?tab=login`;
+};
+
 
   const deleteUser = async () => {
     try {
@@ -57,11 +58,11 @@ export default function UserMenu() {
     }
   };
 
-  // Se não estiver logado, mostra o botão de login
+ // Se não estiver logado, mostra o botão de login
 if (!isLoggedIn) {
   return (
     <Link
-      href={`/${locale}/auth`}
+      href={`/${locale}/auth?tab=login`}
       className="text-white bg-darkgreen px-5 py-2 rounded-md hover:brightness-110 transition-all text-sm sm:text-base"
     >
       {t("login")}

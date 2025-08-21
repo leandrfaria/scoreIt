@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import LogoLateral from "@/assets/LogoLateral";
+import Image from "next/image";
 import { FaFilm, FaMusic, FaTv } from "react-icons/fa";
 import { useTabContext } from "@/context/TabContext";
 import { useAuthContext } from "@/context/AuthContext";
@@ -34,10 +34,15 @@ export function Header({ locale }: { locale: string }) {
         
         {/* LOGO */}
         <div className="flex items-center flex-shrink-0">
-          <Link href={`/${locale}`} className="text-white text-lg font-semibold flex items-center gap-2">
-            <div className="lg:w-auto lg:h-auto w-7 h-7 sm:w-8 sm:h-8">
-              <LogoLateral />
-            </div>
+          <Link href={`/${locale}`} className="flex items-center gap-2">
+            <Image
+              src="/logo/scoreit.jpg"
+              alt="ScoreIt Logo"
+              width={120}
+              height={40}
+              priority
+              className="h-10 w-auto object-contain"
+            />
           </Link>
         </div>
 
