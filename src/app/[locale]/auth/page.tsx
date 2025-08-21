@@ -28,7 +28,9 @@ export default function AuthPage() {
   const [senhaSign, setSenhaSign] = useState("");
   const [date, setDate] = useState("");
   const [gender, setGender] = useState("");
+  const [handle, setHandle] = useState(""); 
   const [msgSign, setMsgSign] = useState("");
+  const [signupDone, setSignupDone] = useState(false); 
 
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
 
@@ -47,26 +49,10 @@ export default function AuthPage() {
 
   useEffect(() => {
     const posters = [
-      "poster1.png",
-      "poster2.png",
-      "poster3.png",
-      "poster4.png",
-      "poster5.png",
-      "poster6.png",
-      "poster7.png",
-      "poster8.png",
-      "poster9.png",
-      "poster10.png",
-      "poster11.png",
-      "poster12.png",
-      "poster13.png",
-      "poster14.png",
-      "poster15.png",
-      "poster16.png",
-      "poster17.png",
-      "poster18.png",
-      "poster19.png",
-      "poster20.png",
+      "poster1.png","poster2.png","poster3.png","poster4.png","poster5.png",
+      "poster6.png","poster7.png","poster8.png","poster9.png","poster10.png",
+      "poster11.png","poster12.png","poster13.png","poster14.png","poster15.png",
+      "poster16.png","poster17.png","poster18.png","poster19.png","poster20.png",
       "poster21.png",
     ];
     const random = Math.floor(Math.random() * posters.length);
@@ -79,19 +65,16 @@ export default function AuthPage() {
     setMsgLogin("");
     setLoadingLogin(true);
 
-    // Limpa qualquer token antigo
     if (typeof window !== "undefined") localStorage.removeItem("authToken");
 
     try {
       const { success, token } = await loginUser(emailLogin.trim(), senhaLogin);
       if (success) {
-        // valida o token no backend e popula o contexto antes de navegar
         await verifyToken(token);
         await loadMemberData();
         setIsLoggedIn(true);
 
         toast.success(tLogin("login_sucesso"));
-        // Evita voltar para a página de login no 'Back'
         router.replace(`/${locale}`);
       }
     } catch (err: any) {
@@ -106,6 +89,7 @@ export default function AuthPage() {
   const nameRegex = useMemo(() => /^[A-Za-zÀ-ÿ\s]{3,}$/, []);
   const emailRegex = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/, []);
   const passwordRegex = useMemo(() => /^(?=.*\d).{5,}$/, []);
+  const handleRegex = useMemo(() => /^[a-zA-Z0-9_]{3,15}$/, []); // handle válido
 
   const isValidDate = (str: string) => {
     const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/(\d{4})$/;
@@ -123,7 +107,8 @@ export default function AuthPage() {
       (age > 18 ||
         (age === 18 &&
           (today.getMonth() > parsed.getMonth() ||
-            (today.getMonth() === parsed.getMonth() && today.getDate() >= parsed.getDate())))) &&
+            (today.getMonth() === parsed.getMonth() &&
+              today.getDate() >= parsed.getDate())))) &&
       age < 120
     );
   };
@@ -141,6 +126,10 @@ export default function AuthPage() {
 
     if (!nameRegex.test(name)) {
       toast.error(tSign("invalid_name"));
+      return;
+    }
+    if (!handleRegex.test(handle)) {
+      toast.error("Handle inválido. Use apenas letras, números ou _ (3-15 chars).");
       return;
     }
     if (!emailRegex.test(emailSign)) {
@@ -171,10 +160,11 @@ export default function AuthPage() {
         password: senhaSign,
         birthDate,
         gender,
+        handle: handle.trim(),
       });
       if (resp.success) {
         toast.success(tSign("cadastro_sucesso"));
-        setTab("login");
+        setSignupDone(true);
       }
     } catch (err: any) {
       toast.error(tSign("cadastro_erro"));
@@ -184,11 +174,9 @@ export default function AuthPage() {
     }
   };
 
-  // === Segmented control (corrigido) ===
   const Segmented = () => (
     <div className="w-full max-w-md mx-auto mb-6">
       <div className="relative flex bg-black/30 border border-[var(--color-darkgreen)] rounded-full p-1 backdrop-blur-sm overflow-hidden">
-        {/* slider com largura exata e movimento por 'left' */}
         <span
           className={[
             "absolute top-1 bottom-1",
@@ -199,7 +187,6 @@ export default function AuthPage() {
           ].join(" ")}
           aria-hidden
         />
-        {/* buttons */}
         <button
           type="button"
           onClick={() => setTab("login")}
@@ -230,7 +217,6 @@ export default function AuthPage() {
 
   return (
     <PageTransition>
-      {/* BACKGROUND com imagem e overlay */}
       <main
         className="relative w-full overflow-hidden min-h-[calc(100vh-5rem)]"
         style={{
@@ -260,7 +246,9 @@ export default function AuthPage() {
                 <div
                   className={[
                     "transition-opacity duration-300",
-                    tab === "login" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none absolute inset-0",
+                    tab === "login"
+                      ? "opacity-100 pointer-events-auto"
+                      : "opacity-0 pointer-events-none absolute inset-0",
                   ].join(" ")}
                 >
                   <form onSubmit={handleLogin} className="space-y-4">
@@ -311,66 +299,81 @@ export default function AuthPage() {
                 <div
                   className={[
                     "transition-opacity duration-300",
-                    tab === "signup" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none absolute inset-0",
+                    tab === "signup"
+                      ? "opacity-100 pointer-events-auto"
+                      : "opacity-0 pointer-events-none absolute inset-0",
                   ].join(" ")}
                 >
-                  <form onSubmit={handleSignup} className="space-y-4">
-                    <input
-                      className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      type="text"
-                      placeholder={tSign("nome")}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                    <input
-                      className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      type="text"
-                      placeholder={tSign("email")}
-                      value={emailSign}
-                      onChange={(e) => setEmailSign(e.target.value)}
-                    />
-                    <input
-                      className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      type="password"
-                      placeholder={tSign("senha")}
-                      value={senhaSign}
-                      onChange={(e) => setSenhaSign(e.target.value)}
-                    />
-                    <input
-                      className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder={tSign("birthday")}
-                      value={date}
-                      onChange={handleDateChange}
-                    />
-                    <select
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)}
-                      className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <option value="" disabled hidden className="bg-black">
-                        {tSign("Select_Gender")}
-                      </option>
-                      <option value="MASC" className="text-emerald-500 bg-black">
-                        {tSign("M_Gender")}
-                      </option>
-                      <option value="FEM" className="text-emerald-500 bg-black">
-                        {tSign("F_Gender")}
-                      </option>
-                      <option value="OTHER" className="text-emerald-500 bg-black">
-                        {tSign("O_Gender")}
-                      </option>
-                    </select>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? "Enviando..." : tSign("botao")}
-                    </button>
-                    {msgSign && (
-                      <p className="text-red-400 text-sm text-center mt-2">{msgSign}</p>
-                    )}
-                  </form>
+                  {signupDone ? (
+                    <div className="text-center text-emerald-300 font-semibold py-10">
+                      Antes de logar, confirme seu email!
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSignup} className="space-y-4">
+                      <input
+                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        type="text"
+                        placeholder={tSign("nome")}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
+                      <input
+                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        type="text"
+                        placeholder="@handle"
+                        value={handle}
+                        onChange={(e) => setHandle(e.target.value)}
+                      />
+                      <input
+                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        type="text"
+                        placeholder={tSign("email")}
+                        value={emailSign}
+                        onChange={(e) => setEmailSign(e.target.value)}
+                      />
+                      <input
+                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        type="password"
+                        placeholder={tSign("senha")}
+                        value={senhaSign}
+                        onChange={(e) => setSenhaSign(e.target.value)}
+                      />
+                      <input
+                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder={tSign("birthday")}
+                        value={date}
+                        onChange={handleDateChange}
+                      />
+                      <select
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      >
+                        <option value="" disabled hidden className="bg-black">
+                          {tSign("Select_Gender")}
+                        </option>
+                        <option value="MASC" className="text-emerald-500 bg-black">
+                          {tSign("M_Gender")}
+                        </option>
+                        <option value="FEM" className="text-emerald-500 bg-black">
+                          {tSign("F_Gender")}
+                        </option>
+                        <option value="OTHER" className="text-emerald-500 bg-black">
+                          {tSign("O_Gender")}
+                        </option>
+                      </select>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? "Enviando..." : tSign("botao")}
+                      </button>
+                      {msgSign && (
+                        <p className="text-red-400 text-sm text-center mt-2">{msgSign}</p>
+                      )}
+                    </form>
+                  )}
                 </div>
               </div>
             </div>

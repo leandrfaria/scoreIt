@@ -69,6 +69,7 @@ export async function registerUser(payload: {
   password: string;
   birthDate: string;
   gender: string;
+  handle: string;
 }) {
   await postJson(`/member/post`, {
     name: payload.name.trim(),
@@ -76,7 +77,9 @@ export async function registerUser(payload: {
     password: payload.password,
     birthDate: payload.birthDate,
     gender: payload.gender,
+    handle: payload.handle.trim(),
   });
 
   return { success: true as const, message: "Usuário cadastrado; verifique seu e-mail." };
 }
+
