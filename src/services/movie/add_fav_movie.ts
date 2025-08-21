@@ -1,7 +1,12 @@
-// src/services/movie/add_fav_movie.ts
 import { apiFetch } from "@/lib/api";
 
-export const addFavouriteMovie = async (token: string, userId: number, movieId: number): Promise<boolean> => {
+export const addFavouriteMovie = async (
+  _token: string,
+  userId: number,
+  movieId: number
+): Promise<boolean> => {
+  if (!userId || !movieId) return false;
+
   try {
     await apiFetch(`/member/favorites/${userId}/${movieId}/movie`, {
       method: "POST",

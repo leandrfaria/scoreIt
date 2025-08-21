@@ -8,6 +8,8 @@ function pickString(v: unknown, fallback = ""): string {
 }
 
 export async function fetchFavouriteAlbuns(memberId: string): Promise<Album[]> {
+  if (!memberId) return [];
+
   try {
     const raw = await apiFetch(`/spotify/api/favorites/${memberId}`, { auth: true });
 
@@ -38,14 +40,14 @@ export async function fetchFavouriteAlbuns(memberId: string): Promise<Album[]> {
           id,
           name,
           artist,
-          release_date: pickString(obj.release_date),
-          total_tracks: typeof obj.total_tracks === "number" ? (obj.total_tracks as number) : 0,
+          release_date: pickString(obj.release_date, ""),
+          total_tracks: typeof obj.total_tracks === "number" ? obj.total_tracks : 0,
           imageUrl,
         } as Album;
       })
       .filter((a): a is Album => a !== null);
   } catch (err) {
-    console.error("Erro ao buscar álbuns favoritos:", err);
+    console.error("❌ Erro ao buscar álbuns favoritos:", err);
     return [];
   }
 }

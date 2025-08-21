@@ -7,9 +7,7 @@ import { useMember } from "@/context/MemberContext";
 import { Series } from "@/types/Series";
 import { SeriesCarousel } from "./SeriesCarousel";
 
-type Props = {
-  memberId?: string;
-};
+type Props = { memberId?: string };
 
 const FavouriteSeriesCarouselSection = ({ memberId }: Props) => {
   const [series, setSeries] = useState<Series[]>([]);
@@ -20,34 +18,26 @@ const FavouriteSeriesCarouselSection = ({ memberId }: Props) => {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const token = localStorage.getItem("authToken");
-      const idToUse = memberId ?? String(member?.id);
-
-      if (!token || !idToUse) {
-        console.error(t("tokenNotFound"));
-        if (mounted) setLoading(false);
-        return;
-      }
-
-      const data = await fetchFavouriteSeries(token, idToUse);
-      if (mounted) {
-        setSeries(data);
-        setLoading(false);
-      }
+      const idToUse = memberId ?? String(member?.id ?? "");
+      if (!idToUse) { setLoading(false); return; }
+      try {
+        const data = await fetchFavouriteSeries(localStorage.getItem("authToken") ?? "", idToUse);
+        if (mounted) setSeries(data);
+      } finally { if (mounted) setLoading(false); }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [t, memberId, member]);
+    return () => { mounted = false; };
+  }, [memberId, member]);
 
-  if (loading) return <div className="text-center py-10 text-white">{t("loadingFavSeries")}</div>;
-  if (series.length === 0) return <div className="text-center py-10 text-white">{t("noFavSeries")}</div>;
+  if (loading) return <div className="text-center py-10 text-gray-300 animate-pulse">{t("loadingFavSeries")}</div>;
+  if (series.length === 0)
+    return (
+      <div className="text-center py-10 text-gray-400">
+        <p className="text-lg font-semibold">{t("noFavSeries")}</p>
+        <p className="text-sm mt-2">Adicione algumas séries aos favoritos e elas aparecerão aqui 📺</p>
+      </div>
+    );
 
-  const handleRemoveSerie = (id: number) => {
-    setSeries((prev) => prev.filter((s) => s.id !== id));
-  };
-
-  return <SeriesCarousel title={t("SeriesFavoritos")} series={series} onRemoveSerie={handleRemoveSerie} />;
+  return <SeriesCarousel title={t("SeriesFavoritos")} series={series} onRemoveSerie={(id) => setSeries((prev) => prev.filter((s) => s.id !== id))} />;
 };
 
 export default FavouriteSeriesCarouselSection;

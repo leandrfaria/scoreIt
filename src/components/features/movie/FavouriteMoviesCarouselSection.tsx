@@ -7,9 +7,7 @@ import { fetchFavouriteMovies } from "@/services/movie/get_fav_movie";
 import { useMember } from "@/context/MemberContext";
 import { MovieCarousel } from "./MovieCarousel";
 
-type Props = {
-  memberId?: string; // ID opcional — se não vier, pega do contexto
-};
+type Props = { memberId?: string };
 
 const FavouriteMoviesCarouselSection = ({ memberId }: Props) => {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -18,44 +16,33 @@ const FavouriteMoviesCarouselSection = ({ memberId }: Props) => {
   const { member } = useMember();
 
   useEffect(() => {
-    const loadMovies = async () => {
-      const token = localStorage.getItem("authToken");
-
-      const idToUse = memberId || member?.id;
-
-      if (!token || !idToUse) {
-        console.error(t("tokenNotFound"));
+    let mounted = true;
+    (async () => {
+      const idToUse = memberId ?? String(member?.id ?? "");
+      if (!idToUse) {
         setLoading(false);
         return;
       }
+      try {
+        const data = await fetchFavouriteMovies(localStorage.getItem("authToken") ?? "", idToUse);
+        if (mounted) setMovies(data);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [memberId, member]);
 
-      const data = await fetchFavouriteMovies(token, String(idToUse));
-      setMovies(data);
-      setLoading(false);
-    };
+  if (loading) return <div className="text-center py-10 text-gray-300 animate-pulse">{t("loadingFav")}</div>;
+  if (movies.length === 0)
+    return (
+      <div className="text-center py-10 text-gray-400">
+        <p className="text-lg font-semibold">{t("noFavMovie")}</p>
+        <p className="text-sm mt-2">Adicione alguns filmes aos favoritos e eles aparecerão aqui 🎬</p>
+      </div>
+    );
 
-    loadMovies();
-  }, [t, memberId, member]);
-
-  if (loading) {
-    return <div className="text-center py-10 text-white">{t("loadingFav")}</div>;
-  }
-
-  if (movies.length === 0) {
-    return <div className="text-center py-10 text-white">{t("noFavMovie")}</div>;
-  }
-
-  const handleRemoveMovie = (id: number) => {
-    setMovies((prevMovies) => prevMovies.filter((movie) => movie.id !== id));
-  };
-
-  return (
-    <MovieCarousel
-      title={t("FilmeFavoritos")}
-      movies={movies}
-      onRemoveMovie={handleRemoveMovie}
-    />
-  );
+  return <MovieCarousel title={t("FilmeFavoritos")} movies={movies} onRemoveMovie={(id) => setMovies((prev) => prev.filter((m) => m.id !== id))} />;
 };
 
 export default FavouriteMoviesCarouselSection;

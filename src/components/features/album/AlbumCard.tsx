@@ -46,59 +46,51 @@ export function AlbumCard({
   const handleClose = useCallback(() => setIsOpen(false), []);
   useOutsideClick(modalRef, handleClose);
 
-  // Fechar via ESC
+  // ESC fecha
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [handleClose]);
 
-  // Foco ao abrir
+  // Foco no título
   useEffect(() => {
-    if (isOpen && titleRef.current) {
-      titleRef.current.focus();
-    }
+    if (isOpen && titleRef.current) titleRef.current.focus();
   }, [isOpen]);
 
-  // Checar favorito só quando o modal abre
+  // Checar favorito
   useEffect(() => {
     let mounted = true;
-    const run = async () => {
+    (async () => {
       try {
-        const token = localStorage.getItem("authToken");
-        if (!token || !member || !isOpen) return;
+        if (!member || !isOpen) return;
         const favorited = await isFavoritedMedia(member.id, id);
         if (mounted) setIsFavorited(favorited);
-      } catch (error) {
-        console.error("Erro ao verificar favorito:", error);
+      } catch (err) {
+        console.error("Erro ao verificar favorito:", err);
       }
-    };
-    run();
+    })();
     return () => {
       mounted = false;
     };
   }, [id, member, isOpen]);
 
-  // Carregar listas só quando abrir o modal
+  // Carregar listas
   useEffect(() => {
     let mounted = true;
-    const loadLists = async () => {
+    (async () => {
       try {
-        const token = localStorage.getItem("authToken");
-        if (!token || !member || !isOpen) return;
-
-        const lists = await fetchMemberLists(token, member.id);
-        const uniqueListNames = Array.from(new Set(lists.map((item) => item.listName)));
-        if (!mounted) return;
-        setCustomLists(uniqueListNames);
-        if (uniqueListNames.length > 0) setSelectedList(uniqueListNames[0]);
+        if (!member || !isOpen) return;
+        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id);
+        const unique = Array.from(new Set(lists.map((l) => l.listName)));
+        if (mounted) {
+          setCustomLists(unique);
+          if (unique.length > 0) setSelectedList(unique[0]);
+        }
       } catch {
         toast.error("Erro carregando listas");
       }
-    };
-    loadLists();
+    })();
     return () => {
       mounted = false;
     };
@@ -107,83 +99,53 @@ export function AlbumCard({
   const openDetailsPath = useMemo(() => `/${locale}/album/${id}`, [locale, id]);
 
   const handleFavorite = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token || !member) {
-        toast.error(t("notAuthenticated"));
-        return;
-      }
-
-      if (isFavorited) {
-        const success = await removeFavouriteMedia(member.id, id, "album");
-        if (success) {
-          // Sem isActive: use um ID fixo para atualizar o mesmo toast
-          toast.success(t("removedFromFavorites"), { id: "fav-removed" });
-          setIsFavorited(false);
-          if (onRemoveAlbum) onRemoveAlbum(id);
-        } else {
-          toast.error(t("errorRemovingFavorite"));
-        }
-      } else {
-        const success = await addFavouriteAlbum(member.id, id);
-        if (success) {
-          toast.success(t("addedToFavorites"), { id: "fav-added" });
-          setIsFavorited(true);
-        } else {
-          toast.error(t("errorAddingFavorite"));
-        }
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(t("errorAddingFavorite"));
+    if (!member) {
+      toast.error(t("notAuthenticated"));
+      return;
+    }
+    if (isFavorited) {
+      const ok = await removeFavouriteMedia(member.id, id, "album");
+      if (ok) {
+        toast.success(t("removedFromFavorites"), { id: "fav-removed" });
+        setIsFavorited(false);
+        onRemoveAlbum?.(id);
+      } else toast.error(t("errorRemovingFavorite"));
+    } else {
+      const ok = await addFavouriteAlbum(member.id, id);
+      if (ok) {
+        toast.success(t("addedToFavorites"), { id: "fav-added" });
+        setIsFavorited(true);
+      } else toast.error(t("errorAddingFavorite"));
     }
   }, [id, isFavorited, member, onRemoveAlbum, t]);
 
   const handleAddToList = useCallback(async () => {
-    if (!selectedList) {
-      toast.error("Selecione uma lista");
-      return;
-    }
-
+    if (!selectedList) return toast.error("Selecione uma lista");
     try {
       setIsAdding(true);
-      const token = localStorage.getItem("authToken");
-      if (!token || !member) {
-        toast.error("Usuário não autenticado");
-        setIsAdding(false);
-        return;
-      }
-
-      const result = await addContentToList(token, {
+      if (!member) return toast.error("Usuário não autenticado");
+      const result = await addContentToList(localStorage.getItem("authToken")!, {
         memberId: member.id,
         mediaId: id,
         mediaType: "album",
         listName: selectedList,
       });
-
-      if (result === "duplicate") {
-        toast.error("Este conteúdo já está na lista");
-      } else if (result === "success") {
-        toast.success("Álbum adicionado à lista!");
-      } else {
-        toast.error("Erro ao adicionar à lista");
-      }
+      if (result === "duplicate") toast.error("Já está na lista");
+      else if (result === "success") toast.success("Álbum adicionado!");
+      else toast.error("Erro ao adicionar à lista");
     } finally {
       setIsAdding(false);
     }
   }, [id, member, selectedList]);
 
-  const handleViewDetails = useCallback(() => {
-    router.push(openDetailsPath);
-  }, [router, openDetailsPath]);
+  const handleViewDetails = useCallback(() => router.push(openDetailsPath), [router, openDetailsPath]);
 
-  // Animações com suporte a prefers-reduced-motion
+  // animações
   const overlayAnim = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: reduceMotion ? 0 : 0.2 } },
     exit: { opacity: 0, transition: { duration: reduceMotion ? 0 : 0.15 } },
   };
-
   const modalAnim = {
     hidden: { opacity: 0, y: reduceMotion ? 0 : 24 },
     visible: { opacity: 1, y: 0, transition: { duration: reduceMotion ? 0 : 0.25 } },
@@ -195,26 +157,35 @@ export function AlbumCard({
       {/* Card */}
       <div
         onClick={handleOpen}
-        onKeyDown={(e) => (e.key === "Enter" ? handleOpen() : null)}
-        tabIndex={0}
-        role="button"
-        aria-label={`${name} — ${artist}`}
-        className="cursor-pointer w-[46vw] max-w-[190px] sm:w-[190px] shrink-0 rounded-xl overflow-hidden hover:scale-[1.03] hover:shadow-lg transition-all duration-300 bg-neutral-900/40 ring-1 ring-white/5 outline-none focus:ring-2 focus:ring-darkgreen"
+        className="cursor-pointer w-[46vw] max-w-[190px] sm:w-[190px] shrink-0 rounded-xl overflow-hidden hover:scale-[1.03] hover:shadow-lg transition-all duration-300 bg-neutral-900/40 ring-1 ring-white/5"
       >
-        <div className="relative w-full aspect-[3/3] sm:h-[190px] rounded-xl overflow-hidden">
+        <div className="relative w-full aspect-[3/3] sm:h-[190px]">
           <Image
             src={imgSrc}
             alt={name}
             fill
             className="object-cover rounded-xl"
             onError={() => setImgSrc("/fallback.jpg")}
-            sizes="(max-width: 640px) 46vw, 190px"
-            priority={false}
           />
+          {/* Botão favorito no card */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFavorite();
+            }}
+            className="absolute top-2 right-2 bg-black/60 p-2 rounded-full hover:scale-110 transition"
+            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          >
+            {isFavorited ? (
+              <FaHeart className="text-red-500 w-5 h-5" />
+            ) : (
+              <FiHeart className="text-white w-5 h-5" />
+            )}
+          </button>
         </div>
         <div className="p-2">
-          <h3 className="text-white text-sm font-semibold leading-tight line-clamp-1">{name}</h3>
-          <p className="text-gray-400 text-xs mt-1 line-clamp-1">{artist}</p>
+          <h3 className="text-white text-sm font-semibold line-clamp-1">{name}</h3>
+          <p className="text-gray-400 text-xs line-clamp-1">{artist}</p>
         </div>
       </div>
 
@@ -222,123 +193,53 @@ export function AlbumCard({
       <AnimatePresence>
         {isOpen && (
           <>
-            <motion.div
-              className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
-              variants={overlayAnim}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            />
-
+            <motion.div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm" variants={overlayAnim} initial="hidden" animate="visible" exit="exit"/>
             <motion.div
               ref={modalRef}
               role="dialog"
               aria-modal="true"
-              aria-labelledby={`album-title-${id}`}
-              aria-describedby={`album-desc-${id}`}
-              className="
-                fixed z-[70]
-                sm:top-[8%] sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md sm:w-full sm:rounded-2xl
-                top-0 left-0 w-full h-[100dvh] sm:h-auto
-                bg-neutral-900 text-white p-0 sm:p-6 shadow-2xl ring-1 ring-white/10
-                flex flex-col
-              "
+              className="fixed z-[70] sm:top-[8%] sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md sm:w-full sm:rounded-2xl top-0 left-0 w-full h-[100dvh] sm:h-auto bg-neutral-900 text-white flex flex-col"
               variants={modalAnim}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 sm:px-0 sm:py-0 sm:mb-4">
-                <h2
-                  id={`album-title-${id}`}
-                  ref={titleRef}
-                  tabIndex={-1}
-                  className="text-lg sm:text-xl font-bold focus:outline-none"
-                >
-                  {name}
-                </h2>
-                <button
-                  onClick={handleClose}
-                  className="text-red-400 text-2xl leading-none hover:scale-110 transition px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400/50"
-                  aria-label="Fechar"
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* Cover */}
-              <div className="relative w-full h-[46vh] sm:h-[250px] overflow-hidden">
-                <Image
-                  src={imgSrc}
-                  alt={name}
-                  fill
-                  className="object-cover"
-                  onError={() => setImgSrc("/fallback.jpg")}
-                  sizes="100vw"
-                  priority
-                />
+              <div className="relative w-full h-[46vh] sm:h-[250px]">
+                <Image src={imgSrc} alt={name} fill className="object-cover" onError={() => setImgSrc("/fallback.jpg")} priority/>
                 <button
                   onClick={handleFavorite}
-                  className="absolute bottom-3 right-3 bg-black/60 px-3 py-2 rounded-full hover:brightness-110 transition focus:outline-none focus:ring-2 focus:ring-white/40"
-                  aria-label={isFavorited ? t("removedFromFavorites") : t("addedToFavorites")}
-                  title={isFavorited ? t("removedFromFavorites") : t("addedToFavorites")}
+                  className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full"
                 >
-                  {isFavorited ? (
-                    <FaHeart className="text-red-500 w-6 h-6" />
-                  ) : (
-                    <FiHeart className="text-white w-6 h-6" />
-                  )}
+                  {isFavorited ? <FaHeart className="text-red-500 w-6 h-6"/> : <FiHeart className="text-white w-6 h-6"/>}
                 </button>
               </div>
-
-              {/* Info */}
-              <div id={`album-desc-${id}`} className="px-4 sm:px-0 sm:space-y-2 text-sm mt-3 sm:mt-4">
-                <p>
-                  <span className="text-gray-400">{t("artist")}</span> {artist}
-                </p>
-                <p>
-                  <span className="text-gray-400">{t("releaseDate")}</span>{" "}
-                  {release_date ? new Date(release_date).toLocaleDateString() : "N/A"}
-                </p>
+              <div className="p-4 space-y-2">
+                <h2 ref={titleRef} className="text-lg font-bold">{name}</h2>
+                <p className="text-gray-400 text-sm">{artist}</p>
+                <p className="text-gray-400 text-sm">{release_date ? new Date(release_date).toLocaleDateString() : "N/A"}</p>
               </div>
-
-              {/* Footer (mobile: sticky) */}
-              <div className="mt-auto w-full px-4 py-4 sm:p-0 sm:mt-6">
-                <div className="flex items-center gap-2 sm:mb-4">
+              <div className="p-4 mt-auto flex flex-col gap-3">
+                <div className="flex gap-2">
                   <select
                     value={selectedList}
                     onChange={(e) => setSelectedList(e.target.value)}
-                    className="bg-neutral-800 text-white p-3 sm:p-2 rounded flex-grow border border-white/10 focus:outline-none focus:ring-2 focus:ring-darkgreen"
+                    className="bg-neutral-800 text-white p-2 rounded flex-grow text-sm"
                     disabled={customLists.length === 0}
                   >
-                    <option value="" disabled>
-                      Selecione uma lista
-                    </option>
-                    {customLists.map((listName) => (
-                      <option key={listName} value={listName}>
-                        {listName}
-                      </option>
-                    ))}
+                    <option value="">Selecione uma lista</option>
+                    {customLists.map((l) => <option key={l}>{l}</option>)}
                   </select>
-
                   <button
                     onClick={handleAddToList}
-                    disabled={isAdding || customLists.length === 0 || !selectedList}
-                    className="bg-darkgreen text-white px-5 py-3 sm:py-2 rounded-md hover:brightness-110 transition disabled:opacity-50 w-auto"
+                    disabled={isAdding || !selectedList}
+                    className="bg-darkgreen text-white px-4 py-2 rounded-md hover:brightness-110 transition text-sm"
                   >
                     {isAdding ? "Adicionando..." : "Adicionar"}
                   </button>
                 </div>
-
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleViewDetails}
-                    className="bg-darkgreen text-white w-full sm:w-auto px-5 py-3 sm:py-2 rounded-md hover:brightness-110 transition"
-                  >
-                    {t("viewDetails")}
-                  </button>
-                </div>
+                <button onClick={handleViewDetails} className="bg-darkgreen text-white px-4 py-2 rounded-md hover:brightness-110 transition text-sm">
+                  {t("viewDetails")}
+                </button>
               </div>
             </motion.div>
           </>

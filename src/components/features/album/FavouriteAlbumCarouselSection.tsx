@@ -7,9 +7,7 @@ import { fetchFavouriteAlbuns } from "@/services/album/get_fav_album";
 import { useMember } from "@/context/MemberContext";
 import { useTranslations } from "next-intl";
 
-type Props = {
-  memberId?: string;
-};
+type Props = { memberId?: string };
 
 const FavouriteAlbumCarouselSection = ({ memberId }: Props) => {
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -19,55 +17,34 @@ const FavouriteAlbumCarouselSection = ({ memberId }: Props) => {
 
   useEffect(() => {
     let mounted = true;
-
-    const loadAlbums = async () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-      const idToUse = memberId ?? (member?.id ? String(member.id) : "");
-
-      if (!token || !idToUse) {
-        // Mantém UX consistente sem disparar chamada desnecessária
-        console.error(t("tokenNotFound"));
-        if (mounted) setLoading(false);
+    (async () => {
+      const idToUse = memberId ?? String(member?.id ?? "");
+      if (!idToUse) {
+        setLoading(false);
         return;
       }
-
       try {
         const data = await fetchFavouriteAlbuns(idToUse);
-        if (mounted) {
-          setAlbums(data);
-        }
+        if (mounted) setAlbums(data);
       } catch (err) {
         console.error("Erro ao carregar álbuns favoritos:", err);
       } finally {
         if (mounted) setLoading(false);
       }
-    };
+    })();
+    return () => { mounted = false; };
+  }, [memberId, member]);
 
-    loadAlbums();
-    return () => {
-      mounted = false;
-    };
-  }, [memberId, member, t]);
+  if (loading) return <div className="text-center py-10 text-gray-300 animate-pulse">{t("loadingFavAlbum")}</div>;
+  if (albums.length === 0)
+    return (
+      <div className="text-center py-10 text-gray-400">
+        <p className="text-lg font-semibold">{t("noFavAlbum")}</p>
+        <p className="text-sm mt-2">Adicione alguns álbuns aos favoritos e eles aparecerão aqui 🎶</p>
+      </div>
+    );
 
-  if (loading) {
-    return <div className="text-center py-10 text-white">{t("loadingFavAlbum")}</div>;
-  }
-
-  if (albums.length === 0) {
-    return <div className="text-center py-10 text-white">{t("noFavAlbum")}</div>;
-  }
-
-  const handleRemoveAlbum = (id: string) => {
-    setAlbums((prev) => prev.filter((album) => album.id !== id));
-  };
-
-  return (
-    <AlbumCarousel
-      title={t("AlbunsFavoritos")}
-      albums={albums}
-      onRemoveAlbum={handleRemoveAlbum}
-    />
-  );
+  return <AlbumCarousel title={t("AlbunsFavoritos")} albums={albums} onRemoveAlbum={(id) => setAlbums((prev) => prev.filter((a) => a.id !== id))} />;
 };
 
 export default FavouriteAlbumCarouselSection;

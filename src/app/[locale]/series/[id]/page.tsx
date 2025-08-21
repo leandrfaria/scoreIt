@@ -1,4 +1,3 @@
-// src/app/[locale]/series/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -20,7 +19,7 @@ export default function SeriePage() {
   const [serie, setSerie] = useState<Series | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [refreshReviews, setRefreshReviews] = useState(false); // ✅ novo state
+  const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
 
   useEffect(() => {
@@ -29,26 +28,22 @@ export default function SeriePage() {
       if (!token) return;
 
       try {
-        const response = await fetch(`http://localhost:8080/series/${id}/details`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL_DEV}/series/${id}/details`, {
+          headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
-
         const data = await response.json();
         setSerie(data);
       } catch (err) {
         console.error("Erro ao buscar detalhes da série:", err);
       }
     };
-
     loadSerie();
   }, [id]);
 
   useEffect(() => {
     const checkFavorite = async () => {
-      if (member) {
+      if (member && id) {
         const fav = await isFavoritedMedia(member.id, Number(id));
         setIsFavorited(fav);
       }
@@ -57,25 +52,20 @@ export default function SeriePage() {
   }, [member, id]);
 
   const handleFavoriteToggle = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token || !member || !serie) return;
+    if (!member || !serie) return;
 
     if (isFavorited) {
       const success = await removeFavouriteMedia(member.id, serie.id, "series");
       if (success) {
         toast.success("Removido dos favoritos");
         setIsFavorited(false);
-      } else {
-        toast.error("Erro ao remover");
-      }
+      } else toast.error("Erro ao remover");
     } else {
-      const success = await addFavouriteSeries(token, member.id, serie.id);
+      const success = await addFavouriteSeries("", member.id, serie.id);
       if (success) {
         toast.success("Adicionado aos favoritos");
         setIsFavorited(true);
-      } else {
-        toast.error("Erro ao favoritar");
-      }
+      } else toast.error("Erro ao favoritar");
     }
   };
 
@@ -114,18 +104,7 @@ export default function SeriePage() {
           {serie.overview || "Sem descrição disponível."}
         </p>
 
-        <div className="flex gap-2 flex-wrap">
-          {serie.genres?.map((genre: string, idx: number) => (
-            <span
-              key={idx}
-              className="bg-white/20 px-3 py-1 rounded-full text-sm text-white font-medium"
-            >
-              {genre}
-            </span>
-          ))}
-        </div>
-
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <button
             onClick={() => setShowModal(true)}
             className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition"
@@ -134,15 +113,16 @@ export default function SeriePage() {
           </button>
           <button
             onClick={handleFavoriteToggle}
-            className="bg-white/10 border border-white text-white px-6 py-3 rounded hover:bg-white hover:text-black transition flex items-center gap-2"
+            className="bg-darkgreen/80 border border-white/20 text-white px-6 py-3 rounded hover:bg-darkgreen hover:brightness-110 transition flex items-center gap-2"
+            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           >
             {isFavorited ? (
               <>
-                <FaHeart className="text-red-500" /> Remover dos Favoritos
+                <FaHeart className="text-red-500" /> Remover
               </>
             ) : (
               <>
-                <FiHeart /> Adicionar aos Favoritos
+                <FiHeart /> Favoritar
               </>
             )}
           </button>
@@ -155,15 +135,12 @@ export default function SeriePage() {
           onClose={() => setShowModal(false)}
           mediaId={serie.id}
           mediaType="series"
-          onSuccess={() => setRefreshReviews(prev => !prev)} 
+          onSuccess={() => setRefreshReviews((prev) => !prev)}
         />
       )}
 
       {serie && (
-        <ReviewSection
-          mediaId={serie.id.toString()}
-          refreshTrigger={refreshReviews} 
-        />
+        <ReviewSection mediaId={serie.id.toString()} refreshTrigger={refreshReviews} />
       )}
     </main>
   );

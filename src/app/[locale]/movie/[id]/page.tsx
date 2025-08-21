@@ -1,4 +1,3 @@
-// src/app/[locale]/movie/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -34,7 +33,7 @@ export default function MoviePage() {
 
   useEffect(() => {
     const checkFavorite = async () => {
-      if (member) {
+      if (member && id) {
         const fav = await isFavoritedMedia(member.id, Number(id));
         setIsFavorited(fav);
       }
@@ -43,25 +42,20 @@ export default function MoviePage() {
   }, [member, id]);
 
   const handleFavoriteToggle = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token || !member || !movie) return;
+    if (!member || !movie) return;
 
     if (isFavorited) {
       const success = await removeFavouriteMedia(member.id, movie.id, "movie");
       if (success) {
         toast.success("Removido dos favoritos");
         setIsFavorited(false);
-      } else {
-        toast.error("Erro ao remover");
-      }
+      } else toast.error("Erro ao remover");
     } else {
-      const success = await addFavouriteMovie(token, member.id, movie.id);
+      const success = await addFavouriteMovie("", member.id, movie.id);
       if (success) {
         toast.success("Adicionado aos favoritos");
         setIsFavorited(true);
-      } else {
-        toast.error("Erro ao favoritar");
-      }
+      } else toast.error("Erro ao favoritar");
     }
   };
 
@@ -91,32 +85,15 @@ export default function MoviePage() {
           <div className="flex items-center gap-4 text-sm text-gray-300">
             <div className="flex items-center gap-1 text-yellow-400">
               <FaStar />
-              <span className="text-lg font-medium">
-                {movie.vote_average.toFixed(1)}
-              </span>
+              <span className="text-lg font-medium">{movie.vote_average.toFixed(1)}</span>
             </div>
-            <span className="uppercase">
-              {movie.genres?.[0] || "DESCONHECIDO"}
-            </span>
+            <span className="uppercase">{movie.genres?.[0] || "DESCONHECIDO"}</span>
             <span>{year}</span>
           </div>
 
-          <p className="max-w-2xl text-gray-200 text-base leading-relaxed">
-            {movie.overview}
-          </p>
+          <p className="max-w-2xl text-gray-200 text-base leading-relaxed">{movie.overview}</p>
 
-          <div className="flex gap-2 flex-wrap">
-            {movie.genres?.map((genre, idx) => (
-              <span
-                key={idx}
-                className="bg-white/20 px-3 py-1 rounded-full text-sm text-white font-medium"
-              >
-                {genre}
-              </span>
-            ))}
-          </div>
-
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <button
               onClick={() => setShowModal(true)}
               className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition"
@@ -125,15 +102,16 @@ export default function MoviePage() {
             </button>
             <button
               onClick={handleFavoriteToggle}
-              className="bg-white/10 border border-white text-white px-6 py-3 rounded hover:bg白 hover:text-black transition flex items-center gap-2"
+              className="bg-darkgreen/80 border border-white/20 text-white px-6 py-3 rounded hover:bg-darkgreen hover:brightness-110 transition flex items-center gap-2"
+              aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
             >
               {isFavorited ? (
                 <>
-                  <FaHeart className="text-red-500" /> Remover dos Favoritos
+                  <FaHeart className="text-red-500" /> Remover
                 </>
               ) : (
                 <>
-                  <FiHeart /> Adicionar aos Favoritos
+                  <FiHeart /> Favoritar
                 </>
               )}
             </button>

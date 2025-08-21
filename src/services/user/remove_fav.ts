@@ -1,27 +1,20 @@
-export const removeFavouriteMedia = async (userId: number, mediaId: string | number, mediaType: string): Promise<boolean> => {
-    try {
-      const token = localStorage.getItem("authToken");
+import { apiFetch } from "@/lib/api";
 
-      if (!token) {
-        console.error("Token não encontrado.");
-        return false;
-      } 
+export const removeFavouriteMedia = async (
+  userId: number,
+  mediaId: string | number,
+  mediaType: "movie" | "series" | "album"
+): Promise<boolean> => {
+  if (!userId || !mediaId || !mediaType) return false;
 
-      const response = await fetch(`http://localhost:8080/member/favoritesDelete/${userId}/${mediaId}/${mediaType}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Erro ao favoritar álbum: ${response.status}`);
-      }
-  
-      return true;
-    } catch (error) {
-      console.error("❌ Erro ao adicionar álbum aos favoritos:", error);
-      return false;
-    }
-  };
-  
+  try {
+    await apiFetch(`/member/favoritesDelete/${userId}/${mediaId}/${mediaType}`, {
+      method: "DELETE",
+      auth: true,
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ Erro ao remover mídia dos favoritos:", error);
+    return false;
+  }
+};

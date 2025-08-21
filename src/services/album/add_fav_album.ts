@@ -1,6 +1,11 @@
 import { apiFetch } from "@/lib/api";
 
-export async function addFavouriteAlbum(userId: number, albumId: string): Promise<boolean> {
+export async function addFavouriteAlbum(
+  userId: number,
+  albumId: string
+): Promise<boolean> {
+  if (!userId || !albumId) return false;
+
   try {
     await apiFetch(`/member/favorites/${userId}/${albumId}/album`, {
       method: "POST",

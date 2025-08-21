@@ -20,7 +20,7 @@ export default function AlbumPage() {
   const [album, setAlbum] = useState<Album | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [refreshReviews, setRefreshReviews] = useState(false); // ✅
+  const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function AlbumPage() {
 
   useEffect(() => {
     const checkFavorite = async () => {
-      if (member) {
+      if (member && id) {
         const fav = await isFavoritedMedia(member.id, id);
         setIsFavorited(fav);
       }
@@ -42,25 +42,20 @@ export default function AlbumPage() {
   }, [member, id]);
 
   const handleFavoriteToggle = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token || !member || !album) return;
+    if (!member || !album) return;
 
     if (isFavorited) {
       const success = await removeFavouriteMedia(member.id, album.id, "album");
       if (success) {
         toast.success("Removido dos favoritos");
         setIsFavorited(false);
-      } else {
-        toast.error("Erro ao remover");
-      }
+      } else toast.error("Erro ao remover");
     } else {
       const success = await addFavouriteAlbum(member.id, album.id);
       if (success) {
         toast.success("Adicionado aos favoritos");
         setIsFavorited(true);
-      } else {
-        toast.error("Erro ao favoritar");
-      }
+      } else toast.error("Erro ao favoritar");
     }
   };
 
@@ -93,7 +88,7 @@ export default function AlbumPage() {
           <span>{album.total_tracks} músicas</span>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <button
             onClick={() => setShowModal(true)}
             className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition"
@@ -102,15 +97,16 @@ export default function AlbumPage() {
           </button>
           <button
             onClick={handleFavoriteToggle}
-            className="bg-white/10 border border-white text-white px-6 py-3 rounded hover:bg-white hover:text-black transition flex items-center gap-2"
+            className="bg-darkgreen/80 border border-white/20 text-white px-6 py-3 rounded hover:bg-darkgreen hover:brightness-110 transition flex items-center gap-2"
+            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           >
             {isFavorited ? (
               <>
-                <FaHeart className="text-red-500" /> Remover dos Favoritos
+                <FaHeart className="text-red-500" /> Remover
               </>
             ) : (
               <>
-                <FiHeart /> Adicionar aos Favoritos
+                <FiHeart /> Favoritar
               </>
             )}
           </button>
@@ -122,10 +118,10 @@ export default function AlbumPage() {
         onClose={() => setShowModal(false)}
         mediaId={album.id}
         mediaType="album"
-        onSuccess={() => setRefreshReviews((prev) => !prev)} 
+        onSuccess={() => setRefreshReviews((prev) => !prev)}
       />
 
-      <ReviewSection mediaId={album.id.toString()} refreshTrigger={refreshReviews} /> 
+      <ReviewSection mediaId={album.id.toString()} refreshTrigger={refreshReviews} />
     </main>
   );
 }
