@@ -1,20 +1,19 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { AnimatedCarousel, CarouselItem } from "@/utils/aceternity/AnimatedTestimonials";
 import { fetchPopularSeries } from "@/services/series/popular";
 import { useTranslations, useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
 
 export const RandomSeriesCarousel = () => {
   const [items, setItems] = useState<CarouselItem[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("RandomMovie");
   const locale = useLocale();
-  const router = useRouter();
 
   useEffect(() => {
-    const load = async () => {
+    let mounted = true;
+    (async () => {
       try {
         const series = await fetchPopularSeries();
         const randomSeries = series.sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -24,29 +23,25 @@ export const RandomSeriesCarousel = () => {
           title: serie.name,
           description: serie.overview?.trim() ? serie.overview : t("noDescription"),
           image: serie.backdropUrl,
-          poster: serie.posterUrl,
+          poster: serie.posterUrl ?? undefined,
           rating: serie.vote_average,
-          buttonLabel: t("detailButton")
+          buttonLabel: t("detailButton"),
         }));
 
-        setItems(formattedItems);
+        if (mounted) setItems(formattedItems);
       } catch (error) {
         console.error("Erro ao carregar séries:", error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
+    })();
+    return () => {
+      mounted = false;
     };
+  }, [locale, t]);
 
-    load();
-  }, [locale]);
-
-  if (loading) {
-    return <p className="text-gray-400 text-center">{t("loading")}</p>;
-  }
-
-  if (items.length === 0) {
-    return <p className="text-gray-400 text-center">{t("notFound")}</p>;
-  }
+  if (loading) return <p className="text-gray-400 text-center">{t("loading")}</p>;
+  if (items.length === 0) return <p className="text-gray-400 text-center">{t("notFound")}</p>;
 
   return (
     <AnimatedCarousel

@@ -1,49 +1,62 @@
-
 import { Series } from "@/types/Series";
+import { apiFetch } from "@/lib/api";
 
-export const fetchOnAirSeries = async (token: string): Promise<Series[]> => {
+type Json = Record<string, unknown>;
+
+function isRecord(v: unknown): v is Json {
+  return typeof v === "object" && v !== null;
+}
+function asArray(v: unknown): Json[] {
+  if (Array.isArray(v)) return v as Json[];
+  if (isRecord(v) && Array.isArray((v as any).results)) return (v as any).results as Json[];
+  if (isRecord(v) && isRecord((v as any).data) && Array.isArray((v as any).data.results)) {
+    return (v as any).data.results as Json[];
+  }
+  return [];
+}
+
+function toSeries(item: Json): Series {
+  const id = Number(item.id ?? 0);
+  const name = String(item.name ?? item.title ?? "").trim();
+  const posterPath = String(item.posterUrl ?? item.poster_path ?? "").trim();
+  const backdropPath = String(item.backdropUrl ?? item.backdrop_path ?? "").trim();
+  const vote_average = Number(item.vote_average ?? 0);
+  const release_date =
+    (item.first_air_date as string) ??
+    (item.release_date as string) ??
+    null;
+  const overview = String(item.overview ?? "").trim();
+
+  const genres: string[] =
+    Array.isArray((item as any).genres)
+      ? ((item as any).genres as unknown[]).map((g) => String(g))
+      : (item as any).genre
+      ? [String((item as any).genre)]
+      : [];
+
+  return {
+    id,
+    name,
+    posterUrl: posterPath ? `https://image.tmdb.org/t/p/w300${posterPath}` : null,
+    backdropUrl: backdropPath
+      ? `https://image.tmdb.org/t/p/original${backdropPath}`
+      : "/fallback.jpg",
+    vote_average,
+    release_date,
+    overview,
+    genres,
+  };
+}
+
+/**
+ * Mantive a assinatura original (aceitando token) para não quebrar chamadas existentes,
+ * mas internamente usamos `apiFetch` com `{ auth: true }`.
+ */
+export const fetchOnAirSeries = async (_token: string): Promise<Series[]> => {
   try {
-    const response = await fetch("http://localhost:8080/series/now/1", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar séries no ar: ${response.status}`);
-    }
-
-    const text = await response.text();
-
-    if (!text) {
-      throw new Error("Resposta da API vazia");
-    }
-
-    const data = JSON.parse(text);
-
-    const results = data.results || data.data?.results || data || [];
-
-    if (!Array.isArray(results)) {
-      console.warn("⚠️ 'results' não é um array:", results);
-      return [];
-    }
-
-    const transformed: Series[] = results.map((serie: any) => ({
-      id: serie.id,
-      name: serie.name,
-      posterUrl: serie.poster_path
-        ? `https://image.tmdb.org/t/p/w300${serie.poster_path}`
-        : "/fallback.jpg",
-      backdropUrl: serie.backdrop_path
-        ? `https://image.tmdb.org/t/p/original${serie.backdrop_path}`
-        : "/fallback.jpg",
-      vote_average: serie.vote_average,
-      release_date: serie.release_date,
-      overview: serie.overview?.trim() ? serie.overview : undefined,
-      genres: serie.genre ? [serie.genre] : ["Desconhecido"],
-    }));
-
-    return transformed;
+    const data = await apiFetch(`/series/now/1`, { auth: true });
+    const results = asArray(data);
+    return results.map(toSeries);
   } catch (error) {
     console.error("❌ Erro ao buscar séries no ar:", error);
     return [];

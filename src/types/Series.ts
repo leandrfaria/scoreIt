@@ -6,5 +6,5 @@ export interface Series {
   vote_average: number;
   release_date: string | null;
   overview: string;
-  genres: string[]; // novo campo
+  genres: string[];
 }

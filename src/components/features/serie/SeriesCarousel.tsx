@@ -60,9 +60,7 @@ export function SeriesCarousel({
     }
   };
 
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
+  const handleDragEnd = () => setIsDragging(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
@@ -91,7 +89,6 @@ export function SeriesCarousel({
           }
         }
       }, autoScrollInterval);
-
       return () => clearInterval(interval);
     }
   }, [autoScroll, autoScrollInterval, series.length]);
@@ -131,11 +128,7 @@ export function SeriesCarousel({
         onTouchEnd={handleDragEnd}
       >
         {series.map((serie) => (
-          <div
-            key={serie.id}
-            className="flex-shrink-0"
-            style={{ width: "190px", maxWidth: "190px" }}
-          >
+          <div key={serie.id} className="flex-shrink-0" style={{ width: "190px", maxWidth: "190px" }}>
             <SeriesCard {...serie} onRemoveSerie={onRemoveSerie} />
           </div>
         ))}
@@ -145,8 +138,9 @@ export function SeriesCarousel({
         <div className="flex gap-4">
           <button
             onClick={() => scroll("left")}
-            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${!showLeftButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
-              }`}
+            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${
+              !showLeftButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
+            }`}
             disabled={!showLeftButton}
             aria-label="Scroll left"
           >
@@ -154,8 +148,9 @@ export function SeriesCarousel({
           </button>
           <button
             onClick={() => scroll("right")}
-            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${!showRightButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
-              }`}
+            className={`group/button flex h-8 w-8 items-center justify-center rounded-full ${
+              !showRightButton ? "opacity-50 cursor-not-allowed" : arrowButtonClass
+            }`}
             disabled={!showRightButton}
             aria-label="Scroll right"
           >

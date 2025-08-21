@@ -18,49 +18,36 @@ const FavouriteSeriesCarouselSection = ({ memberId }: Props) => {
   const { member } = useMember();
 
   useEffect(() => {
-    const loadSeries = async () => {
+    let mounted = true;
+    (async () => {
       const token = localStorage.getItem("authToken");
       const idToUse = memberId ?? String(member?.id);
 
       if (!token || !idToUse) {
         console.error(t("tokenNotFound"));
-        setLoading(false);
+        if (mounted) setLoading(false);
         return;
       }
 
       const data = await fetchFavouriteSeries(token, idToUse);
-      setSeries(data);
-      setLoading(false);
+      if (mounted) {
+        setSeries(data);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
     };
-
-    loadSeries();
   }, [t, memberId, member]);
 
-  if (loading) {
-    return (
-      <div className="text-center py-10 text-white">{t("loadingFavSeries")}</div>
-    );
-  }
-
-  if (series.length === 0) {
-    return (
-      <div className="text-center py-10 text-white">
-        {t("noFavSeries")}
-      </div>
-    );
-  }
+  if (loading) return <div className="text-center py-10 text-white">{t("loadingFavSeries")}</div>;
+  if (series.length === 0) return <div className="text-center py-10 text-white">{t("noFavSeries")}</div>;
 
   const handleRemoveSerie = (id: number) => {
-    setSeries((prevSeries) => prevSeries.filter((serie) => serie.id !== id));
+    setSeries((prev) => prev.filter((s) => s.id !== id));
   };
 
-  return (
-    <SeriesCarousel
-      title={t("SeriesFavoritos")}
-      series={series}
-      onRemoveSerie={handleRemoveSerie}
-    />
-  );
+  return <SeriesCarousel title={t("SeriesFavoritos")} series={series} onRemoveSerie={handleRemoveSerie} />;
 };
 
 export default FavouriteSeriesCarouselSection;
