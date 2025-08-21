@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import LogoLateral from "@/assets/LogoLateral";
 import { FaFilm, FaMusic, FaTv } from "react-icons/fa";
 import { useTabContext } from "@/context/TabContext";
+import { useAuthContext } from "@/context/AuthContext";
 
 // widgets client carregados dinamicamente
 const SearchBar = dynamic(() => import("./SearchBar"), { ssr: false });
@@ -18,6 +19,7 @@ export function Header({ locale }: { locale: string }) {
   const pathname = usePathname();
   const isAuthPage = pathname?.includes("/auth");
   const { activeTab, setActiveTab } = useTabContext();
+  const { isLoggedIn } = useAuthContext();
 
   return (
     <header
@@ -44,36 +46,38 @@ export function Header({ locale }: { locale: string }) {
           <TabSwitcherGuard />
         </div>
 
-        {/* MOBILE — ícones centrais para abas */}
-        <div className="flex lg:hidden items-center justify-center gap-6 absolute left-1/2 -translate-x-1/2">
-          <button
-            onClick={() => setActiveTab("filmes")}
-            aria-label="Filmes"
-            className={`text-xl transition-colors ${
-              activeTab === "filmes" ? "text-white" : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            <FaFilm />
-          </button>
-          <button
-            onClick={() => setActiveTab("musicas")}
-            aria-label="Músicas"
-            className={`text-xl transition-colors ${
-              activeTab === "musicas" ? "text-white" : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            <FaMusic />
-          </button>
-          <button
-            onClick={() => setActiveTab("series")}
-            aria-label="Séries"
-            className={`text-xl transition-colors ${
-              activeTab === "series" ? "text-white" : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            <FaTv />
-          </button>
-        </div>
+        {/* MOBILE — ícones centrais para abas (só aparecem se logado) */}
+        {isLoggedIn && (
+          <div className="flex lg:hidden items-center justify-center gap-6 absolute left-1/2 -translate-x-1/2">
+            <button
+              onClick={() => setActiveTab("filmes")}
+              aria-label="Filmes"
+              className={`text-xl transition-colors ${
+                activeTab === "filmes" ? "text-white" : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              <FaFilm />
+            </button>
+            <button
+              onClick={() => setActiveTab("musicas")}
+              aria-label="Músicas"
+              className={`text-xl transition-colors ${
+                activeTab === "musicas" ? "text-white" : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              <FaMusic />
+            </button>
+            <button
+              onClick={() => setActiveTab("series")}
+              aria-label="Séries"
+              className={`text-xl transition-colors ${
+                activeTab === "series" ? "text-white" : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              <FaTv />
+            </button>
+          </div>
+        )}
 
         {/* LADO DIREITO (DESKTOP) */}
         <div className="hidden lg:flex flex-1 justify-end items-center gap-3 xl:gap-4">
