@@ -12,48 +12,39 @@ const OnAirSeriesCarouselSection = () => {
   const t = useTranslations("NowPlayingCarousel");
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const token = localStorage.getItem("authToken");
+    const controller = new AbortController();
 
-      if (!token) {
-        console.error(t("tokenNotFound"));
-        if (mounted) setLoading(false);
-        return;
-      }
-
-      const data = await fetchOnAirSeries(token);
-
-      if (mounted) {
-        if (!data || data.length === 0) {
-          console.warn(t("emptyListWarning"));
-          setSeries([
-            {
-              id: 9999,
-              name: t("mockMovie.title"),
-              posterUrl: "https://image.tmdb.org/t/p/w300/6DrHO1jr3qVrViUO6s6kFiAGM7.jpg",
-              backdropUrl: "https://image.tmdb.org/t/p/original/rTh4K5uw9HypmpGslcKd4QfHl93.jpg",
-              vote_average: 7.5,
-              release_date: "2024-01-01",
-              overview: t("mockMovie.overview"),
-              genres: [],
-            },
-          ]);
-        } else {
-          setSeries(data);
+    const loadSeries = async () => {
+      try {
+        // Mantemos a assinatura original do service (aceita token), mas ele usa apiFetch internamente.
+        const token = localStorage.getItem("authToken") ?? "";
+        const list = await fetchOnAirSeries(token);
+        if (!controller.signal.aborted) setSeries(list);
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          console.error(e);
+          setSeries([]);
         }
-        setLoading(false);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-    })();
-    return () => {
-      mounted = false;
     };
-  }, [t]);
 
-  if (loading) return <div className="text-center py-10 text-white">{t("loading")}</div>;
-  if (series.length === 0) return <div className="text-center py-10 text-white">{t("noMoviesFound")}</div>;
+    loadSeries();
+    return () => controller.abort();
+  }, []);
 
-  return <SeriesCarousel title={t("seriesTitle")} series={series} />;
+  if (loading) return <div className="text-center py-8 sm:py-10 text-white">{t("loading")}</div>;
+  if (series.length === 0) return <div className="text-center py-8 sm:py-10 text-white">{t("noMoviesFound")}</div>;
+
+  return (
+    <SeriesCarousel
+      title={t("seriesTitle")}
+      series={series}
+      autoScroll
+      autoScrollInterval={6000}
+    />
+  );
 };
 
 export default OnAirSeriesCarouselSection;
