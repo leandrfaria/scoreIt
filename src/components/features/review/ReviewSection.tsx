@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import ReviewCard from "./ReviewCard";
 import { ReviewFromApi, getReviewsByMediaId } from "@/services/review/get_media_review";
@@ -28,83 +28,103 @@ export default function ReviewSection({
   const [sortOption, setSortOption] = useState<SortOption>("date");
   const [ascending, setAscending] = useState(false);
   const [editingReview, setEditingReview] = useState<FullReview | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
 
-  const fetchReviewsWithAuthors = async () => {
+  const abortRef = useRef<AbortController | null>(null);
+
+  const buildAvatar = (displayName: string) =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=222&color=fff`;
+
+  const fetchReviewsWithAuthors = useCallback(async () => {
+    // cancela anterior
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    setError("");
+
     try {
       const reviewList = await getReviewsByMediaId(mediaId);
 
       const reviewsWithAuthors: FullReview[] = await Promise.all(
         reviewList.map(async (review) => {
           try {
-            const member = await fetchMemberById(String(review.memberId));
+            const fetchedMember = await fetchMemberById(String(review.memberId), {
+              signal: controller.signal,
+            });
+
+            const name = fetchedMember?.name || "Usuário desconhecido";
+            const avatar = fetchedMember?.profileImageUrl || buildAvatar(name);
+
             return {
               ...review,
-              memberName: member.name,
-              memberAvatar:
-                member.profileImageUrl ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  member.name
-                )}&background=random&color=fff`,
+              memberName: name,
+              memberAvatar: avatar,
             };
-          } catch (error) {
+          } catch {
+            const name = "Usuário desconhecido";
             return {
               ...review,
-              memberName: "Usuário desconhecido",
-              memberAvatar: `https://ui-avatars.com/api/?name=Anônimo&background=555&color=fff`,
+              memberName: name,
+              memberAvatar: buildAvatar(name),
             };
           }
         })
       );
 
       setReviews(reviewsWithAuthors);
-    } catch (error) {
-      console.error("Erro ao buscar avaliações:", error);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        console.error("Erro ao buscar avaliações:", e);
+        setError("Não foi possível carregar as avaliações no momento.");
+      }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [mediaId]);
 
   useEffect(() => {
     fetchReviewsWithAuthors();
-  }, [mediaId, refreshTrigger]);
+    return () => abortRef.current?.abort();
+  }, [fetchReviewsWithAuthors, refreshTrigger]);
 
   const toggleSort = (option: SortOption) => {
     if (sortOption === option) {
-      setAscending(!ascending);
+      setAscending((prev) => !prev);
     } else {
       setSortOption(option);
       setAscending(false);
     }
   };
 
-  const sortedReviews = [...reviews].sort((a, b) => {
-    if (sortOption === "date") {
-      return ascending
-        ? new Date(a.watchDate).getTime() - new Date(b.watchDate).getTime()
-        : new Date(b.watchDate).getTime() - new Date(a.watchDate).getTime();
+  const sortedReviews = useMemo(() => {
+    const arr = [...reviews];
+    switch (sortOption) {
+      case "date":
+        return arr.sort((a, b) =>
+          ascending
+            ? new Date(a.watchDate).getTime() - new Date(b.watchDate).getTime()
+            : new Date(b.watchDate).getTime() - new Date(a.watchDate).getTime()
+        );
+      case "rating":
+        return arr.sort((a, b) => (ascending ? a.score - b.score : b.score - a.score));
+      case "comments": {
+        const has = (r: FullReview) => (r.memberReview?.trim() ?? "") !== "";
+        return arr.sort((a, b) =>
+          ascending ? Number(has(a)) - Number(has(b)) : Number(has(b)) - Number(has(a))
+        );
+      }
+      default:
+        return arr;
     }
+  }, [reviews, sortOption, ascending]);
 
-    if (sortOption === "rating") {
-      return ascending ? a.score - b.score : b.score - a.score;
-    }
-
-    if (sortOption === "comments") {
-      const hasCommentA = a.memberReview?.trim() !== "";
-      const hasCommentB = b.memberReview?.trim() !== "";
-      return ascending
-        ? Number(hasCommentA) - Number(hasCommentB)
-        : Number(hasCommentB) - Number(hasCommentA);
-    }
-
-    return 0;
-  });
-
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 6);
-  };
+  const handleLoadMore = () => setVisibleCount((prev) => prev + 6);
 
   const renderArrow = (option: SortOption) =>
-    sortOption === option ? (
-      ascending ? <FaArrowUp className="inline ml-1" /> : <FaArrowDown className="inline ml-1" />
-    ) : null;
+    sortOption === option ? (ascending ? <FaArrowUp className="inline ml-1" /> : <FaArrowDown className="inline ml-1" />) : null;
 
   return (
     <section className="bg-[#02070A] py-16 px-4 md:px-10 lg:px-20">
@@ -116,26 +136,40 @@ export default function ReviewSection({
         <button
           onClick={() => toggleSort("rating")}
           className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition"
+          aria-label="Ordenar por avaliação"
         >
           Avaliação {renderArrow("rating")}
         </button>
         <button
           onClick={() => toggleSort("comments")}
           className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition"
+          aria-label="Ordenar por comentários"
         >
           Comentários {renderArrow("comments")}
         </button>
         <button
           onClick={() => toggleSort("date")}
           className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition"
+          aria-label="Ordenar por data"
         >
           Data {renderArrow("date")}
         </button>
       </div>
 
-      {reviews.length === 0 ? (
+      {/* Estados */}
+      {loading && (
+        <p className="text-gray-400">Carregando avaliações...</p>
+      )}
+
+      {error && !loading && (
+        <p className="text-red-400">{error}</p>
+      )}
+
+      {!loading && !error && reviews.length === 0 && (
         <p className="text-gray-400 text-center">Nenhuma avaliação foi registrada ainda.</p>
-      ) : (
+      )}
+
+      {!loading && !error && reviews.length > 0 && (
         <>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {sortedReviews.slice(0, visibleCount).map((review) => (
@@ -148,9 +182,9 @@ export default function ReviewSection({
                 comment={review.memberReview}
                 spoiler={review.spoiler}
                 onEdit={() => setEditingReview(review)}
-                canEdit={!!member && review.memberId === member.id}
-                reviewId={review.id} // ✅ ISSO AQUI FALTAVA, PORRA
-                onDelete={fetchReviewsWithAuthors} // opcional: recarrega após exclusão
+                canEdit={!!member && Number(review.memberId) === Number(member.id)}
+                reviewId={review.id}
+                onDelete={fetchReviewsWithAuthors}
               />
             ))}
           </div>
@@ -171,7 +205,7 @@ export default function ReviewSection({
               isOpen={!!editingReview}
               onClose={() => setEditingReview(null)}
               review={editingReview}
-              onSuccess={fetchReviewsWithAuthors} // atualiza ao editar
+              onSuccess={fetchReviewsWithAuthors}
             />
           )}
         </>
