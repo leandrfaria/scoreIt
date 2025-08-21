@@ -1,20 +1,34 @@
-export const countFollowers = async (memberId: string, token: string): Promise<number> => {
-    const res = await fetch(`http://localhost:8080/followers/${memberId}/countFollowers`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) throw new Error("Erro ao contar seguidores");
-    return await res.json();
-  };
-  
-  export const countFollowing = async (memberId: string, token: string): Promise<number> => {
-    const res = await fetch(`http://localhost:8080/followers/${memberId}/countFollowing`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) throw new Error("Erro ao contar seguindo");
-    return await res.json();
-  };
-  
+import { apiFetch } from "@/lib/api";
+
+/**
+ * Conta seguidores de um membro.
+ */
+export async function countFollowers(
+  memberId: string,
+  token: string,
+  opts?: { signal?: AbortSignal }
+): Promise<number> {
+  const data = await apiFetch(`/followers/${memberId}/countFollowers`, {
+    auth: true,
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+    signal: opts?.signal,
+  });
+  const n = Number(data);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export async function countFollowing(
+  memberId: string,
+  token: string,
+  opts?: { signal?: AbortSignal }
+): Promise<number> {
+  const data = await apiFetch(`/followers/${memberId}/countFollowing`, {
+    auth: true,
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+    signal: opts?.signal,
+  });
+  const n = Number(data);
+  return Number.isFinite(n) ? n : 0;
+}

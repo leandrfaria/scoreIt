@@ -1,11 +1,16 @@
-export const unfollowUser = async (followerId: string, followedId: string, token: string) => {
-    const res = await fetch(`http://localhost:8080/followers/unfollow?followerId=${followerId}&followedId=${followedId}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) throw new Error("Erro ao deixar de seguir usuário");
-    return true;
-  };
-  
+import { apiFetch } from "@/lib/api";
+
+export async function unfollowUser(
+  followerId: string,
+  followedId: string,
+  token: string,
+  opts?: { signal?: AbortSignal }
+): Promise<boolean> {
+  await apiFetch(`/followers/unfollow?followerId=${encodeURIComponent(followerId)}&followedId=${encodeURIComponent(followedId)}`, {
+    auth: true,
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    signal: opts?.signal,
+  });
+  return true;
+}

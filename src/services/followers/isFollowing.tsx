@@ -1,11 +1,16 @@
-export const isFollowing = async (followerId: string, followedId: string, token: string): Promise<boolean> => {
-    const res = await fetch(`http://localhost:8080/followers/isFollowing?followerId=${followerId}&followedId=${followedId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+import { apiFetch } from "@/lib/api";
 
-    if (!res.ok) throw new Error("Erro ao verificar se está seguindo");
-    return await res.json();
-  };
-  
+export async function isFollowing(
+  followerId: string,
+  followedId: string,
+  token: string,
+  opts?: { signal?: AbortSignal }
+): Promise<boolean> {
+  const res = await apiFetch(`/followers/isFollowing?followerId=${encodeURIComponent(followerId)}&followedId=${encodeURIComponent(followedId)}`, {
+    auth: true,
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+    signal: opts?.signal,
+  });
+  return Boolean(res);
+}
