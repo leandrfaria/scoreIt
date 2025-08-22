@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useId, useMemo, useState } from "react";
 import { Dialog } from "@headlessui/react";
 import { FaStar } from "react-icons/fa";
 import DatePicker from "react-datepicker";
@@ -8,11 +9,12 @@ import "@/styles/react-datepicker-dark.css";
 import { postReview } from "@/services/review/post_review";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
-import { useRouter, usePathname } from "next/navigation";
 
 function formatDateTimeLocal(date: Date) {
   const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}`;
 }
 
 export default function RatingModal({
@@ -20,34 +22,48 @@ export default function RatingModal({
   onClose,
   mediaId,
   mediaType,
-  onSuccess, // ✅ NOVA PROP
+  onSuccess,
 }: {
   isOpen: boolean;
   onClose: () => void;
   mediaId: string | number;
   mediaType: "movie" | "series" | "album";
-  onSuccess?: () => void; // ✅ NOVA PROP DEFINIDA
+  onSuccess?: () => void;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
+  const titleId = useId();
+  const descId = useId();
   const { member } = useMember();
+
   const [score, setScore] = useState(0);
   const [watchDate, setWatchDate] = useState<Date | null>(new Date());
   const [memberReview, setMemberReview] = useState("");
   const [spoiler, setSpoiler] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // reset ao abrir
+  useEffect(() => {
+    if (isOpen) {
+      setScore(0);
+      setWatchDate(new Date());
+      setMemberReview("");
+      setSpoiler(false);
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
   const isDateValid = (date: Date | null) => {
     if (!date) return false;
     const now = new Date();
-    const minDate = new Date("2020-01-01");
+    const minDate = new Date("2020-01-01T00:00:00");
     return date <= now && date >= minDate;
   };
 
-  const isReviewValid = memberReview.trim().length <= 250;
+  const reviewLen = memberReview.trim().length;
+  const isReviewValid = reviewLen <= 250;
+  const canSubmit = !!member && score > 0 && !!watchDate && isDateValid(watchDate) && isReviewValid && !isSubmitting;
 
   const handleSubmit = async () => {
-    if (!score || !watchDate || !member || !isDateValid(watchDate) || !isReviewValid) return;
+    if (!canSubmit || !watchDate || !member) return;
     setIsSubmitting(true);
 
     const payload = {
@@ -65,37 +81,47 @@ export default function RatingModal({
 
     if (success) {
       toast.success("Avaliação enviada!");
-      setScore(0);
-      setWatchDate(new Date());
-      setMemberReview("");
-      setSpoiler(false);
       onClose();
-      onSuccess?.(); // ✅ Notifica que teve avaliação nova
+      onSuccess?.();
     } else {
       toast.error("Erro ao enviar avaliação.");
     }
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50" aria-labelledby={titleId} aria-describedby={descId}>
       <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="w-full max-w-lg rounded-lg bg-[#02070A] text-white shadow-lg border border-white/10 p-6 space-y-6">
-          <Dialog.Title className="text-2xl font-bold">Avaliar</Dialog.Title>
+          <Dialog.Title id={titleId} className="text-2xl font-bold">Avaliar</Dialog.Title>
+          <p id={descId} className="sr-only">Defina nota, data, comentário e se contém spoiler.</p>
 
+          {/* Nota */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Sua nota</label>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <FaStar
-                  key={i}
-                  className={`cursor-pointer text-2xl transition ${i <= score ? "text-[var(--color-lightgreen)]" : "text-gray-600"}`}
-                  onClick={() => setScore(i)}
-                />
-              ))}
+            <div role="radiogroup" aria-label="Nota de 1 a 5" className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((i) => {
+                const selected = i <= score;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={`${i} estrela${i > 1 ? "s" : ""}`}
+                    onClick={() => setScore(i)}
+                    className={`cursor-pointer text-2xl transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)] rounded-sm ${
+                      selected ? "text-[var(--color-lightgreen)]" : "text-gray-600"
+                    }`}
+                  >
+                    <FaStar />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
+          {/* Data */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Data que assistiu</label>
             <DatePicker
@@ -106,14 +132,18 @@ export default function RatingModal({
               timeIntervals={15}
               dateFormat="dd/MM/yyyy HH:mm"
               placeholderText="Selecione a data e hora"
-              className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none"
+              className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-lightgreen)]"
               calendarClassName="react-datepicker"
               popperClassName="z-50"
               maxDate={new Date()}
               minDate={new Date("2020-01-01")}
             />
+            {!isDateValid(watchDate) && (
+              <span className="text-xs text-red-400">Data inválida (entre 01/01/2020 e hoje).</span>
+            )}
           </div>
 
+          {/* Review */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">O que achou?</label>
             <textarea
@@ -121,42 +151,44 @@ export default function RatingModal({
               onChange={(e) => setMemberReview(e.target.value)}
               maxLength={250}
               rows={4}
-              className="bg-zinc-800 text-white p-2 rounded border border-white/10 focus:outline-none resize-none"
+              className="bg-zinc-800 text-white p-2 rounded border border-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--color-lightgreen)] resize-none"
               placeholder="Compartilhe sua opinião..."
             />
-            <span className="text-sm text-gray-400">
-              {memberReview.trim().length} / 250 caracteres
+            <span className={`text-sm ${isReviewValid ? "text-gray-400" : "text-red-400"}`}>
+              {reviewLen} / 250 caracteres
             </span>
           </div>
 
+          {/* Spoiler */}
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
-              id="spoiler"
+              id="spoiler-create"
               checked={spoiler}
-              onChange={() => setSpoiler(!spoiler)}
+              onChange={() => setSpoiler((s) => !s)}
               className="accent-red-500"
             />
-            <label htmlFor="spoiler" className="text-sm text-gray-300">
+            <label htmlFor="spoiler-create" className="text-sm text-gray-300">
               Contém spoiler
             </label>
           </div>
 
+          {/* Botões */}
           <div className="flex justify-end gap-4 pt-4">
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded bg-zinc-700 hover:bg-zinc-600 transition"
+              className="px-4 py-2 rounded bg-zinc-700 hover:bg-zinc-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!score || !watchDate || isSubmitting || !isDateValid(watchDate) || !isReviewValid}
-              className="px-6 py-2 rounded bg-[var(--color-darkgreen)] hover:brightness-110 transition font-semibold disabled:opacity-40"
+              disabled={!canSubmit}
+              className="px-6 py-2 rounded bg-[var(--color-darkgreen)] hover:brightness-110 transition font-semibold disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
             >
               {isSubmitting ? (
-                <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                <span className="inline-block animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full align-middle" />
               ) : (
                 "Enviar Avaliação"
               )}

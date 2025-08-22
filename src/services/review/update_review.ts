@@ -1,3 +1,5 @@
+import { apiFetch } from "@/lib/api";
+
 export interface UpdateReviewPayload {
   id: number;
   score: number;
@@ -6,27 +8,22 @@ export interface UpdateReviewPayload {
   spoiler: boolean;
 }
 
-export const updateReview = async (payload: UpdateReviewPayload): Promise<boolean> => {
-  try {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      console.error("❌ Token JWT não encontrado.");
-      return false;
-    }
+type PutOpts = { signal?: AbortSignal };
 
-    const response = await fetch("http://localhost:8080/review/update", {
+export const updateReview = async (
+  payload: UpdateReviewPayload,
+  opts: PutOpts = {}
+): Promise<boolean> => {
+  try {
+    if (!payload?.id || !Number.isFinite(payload.id)) return false;
+
+    await apiFetch("/review/update", {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      auth: true,
+      signal: opts.signal,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-      console.error("❌ Erro ao atualizar avaliação:", response.status, await response.text());
-      return false;
-    }
 
     return true;
   } catch (error) {

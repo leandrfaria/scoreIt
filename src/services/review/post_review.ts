@@ -1,5 +1,7 @@
-interface ReviewPayload {
-  mediaId: string | number; 
+import { apiFetch } from "@/lib/api";
+
+export interface ReviewPayload {
+  mediaId: string | number;
   mediaType: "movie" | "series" | "album";
   memberId: number;
   score: number;
@@ -8,27 +10,23 @@ interface ReviewPayload {
   spoiler: boolean;
 }
 
-export const postReview = async (payload: ReviewPayload): Promise<boolean> => {
-  try {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      console.error("❌ Token JWT não encontrado.");
-      return false;
-    }
+type PostOpts = { signal?: AbortSignal };
 
-    const response = await fetch("http://localhost:8080/review/register", {
+export const postReview = async (
+  payload: ReviewPayload,
+  opts: PostOpts = {}
+): Promise<boolean> => {
+  try {
+    // validação leve
+    if (!payload?.mediaId || !payload?.mediaType) return false;
+
+    await apiFetch("/review/register", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      auth: true,
+      signal: opts.signal,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-      console.error("❌ Erro ao enviar avaliação:", response.status, await response.text());
-      return false;
-    }
 
     return true;
   } catch (error) {

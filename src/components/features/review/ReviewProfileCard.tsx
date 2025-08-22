@@ -16,6 +16,8 @@ type ReviewProfileCardProps = {
   reviewId?: number;
 };
 
+const FALLBACK_POSTER = "/fallback.jpg";
+
 export default function ReviewProfileCard({
   title,
   posterUrl,
@@ -27,14 +29,16 @@ export default function ReviewProfileCard({
   reviewId,
 }: ReviewProfileCardProps) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [posterSrc, setPosterSrc] = useState(posterUrl || FALLBACK_POSTER);
+  const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!reviewId) {
-      console.error("❌ ID da review ausente.");
-      return;
-    }
+    if (!reviewId || deleting) return;
+    setDeleting(true);
 
     const success = await deleteReview(reviewId);
+    setDeleting(false);
+
     if (success) {
       toast.success("Avaliação excluída com sucesso!", {
         style: {
@@ -44,9 +48,7 @@ export default function ReviewProfileCard({
         },
         icon: "🗑️",
       });
-
       onDelete?.();
-      if (!onDelete) location.reload();
     } else {
       toast.error("Erro ao deletar a avaliação.");
     }
@@ -58,11 +60,11 @@ export default function ReviewProfileCard({
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       if (rating >= i) {
-        stars.push(<FaStar key={i} className="text-base text-[var(--color-lightgreen)]" />);
+        stars.push(<FaStar key={i} className="text-base text-[var(--color-lightgreen)]" aria-hidden />);
       } else if (rating >= i - 0.5) {
-        stars.push(<FaStarHalfAlt key={i} className="text-base text-[var(--color-lightgreen)]" />);
+        stars.push(<FaStarHalfAlt key={i} className="text-base text-[var(--color-lightgreen)]" aria-hidden />);
       } else {
-        stars.push(<FaRegStar key={i} className="text-base text-gray-700" />);
+        stars.push(<FaRegStar key={i} className="text-base text-gray-700" aria-hidden />);
       }
     }
     return stars;
@@ -70,13 +72,14 @@ export default function ReviewProfileCard({
 
   return (
     <div className="relative">
-      <div className="bg-[#0D1117] rounded-lg p-6 min-w-[360px] max-w-[360px] min-h-[260px] shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
+      <article className="bg-[#0D1117] rounded-lg p-6 min-w-[360px] max-w-[360px] min-h-[260px] shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
         {canEdit && (
           <div className="absolute top-4 right-4 z-10">
             <button
               onClick={() => setShowConfirm(true)}
-              className="text-white/60 hover:text-red-500"
+              className="text-white/70 hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 rounded"
               title="Excluir"
+              aria-label="Excluir avaliação"
             >
               <FaTrash />
             </button>
@@ -85,37 +88,43 @@ export default function ReviewProfileCard({
 
         <div className="flex gap-4 mb-4 pr-8">
           <img
-            src={posterUrl}
+            src={posterSrc}
             alt={title}
+            onError={() => setPosterSrc(FALLBACK_POSTER)}
             className="w-16 h-24 object-cover rounded-md border border-white/10"
           />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="text-white font-semibold text-base line-clamp-2 pr-4">{title}</h3>
-            <p className="text-sm text-gray-400">
-              {new Date(date).toLocaleDateString("pt-BR")}
-            </p>
+            <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString("pt-BR")}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 mb-3">{renderStars()}</div>
+        <div className="flex items-center gap-1 mb-3" aria-label={`Nota: ${rating} de 5`}>
+          {renderStars()}
+        </div>
 
         {comment?.trim() && (
           <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">
             {comment}
           </p>
         )}
-      </div>
+      </article>
 
       {showConfirm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-          <div className="bg-[#0D1117] p-6 rounded-lg shadow-md border border-white/10 w-[90%] max-w-md">
-            <h2 className="text-white text-lg font-semibold mb-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-title-profile"
+            className="bg-[#0D1117] p-6 rounded-lg shadow-md border border-white/10 w-[90%] max-w-md"
+          >
+            <h2 id="confirm-title-profile" className="text-white text-lg font-semibold mb-4">
               Tem certeza que deseja excluir esta avaliação?
             </h2>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 border border-gray-500 text-gray-300 hover:bg-gray-700 rounded transition"
+                className="px-4 py-2 border border-gray-500 text-gray-300 hover:bg-gray-700 rounded transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
               >
                 Cancelar
               </button>
@@ -125,9 +134,10 @@ export default function ReviewProfileCard({
                   e.stopPropagation();
                   handleDelete();
                 }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               >
-                Confirmar
+                {deleting ? "Excluindo..." : "Confirmar"}
               </button>
             </div>
           </div>
@@ -135,5 +145,4 @@ export default function ReviewProfileCard({
       )}
     </div>
   );
-
 }

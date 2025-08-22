@@ -10,52 +10,61 @@ type MediaType = "movie" | "series" | "album";
 export type UnifiedMedia = {
   id: number | string;
   title: string;
-  posterUrl: string; // precisa ser sempre string
+  posterUrl: string;
 };
 
+const FALLBACK_POSTER = "/fallback.jpg";
+
+function pickString(...vals: Array<string | null | undefined>): string {
+  for (const v of vals) {
+    if (typeof v === "string" && v.trim() !== "") return v;
+  }
+  return FALLBACK_POSTER;
+}
+
 export const fetchMediaById = async (
-  id: string,
+  id: string | number,
   mediaType: MediaType
 ): Promise<UnifiedMedia | null> => {
-  const token = localStorage.getItem("authToken");
-  if (!token) {
-    console.error("❌ Token JWT não encontrado.");
+  if (id === undefined || id === null || String(id).trim() === "") return null;
+  if (!mediaType) return null;
+
+  try {
+    switch (mediaType) {
+      case "movie": {
+        const movie: Movie | null = await fetchMovieById(String(id));
+        if (!movie) return null;
+        return {
+          id: movie.id,
+          title: movie.title,
+          posterUrl: pickString(movie.posterUrl, movie.backdropUrl),
+        };
+      }
+      case "series": {
+        const serie: Series | null = await fetchSerieById(String(id));
+        if (!serie) return null;
+        return {
+          id: serie.id,
+          title: serie.name,
+          posterUrl: pickString(serie.posterUrl, serie.backdropUrl),
+        };
+      }
+      case "album": {
+        const album: Album | null = await fetchAlbumById(String(id));
+        if (!album) return null;
+        return {
+          id: album.id,
+          title: album.name,
+          posterUrl: pickString(album.imageUrl),
+        };
+      }
+      default: {
+        console.error(`❌ Tipo de mídia inválido: ${mediaType}`);
+        return null;
+      }
+    }
+  } catch (error) {
+    console.error("❌ Erro ao buscar mídia unificada:", error);
     return null;
-  }
-  if (!id || !mediaType) return null;
-
-  switch (mediaType) {
-    case "movie": {
-      const movie: Movie | null = await fetchMovieById(id);
-      if (!movie) return null;
-      return {
-        id: movie.id,
-        title: movie.title,
-        // 👇 evita o erro de tipo: se poster vier null, usa o backdrop (string)
-        posterUrl: movie.posterUrl ?? movie.backdropUrl,
-      };
-    }
-    case "series": {
-      const serie: Series | null = await fetchSerieById(id);
-      if (!serie) return null;
-      return {
-        id: serie.id,
-        title: serie.name,
-        posterUrl: serie.posterUrl ?? serie.backdropUrl, // <- garante string
-      };
-    }
-
-    case "album": {
-      const album: Album | null = await fetchAlbumById(id);
-      if (!album) return null;
-      return {
-        id: album.id,
-        title: album.name,
-        posterUrl: album.imageUrl, // já retorna string ("" se faltar)
-      };
-    }
-    default:
-      console.error(`❌ Tipo de mídia inválido: ${mediaType}`);
-      return null;
   }
 };

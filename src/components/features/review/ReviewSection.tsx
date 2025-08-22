@@ -37,7 +37,6 @@ export default function ReviewSection({
     `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=222&color=fff`;
 
   const fetchReviewsWithAuthors = useCallback(async () => {
-    // cancela anterior
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -46,7 +45,7 @@ export default function ReviewSection({
     setError("");
 
     try {
-      const reviewList = await getReviewsByMediaId(mediaId);
+      const reviewList = await getReviewsByMediaId(mediaId, { signal: controller.signal });
 
       const reviewsWithAuthors: FullReview[] = await Promise.all(
         reviewList.map(async (review) => {
@@ -132,24 +131,25 @@ export default function ReviewSection({
         Avaliações da comunidade
       </h2>
 
-      <div className="flex flex-wrap gap-4 mb-10 text-white">
+      {/* Barra de ordenação */}
+      <div className="flex flex-wrap gap-2 sm:gap-4 mb-10 text-white">
         <button
           onClick={() => toggleSort("rating")}
-          className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition"
+          className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
           aria-label="Ordenar por avaliação"
         >
           Avaliação {renderArrow("rating")}
         </button>
         <button
           onClick={() => toggleSort("comments")}
-          className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition"
+          className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
           aria-label="Ordenar por comentários"
         >
           Comentários {renderArrow("comments")}
         </button>
         <button
           onClick={() => toggleSort("date")}
-          className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition"
+          className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
           aria-label="Ordenar por data"
         >
           Data {renderArrow("date")}
@@ -157,13 +157,9 @@ export default function ReviewSection({
       </div>
 
       {/* Estados */}
-      {loading && (
-        <p className="text-gray-400">Carregando avaliações...</p>
-      )}
+      {loading && <p className="text-gray-400">Carregando avaliações...</p>}
 
-      {error && !loading && (
-        <p className="text-red-400">{error}</p>
-      )}
+      {error && !loading && <p className="text-red-400">{error}</p>}
 
       {!loading && !error && reviews.length === 0 && (
         <p className="text-gray-400 text-center">Nenhuma avaliação foi registrada ainda.</p>
@@ -193,7 +189,7 @@ export default function ReviewSection({
             <div className="flex justify-center mt-10">
               <button
                 onClick={handleLoadMore}
-                className="px-6 py-2 bg-[var(--color-darkgreen)] text-white rounded hover:brightness-110 transition"
+                className="px-6 py-2 bg-[var(--color-darkgreen)] text-white rounded hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
               >
                 Ver mais
               </button>

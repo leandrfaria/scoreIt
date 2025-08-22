@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMember } from "@/context/MemberContext";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import ReviewProfileCard from "./ReviewProfileCard";
@@ -33,35 +33,54 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
   const { member } = useMember();
   const [reviews, setReviews] = useState<ReviewWithMediaData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string>("");
+
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const userIdToUse = useMemo(() => memberId || (member?.id ? String(member.id) : ""), [memberId, member?.id]);
 
   const fetchReviews = async () => {
-    const token = localStorage.getItem("authToken");
-    const idToUse = memberId || member?.id;
+    if (!userIdToUse) {
+      setLoading(false);
+      return;
+    }
 
-    if (!token || !idToUse) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
-      const res = await getReviewsByMemberId(Number(idToUse), token);
+      setLoading(true);
+      setErr("");
 
-      const reviewsWithMedia: ReviewWithMediaData[] = await Promise.all(
+      // service atualizado não precisa de token; aceita opts.signal
+      const res = await getReviewsByMemberId(Number(userIdToUse), { signal: controller.signal });
+
+      // enriquece com dados de mídia (em paralelo)
+      const enriched: (ReviewWithMediaData | null)[] = await Promise.all(
         res.map(async (review) => {
-          const media = await fetchMediaById(review.mediaId, review.mediaType);
-          if (!media) return null;
-          return {
-            ...review,
-            title: media.title,
-            posterUrl: media.posterUrl,
-          };
+          try {
+            const media = await fetchMediaById(review.mediaId, review.mediaType);
+            if (!media) return null;
+            return { ...review, title: media.title, posterUrl: media.posterUrl };
+          } catch {
+            return null;
+          }
         })
-      ).then((results) => results.filter((r): r is ReviewWithMediaData => r !== null));
-
-      const sorted = reviewsWithMedia.sort(
-        (a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime()
       );
 
-      setReviews(sorted);
-    } catch (error) {
-      console.error("Erro ao buscar reviews:", error);
+      const valid = enriched.filter((x): x is ReviewWithMediaData => x !== null);
+
+      // ordena por data da review (mais recente primeiro)
+      valid.sort((a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime());
+
+      setReviews(valid);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        console.error("Erro ao buscar reviews:", e);
+        setErr("Não foi possível carregar suas avaliações agora.");
+      }
     } finally {
       setLoading(false);
     }
@@ -69,19 +88,48 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
 
   useEffect(() => {
     fetchReviews();
-  }, [memberId, member]);
+    return () => abortRef.current?.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userIdToUse]);
 
   const scrollContainer = (dir: "left" | "right") => {
-    const container = document.getElementById("review-carousel");
-    if (!container) return;
+    if (!carouselRef.current) return;
     const scrollAmount = 350;
-    container.scrollBy({ left: dir === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+    carouselRef.current.scrollBy({ left: dir === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
   };
 
   if (loading) {
     return (
       <Container>
-        <div className="text-white py-10 text-center">Carregando avaliações...</div>
+        <div className="py-10">
+          <h2 className="text-2xl font-bold text-white mb-6 px-4 sm:px-6 lg:px-20">
+            {memberId ? "Últimas avaliações do usuário" : "Suas últimas avaliações"}
+          </h2>
+          {/* Skeletons */}
+          <div className="px-4 sm:px-6 lg:px-20 flex overflow-hidden gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="min-w-[360px] max-w-[360px] rounded-lg border border-white/10 bg-[#0D1117] p-6 animate-pulse">
+                <div className="flex gap-4 mb-4">
+                  <div className="w-16 h-24 bg-white/10 rounded" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-white/10 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-white/10 rounded w-1/3" />
+                  </div>
+                </div>
+                <div className="h-4 bg-white/10 rounded w-1/2 mb-3" />
+                <div className="h-3 bg-white/10 rounded w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (err) {
+    return (
+      <Container>
+        <div className="text-red-400 py-10 text-center">{err}</div>
       </Container>
     );
   }
@@ -103,21 +151,21 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
       {/* Botão esquerda */}
       <button
         onClick={() => scrollContainer("left")}
-        className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition"
+        aria-label="Rolagem para a esquerda"
+        className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
       >
         <FaChevronLeft className="text-white" />
       </button>
 
       {/* Carrossel */}
       <div
+        ref={carouselRef}
         id="review-carousel"
         className="px-4 sm:px-6 lg:px-20 flex overflow-x-auto gap-6 scroll-smooth py-2"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         <style>{`
-          #review-carousel::-webkit-scrollbar {
-            display: none;
-          }
+          #review-carousel::-webkit-scrollbar { display: none; }
         `}</style>
 
         {reviews.map((review) => (
@@ -138,11 +186,11 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
       {/* Botão direita */}
       <button
         onClick={() => scrollContainer("right")}
-        className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition"
+        aria-label="Rolagem para a direita"
+        className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
       >
         <FaChevronRight className="text-white" />
       </button>
     </section>
-
   );
 }

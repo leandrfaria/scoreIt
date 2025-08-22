@@ -1,36 +1,23 @@
-export const deleteReview = async (reviewId: number | string): Promise<boolean> => {
+import { apiFetch } from "@/lib/api";
+
+type DeleteOpts = { signal?: AbortSignal };
+
+export const deleteReview = async (
+  reviewId: number | string,
+  opts: DeleteOpts = {}
+): Promise<boolean> => {
+  const idStr = String(reviewId ?? "").trim();
+  if (!idStr) return false;
+
   try {
-    const token = localStorage.getItem("authToken");
-
-    if (!token) {
-      console.error("❌ Token JWT não encontrado.");
-      return false;
-    }
-
-    const url = `http://localhost:8080/review/delete/${reviewId}`;
-    console.log("🧨 URL da requisição:", url);
-    console.log("🔐 Token usado:", token);
-
-    const response = await fetch(url, {
+    await apiFetch(`/review/delete/${idStr}`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      auth: true,
+      signal: opts.signal,
     });
-
-    const text = await response.text();
-    console.log("📦 Resposta da API:", text);
-
-    if (!response.ok) {
-      console.error("❌ Erro ao deletar avaliação:", response.status, text);
-      return false;
-    }
-
-    console.log("✅ Avaliação deletada com sucesso!");
     return true;
   } catch (error) {
-    console.error("❌ Erro inesperado ao deletar avaliação:", error);
+    console.error("❌ Erro ao deletar avaliação:", error);
     return false;
   }
 };
