@@ -27,8 +27,11 @@ function toMember(u: any): Member {
   };
 }
 
-// Lista ou "self" (caso o endpoint retorne o próprio quando autenticado)
-// useJwtId: tenta anexar o id do JWT em /member/get/{id}
+/**
+ * Lista ou "self" (caso o endpoint retorne o próprio quando autenticado)
+ * useJwtId: tenta anexar o id do JWT em /member/get/{id}
+ * Retém assinatura antiga para compatibilidade: Member | Member[] | null
+ */
 export async function fetchMembers(
   useJwtId = false,
   opts?: { signal?: AbortSignal }
@@ -49,12 +52,8 @@ export async function fetchMembers(
   }
 
   const data: any = await apiFetch(path, { auth: true, signal: opts?.signal });
-  if (Array.isArray(data)) {
-    return data.map(toMember);
-  }
-  if (data && typeof data === "object") {
-    return toMember(data);
-  }
+  if (Array.isArray(data)) return data.map(toMember);
+  if (data && typeof data === "object") return toMember(data);
   return null;
 }
 
@@ -66,6 +65,35 @@ export async function fetchMemberById(
   const data: any = await apiFetch(path, { auth: true, signal: opts?.signal });
   if (!data || typeof data !== "object") return null;
   return toMember(data);
+}
+
+/**
+ * ✅ Novo: sempre retorna **um** membro (ou null).
+ * Usa o id do JWT quando possível; caso contrário, tenta `fetchMembers(true)`
+ * e “desempacota” o resultado para Member | null.
+ */
+export async function fetchCurrentMember(opts?: { signal?: AbortSignal }): Promise<Member | null> {
+  // 1) tenta extrair o id do JWT e buscar diretamente
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      try {
+        const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
+        const decoded = jwtDecode<CustomJwtPayload>(raw);
+        if (decoded?.id != null) {
+          const byId = await fetchMemberById(String(decoded.id), opts);
+          if (byId) return byId;
+        }
+      } catch {
+        // ignore e tenta fallback
+      }
+    }
+  }
+
+  // 2) fallback: usa fetchMembers(true) e desempacota caso venha lista
+  const data = await fetchMembers(true, opts);
+  if (!data) return null;
+  return Array.isArray(data) ? (data[0] ?? null) : data;
 }
 
 type UpdatePayload = Partial<
@@ -89,7 +117,7 @@ export async function updateMember(
     method: "PUT",
     auth: true,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(jsonBody), // <- fixa o erro de tipo
+    body: JSON.stringify(jsonBody),
     signal: opts?.signal,
   });
 
