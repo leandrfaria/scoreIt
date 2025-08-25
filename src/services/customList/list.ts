@@ -8,12 +8,12 @@ import { Series } from "@/types/Series";
 import { Album } from "@/types/Album";
 
 export type MediaType = (Movie | Series | Album) & {
-  internalId: number;          // id do item dentro da tabela de customList content
-  posterUrl?: string | null;   // filmes/séries
-  imageUrl?: string | null;    // álbuns
+  internalId: number;
+  posterUrl?: string | null;
+  imageUrl?: string | null;
 };
 
-type Fetcher = (id: string) => Promise<Movie | Series | Album | null>;
+type Fetcher = (id: string, locale: string) => Promise<Movie | Series | Album | null>;
 
 const fetchMap: Record<"movie" | "series" | "album", Fetcher> = {
   movie: fetchMovieById,
@@ -25,7 +25,6 @@ const fetchMap: Record<"movie" | "series" | "album", Fetcher> = {
 function validCustomItem(item: CustomList): boolean {
   if (!item.mediaId || item.mediaId === "null") return false;
 
-  // séries devem ser numéricas, filme não pode ser id base64 (22 chars) no seu backend, etc.
   if (item.mediaType === "series" && isNaN(Number(item.mediaId))) return false;
   if (item.mediaType === "movie" && /^[A-Za-z0-9]{22}$/.test(item.mediaId)) return false;
 
@@ -38,14 +37,10 @@ function coerceType(t: string): "movie" | "series" | "album" | null {
   return null;
 }
 
-// ---------- API ----------
-/**
- * Busca conteúdo de uma lista específica de um membro e resolve os metadados de cada mídia.
- * Usa apiFetch (com JWT automático em client), valida itens, e ignora os que falharem.
- */
 export async function fetchListContent(
   memberId: number,
   listName: string,
+  locale: string, // Adicionar locale como parâmetro
   opts?: { signal?: AbortSignal }
 ): Promise<MediaType[]> {
   const items = await apiFetch(`/customList/getContent/${memberId}/${encodeURIComponent(listName)}`, {
@@ -62,7 +57,7 @@ export async function fetchListContent(
         const type = coerceType(item.mediaType);
         if (!type) return null;
 
-        const media = await fetchMap[type](String(item.mediaId));
+        const media = await fetchMap[type](String(item.mediaId), locale);
         return media ? ({ ...media, internalId: item.id } as MediaType) : null;
       } catch {
         return null;
@@ -126,12 +121,15 @@ export async function removeContentFromList(
 /**
  * Busca todas as listas de um membro.
  */
+// services/customList/list.ts
 export async function fetchMemberLists(
   token: string,
   memberId: number,
+  language: string, // Novo parâmetro para idioma
   opts?: { signal?: AbortSignal }
 ): Promise<CustomList[]> {
-  const lists = await apiFetch(`/customList/getList/${memberId}`, {
+  const url = `/customList/getList/${memberId}?language=${encodeURIComponent(language)}`;
+  const lists = await apiFetch(url, {
     auth: true,
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },

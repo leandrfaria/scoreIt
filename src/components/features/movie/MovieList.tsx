@@ -7,6 +7,7 @@ import { Movie } from "@/types/Movie";
 import { useTranslations } from "next-intl";
 import { MovieCard } from "./MovieCard";
 import { FaSearch } from "react-icons/fa";
+import { useLocale } from "next-intl";
 import { X } from "lucide-react";
 
 function GridSkeleton() {
@@ -44,6 +45,8 @@ export function MovieList() {
   const maxPage = 500;
   const searchRef = useRef<HTMLInputElement | null>(null);
   const mobileSearchRef = useRef<HTMLInputElement | null>(null);
+  const locale = useLocale(); // retorna 'pt' ou 'en'
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -65,7 +68,8 @@ export function MovieList() {
           page,
           selectedYear ? parseInt(selectedYear) : undefined,
           selectedGenre ? parseInt(selectedGenre) : undefined,
-          debouncedSearchTerm || undefined
+          debouncedSearchTerm || undefined,
+          locale // <- adiciona o locale aqui
         );
         if (!controller.signal.aborted) setMovies(moviesData);
       } catch (error) {
@@ -76,7 +80,8 @@ export function MovieList() {
     };
     getMovies();
     return () => controller.abort();
-  }, [page, selectedYear, selectedGenre, debouncedSearchTerm]);
+  }, [page, selectedYear, selectedGenre, debouncedSearchTerm, locale]);
+
 
   useEffect(() => {
     const loadGenres = async () => {

@@ -1,9 +1,41 @@
+// services/movie/fetch_movie_by_id.ts
 import { apiFetch } from "@/lib/api";
 import { Movie } from "@/types/Movie";
+import { mapNextIntlToTMDB, isTMDBLocale } from "@/i18n/localeMapping";
 
-export const fetchMovieById = async (id: string): Promise<Movie | null> => {
+export const fetchMovieById = async (id: string, locale?: any): Promise<Movie | null> => {
+  if (!id) {
+    console.error("fetchMovieById: id vazio");
+    return null;
+  }
+
+  let localeParam = "en-US"; // Padrão para TMDB
+  
+  // Se locale for um objeto (pode acontecer em alguns casos), extrair a string
+  let localeString = locale;
+  if (locale && typeof locale === 'object') {
+    if (locale.locale) localeString = locale.locale;
+    else if (locale.language) localeString = locale.language;
+    else localeString = String(locale);
+  }
+  
+  // Se for uma string válida, mapear para o formato TMDB
+  if (typeof localeString === "string" && localeString.trim() !== "") {
+    localeParam = isTMDBLocale(localeString) ? localeString : mapNextIntlToTMDB(localeString);
+  }
+
+  const encodedId = encodeURIComponent(id);
+  const encodedLocale = encodeURIComponent(localeParam);
+  const url = `/movie/${encodedId}/details?language=${encodedLocale}`;
+
   try {
-    const data: any = await apiFetch(`/movie/${id}/details`, { auth: true });
+    console.debug("[fetchMovieById] requesting:", url);
+    const data: any = await apiFetch(url, { auth: true });
+
+    if (!data) {
+      console.warn("[fetchMovieById] resposta vazia (null/undefined)", url);
+      return null;
+    }
 
     const poster = data.posterUrl ?? data.poster_path ?? null;
     const backdrop = data.backdropUrl ?? data.backdrop_path ?? null;
@@ -34,8 +66,8 @@ export const fetchMovieById = async (id: string): Promise<Movie | null> => {
       recommendations: data.recommendations || [],
       similar: data.similar || [],
     };
-  } catch (error) {
-    console.error("Erro ao buscar filme:", error);
+  } catch (error: any) {
+    console.error("[fetchMovieById] erro ao buscar filme:", { url, message: error?.message ?? error, error });
     return null;
   }
 };

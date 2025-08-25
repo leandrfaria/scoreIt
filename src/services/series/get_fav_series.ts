@@ -1,5 +1,6 @@
 import { Series } from "@/types/Series";
 import { apiFetch } from "@/lib/api";
+import { mapNextIntlToTMDB } from "@/i18n/localeMapping";
 
 type Json = Record<string, unknown>;
 
@@ -39,10 +40,11 @@ function toSeries(item: Json): Series {
   const overview = String(item.overview ?? "").trim();
 
   const genres: string[] = Array.isArray((item as any).genres)
-    ? (item as any).genres.map((g: unknown) => String(g))
+    ? (item as any).genres.map((g: any) => String(g.name ?? g)) // pega o nome se existir
     : (item as any).genre
     ? [String((item as any).genre)]
     : [];
+
 
   return {
     id,
@@ -63,16 +65,65 @@ function toSeries(item: Json): Series {
  */
 export const fetchFavouriteSeries = async (
   _token: string,
-  memberId: string
+  memberId: string,
+  locale: string
 ): Promise<Series[]> => {
   if (!memberId) return [];
 
   try {
-    const data = await apiFetch(`/series/favorites/${memberId}`, { auth: true });
-    const results = asArray(data);
+    const tmdbLocale = mapNextIntlToTMDB(locale);
+    const fallbackLocale = locale.startsWith("pt") ? "en-US" : "pt-BR";
+
+    // Busca no idioma solicitado
+    const data: any = await apiFetch(`/series/favorites/${memberId}?language=${tmdbLocale}`, { auth: true });
+    let results = asArray(data);
+
+    // Se resultados estiverem incompletos, busca fallback
+    if (results.length === 0 || hasIncompleteTranslations(results)) {
+      console.log("Tentando fallback para:", fallbackLocale);
+      const fallbackData: any = await apiFetch(`/series/favorites/${memberId}?language=${fallbackLocale}`, { auth: true });
+      const fallbackResults = asArray(fallbackData);
+
+      // Mescla os resultados
+      results = mergeResults(results, fallbackResults);
+    }
+
     return results.map(toSeries).filter((s) => s.id !== 0);
   } catch (error) {
     console.error("❌ Erro ao buscar séries favoritas:", error);
     return [];
   }
 };
+
+// 🔹 Verifica traduções incompletas
+function hasIncompleteTranslations(results: any[]): boolean {
+  const incompleteCount = results.filter(
+    (series) => !series.name || series.name === "" || !series.overview || series.overview === ""
+  ).length;
+
+  return incompleteCount > results.length / 2;
+}
+
+// 🔹 Mescla resultados
+function mergeResults(primary: any[], fallback: any[]): any[] {
+  const merged = [...primary];
+
+  fallback.forEach((fbSeries) => {
+    const existingIndex = merged.findIndex((s) => s.id === fbSeries.id);
+
+    if (existingIndex === -1) {
+      merged.push(fbSeries);
+    } else {
+      const existing = merged[existingIndex];
+      if (!existing.name || !existing.overview) {
+        merged[existingIndex] = {
+          ...existing,
+          name: existing.name || fbSeries.name,
+          overview: existing.overview || fbSeries.overview,
+        };
+      }
+    }
+  });
+
+  return merged;
+}

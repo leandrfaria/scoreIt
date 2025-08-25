@@ -1,24 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { fetchOnAirSeries } from "@/services/series/on_air";
 import { Series } from "@/types/Series";
 import { SeriesCarousel } from "@/components/features/serie/SeriesCarousel";
-import { useTranslations } from "next-intl";
 
 const OnAirSeriesCarouselSection = () => {
   const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("NowPlayingCarousel");
+  const locale = useLocale();
 
   useEffect(() => {
     const controller = new AbortController();
 
     const loadSeries = async () => {
       try {
-        // Mantemos a assinatura original do service (aceita token), mas ele usa apiFetch internamente.
         const token = localStorage.getItem("authToken") ?? "";
-        const list = await fetchOnAirSeries(token);
+        const list = await fetchOnAirSeries(token, locale);
         if (!controller.signal.aborted) setSeries(list);
       } catch (e) {
         if (!controller.signal.aborted) {
@@ -32,7 +32,7 @@ const OnAirSeriesCarouselSection = () => {
 
     loadSeries();
     return () => controller.abort();
-  }, []);
+  }, [locale]);
 
   if (loading) return <div className="text-center py-8 sm:py-10 text-white">{t("loading")}</div>;
   if (series.length === 0) return <div className="text-center py-8 sm:py-10 text-white">{t("noMoviesFound")}</div>;

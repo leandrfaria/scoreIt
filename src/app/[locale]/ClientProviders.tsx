@@ -15,26 +15,34 @@ const Header = dynamic(
 
 type Messages = Record<string, unknown>;
 
+// Adicione esta função de validação
+const isValidLocale = (locale: string): locale is "pt" | "en" => {
+  return locale === "pt" || locale === "en";
+};
+
 export default function ClientProviders({
   locale,
   messages,
   children,
 }: {
-  locale: "pt" | "en";
-  messages: Messages;
+  locale: string;
+  messages: any;
   children: React.ReactNode;
 }) {
+  // Valide o locale antes de passar para o NextIntlClientProvider
+  const validLocale = isValidLocale(locale) ? locale : "pt";
+
   return (
     <MemberProvider>
       <AuthProvider>
         <NextIntlClientProvider
-          locale={locale}
+          locale={validLocale} // Use o locale validado aqui
           messages={messages}
           timeZone="America/Sao_Paulo"
           now={new Date()}
         >
           <TabProvider>
-            <Header locale={locale} />
+            <Header locale={validLocale} /> {/* Use o mesmo locale validado aqui */}
             <Toaster
               position="top-center"
               toastOptions={{

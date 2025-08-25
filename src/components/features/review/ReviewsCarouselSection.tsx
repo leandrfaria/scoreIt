@@ -7,6 +7,7 @@ import ReviewProfileCard from "./ReviewProfileCard";
 import { getReviewsByMemberId } from "@/services/review/get_member_review";
 import { fetchMediaById } from "@/services/review/fetchMediaById";
 import { Container } from "@/components/layout/Others/Container";
+import { useLocale } from "next-intl";
 
 interface Props {
   memberId?: string;
@@ -37,8 +38,12 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
 
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const locale = useLocale(); // retorna string como 'en', 'pt-BR' etc.
 
-  const userIdToUse = useMemo(() => memberId || (member?.id ? String(member.id) : ""), [memberId, member?.id]);
+  const userIdToUse = useMemo(
+    () => memberId || (member?.id ? String(member.id) : ""),
+    [memberId, member?.id]
+  );
 
   const fetchReviews = async () => {
     if (!userIdToUse) {
@@ -46,33 +51,49 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
       return;
     }
 
-    abortRef.current?.abort();
+    // Aborta requisição anterior se existir
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
     const controller = new AbortController();
     abortRef.current = controller;
+
+    // Prioriza locale do next-intl, se não existir usa navigator.language, senão 'en'
+    const localeToUse =
+      (typeof locale === "string" && locale.trim() !== ""
+        ? locale
+        : typeof navigator !== "undefined"
+        ? navigator.language || "en"
+        : "en") ?? "en";
 
     try {
       setLoading(true);
       setErr("");
 
-      // service atualizado não precisa de token; aceita opts.signal
-      const res = await getReviewsByMemberId(Number(userIdToUse), { signal: controller.signal });
+      const res = await getReviewsByMemberId(Number(userIdToUse), {
+        signal: controller.signal,
+      });
 
-      // enriquece com dados de mídia (em paralelo)
-      const enriched: (ReviewWithMediaData | null)[] = await Promise.all(
+      // Verifica se a requisição não foi abortada antes de processar
+      if (controller.signal.aborted) return;
+
+      const enriched = await Promise.all(
         res.map(async (review) => {
           try {
-            const media = await fetchMediaById(review.mediaId, review.mediaType);
-            if (!media) return null;
-            return { ...review, title: media.title, posterUrl: media.posterUrl };
+            // <-- aqui passamos o locale para buscar título no idioma correto
+            const media = await fetchMediaById(review.mediaId, review.mediaType, localeToUse);
+            return media ? { ...review, title: media.title, posterUrl: media.posterUrl } : null;
           } catch {
             return null;
           }
         })
       );
 
-      const valid = enriched.filter((x): x is ReviewWithMediaData => x !== null);
+      // Verifica novamente se não foi abortado
+      if (controller.signal.aborted) return;
 
-      // ordena por data da review (mais recente primeiro)
+      const valid = enriched.filter(Boolean) as ReviewWithMediaData[];
       valid.sort((a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime());
 
       setReviews(valid);
@@ -82,15 +103,24 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
         setErr("Não foi possível carregar suas avaliações agora.");
       }
     } finally {
-      setLoading(false);
+      // Só atualiza o loading se não foi abortado
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchReviews();
-    return () => abortRef.current?.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userIdToUse]);
+
+    // Cleanup: aborta a requisição se o componente for desmontado
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
+    // Reexecuta quando userIdToUse ou locale mudarem
+  }, [userIdToUse, locale]);
 
   const scrollContainer = (dir: "left" | "right") => {
     if (!carouselRef.current) return;

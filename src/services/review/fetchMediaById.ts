@@ -1,3 +1,4 @@
+// services/review/fetchMediaById.ts (ou onde estiver)
 import { fetchMovieById } from "@/services/movie/fetch_movie_by_id";
 import { fetchSerieById } from "@/services/series/fetch_series_by_id";
 import { fetchAlbumById } from "@/services/album/fetch_album_by_id";
@@ -5,7 +6,7 @@ import { Movie } from "@/types/Movie";
 import { Series } from "@/types/Series";
 import { Album } from "@/types/Album";
 
-type MediaType = "movie" | "series" | "album";
+type MediaType = "movie" | "series" | "album";  
 
 export type UnifiedMedia = {
   id: number | string;
@@ -24,7 +25,8 @@ function pickString(...vals: Array<string | null | undefined>): string {
 
 export const fetchMediaById = async (
   id: string | number,
-  mediaType: MediaType
+  mediaType: MediaType,
+  locale?: string // <-- novo param opcional
 ): Promise<UnifiedMedia | null> => {
   if (id === undefined || id === null || String(id).trim() === "") return null;
   if (!mediaType) return null;
@@ -32,7 +34,7 @@ export const fetchMediaById = async (
   try {
     switch (mediaType) {
       case "movie": {
-        const movie: Movie | null = await fetchMovieById(String(id));
+        const movie: Movie | null = await fetchMovieById(String(id), locale);
         if (!movie) return null;
         return {
           id: movie.id,
@@ -41,7 +43,7 @@ export const fetchMediaById = async (
         };
       }
       case "series": {
-        const serie: Series | null = await fetchSerieById(String(id));
+        const serie: Series | null = await fetchSerieById(String(id), locale);
         if (!serie) return null;
         return {
           id: serie.id,
@@ -50,7 +52,7 @@ export const fetchMediaById = async (
         };
       }
       case "album": {
-        const album: Album | null = await fetchAlbumById(String(id));
+        const album: Album | null = await fetchAlbumById(String(id), locale);
         if (!album) return null;
         return {
           id: album.id,

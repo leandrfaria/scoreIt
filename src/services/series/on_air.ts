@@ -52,13 +52,55 @@ function toSeries(item: Json): Series {
  * Mantive a assinatura original (aceitando token) para não quebrar chamadas existentes,
  * mas internamente usamos `apiFetch` com `{ auth: true }`.
  */
-export const fetchOnAirSeries = async (_token: string): Promise<Series[]> => {
+export const fetchOnAirSeries = async (token: string, locale: string): Promise<Series[]> => {
   try {
-    const data = await apiFetch(`/series/now/1`, { auth: true });
-    const results = asArray(data);
+    const tmdbLocale = locale; // ou use um map se precisar: mapNextIntlToTMDB(locale)
+    const fallbackLocale = locale.startsWith("pt") ? "en-US" : "pt-BR";
+
+    // Primeiro, tenta buscar no idioma solicitado
+    const data: any = await apiFetch(`/series/now/1?language=${tmdbLocale}`, { auth: true });
+    let results = asArray(data);
+
+    // Se resultados estiverem incompletos, tenta fallback
+    if (hasIncompleteTranslations(results)) {
+      console.log("Tentando fallback para:", fallbackLocale);
+      const fallbackData: any = await apiFetch(`/series/now/1?language=${fallbackLocale}`, { auth: true });
+      const fallbackResults = asArray(fallbackData);
+
+      results = mergeResults(results, fallbackResults);
+    }
+
     return results.map(toSeries);
   } catch (error) {
     console.error("❌ Erro ao buscar séries no ar:", error);
     return [];
   }
 };
+
+// Verifica se a maioria das séries está com dados incompletos
+function hasIncompleteTranslations(results: any[]): boolean {
+  const incompleteCount = results.filter(s => !s.name || s.name === "" || !s.overview || s.overview === "").length;
+  return incompleteCount > results.length / 2;
+}
+
+// Combina os resultados de primary + fallback
+function mergeResults(primary: any[], fallback: any[]): any[] {
+  const merged = [...primary];
+
+  fallback.forEach(fb => {
+    const idx = merged.findIndex(m => m.id === fb.id);
+    if (idx === -1) {
+      merged.push(fb);
+    } else {
+      const existing = merged[idx];
+      merged[idx] = {
+        ...existing,
+        name: existing.name || fb.name,
+        overview: existing.overview || fb.overview,
+      };
+    }
+  });
+
+  return merged;
+}
+

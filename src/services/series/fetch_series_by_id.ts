@@ -1,7 +1,7 @@
 import { Series } from "@/types/Series";
 import { apiFetch } from "@/lib/api";
 
-export const fetchSerieById = async (id: string): Promise<Series | null> => {
+export const fetchSerieById = async (id: string, locale: string | undefined): Promise<Series | null> => {
   try {
     const data = await apiFetch(`/series/${id}/details`, { auth: true, cache: "no-store" });
 

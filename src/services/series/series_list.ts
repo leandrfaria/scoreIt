@@ -50,12 +50,12 @@ function toSeries(item: Json): Series {
   };
 }
 
-/** Gêneros de séries */
 export const fetchGenres = async (
-  opts: { signal?: AbortSignal } = {}
+  opts: { signal?: AbortSignal; locale?: string } = {}
 ): Promise<{ id: number; name: string }[]> => {
   try {
-    const data = await apiFetch(`/series/search/genres`, { auth: true, signal: opts.signal });
+    const url = `/series/search/genres${opts.locale ? `?language=${opts.locale}` : ""}`;
+    const data = await apiFetch(url, { auth: true, signal: opts.signal });
     if (!data) return [];
     if (isRecord(data) && Array.isArray((data as any).genres)) {
       return ((data as any).genres as any[]).map((g) => ({
@@ -70,13 +70,12 @@ export const fetchGenres = async (
   }
 };
 
-/** Lista/pesquisa de séries por página + filtros */
 export const fetchSeriesByPage = async (
   page: number,
   year?: number,
   genreID?: number,
   title?: string,
-  opts: { signal?: AbortSignal } = {}
+  opts: { signal?: AbortSignal; locale?: string } = {}
 ): Promise<Series[]> => {
   try {
     const params = new URLSearchParams();
@@ -84,6 +83,8 @@ export const fetchSeriesByPage = async (
     if (title) params.set("title", title);
     if (year) params.set("year", String(year));
     if (genreID) params.set("genre", String(genreID));
+
+    if (opts.locale) params.set("language", opts.locale); // <-- adiciona idioma
 
     const data = await apiFetch(`/series/search?${params.toString()}`, {
       auth: true,

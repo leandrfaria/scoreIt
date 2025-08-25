@@ -20,17 +20,26 @@ export async function apiFetch(path: string, opts: FetchOpts = {}) {
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(`${apiBase}${path}`, {
-    ...opts,
-    headers,
-    cache: "no-store", // evite cache em chamadas mutáveis
-  });
+  try {
+    const res = await fetch(`${apiBase}${path}`, {
+      ...opts,
+      headers,
+      cache: "no-store", // evite cache em chamadas mutáveis
+    });
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`API ${res.status}: ${body || res.statusText}`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API ${res.status}: ${body || res.statusText}`);
+    }
+
+    const ct = res.headers.get("content-type") || "";
+    return ct.includes("application/json") ? res.json() : res.text();
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      // requisição foi cancelada pelo AbortController → não é erro real
+      return undefined;
+    }
+    console.error("Erro no apiFetch:", err);
+    throw err;
   }
-
-  const ct = res.headers.get("content-type") || "";
-  return ct.includes("application/json") ? res.json() : res.text();
 }

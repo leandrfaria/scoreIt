@@ -1,20 +1,20 @@
-import { apiFetch } from "@/lib/api";
-
-export const addFavouriteSeries = async (
-  _token: string,
-  userId: number,
-  seriesId: number
-): Promise<boolean> => {
-  if (!userId || !seriesId) return false;
-
-  try {
-    await apiFetch(`/member/favorites/${userId}/${seriesId}/series`, {
-      method: "POST",
-      auth: true,
+export const addFavouriteSeries = async (token: string, memberId: number, seriesId: number,language: string) =>{
+    try {
+    const response = await fetch(`/members/favorites/${memberId}?language=${language}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        memberId, 
+        mediaId: seriesId, 
+        mediaType: 'series' 
+      }),
     });
-    return true;
+    return response.ok;
   } catch (error) {
-    console.error("❌ Erro ao adicionar série aos favoritos:", error);
+    console.error('Error adding favorite series:', error);
     return false;
   }
 };

@@ -1,37 +1,41 @@
 import { apiFetch } from "@/lib/api";
 import { Movie } from "@/types/Movie";
+import { mapNextIntlToTMDB, isTMDBLocale } from "@/i18n/localeMapping";
 
 export const fetchFavouriteMovies = async (
-  _token: string,
-  userId: string
+  token: string, 
+  memberId: string, 
+  locale: string
 ): Promise<Movie[]> => {
-  if (!userId) return [];
-
   try {
-    const data: any = await apiFetch(`/movie/favorites/${userId}`, { auth: true });
-    const results = data.results || data.data?.results || data || [];
+    // Mapear o locale do next-intl para o formato TMDB
+    const tmdbLocale = isTMDBLocale(locale) ? locale : mapNextIntlToTMDB(locale);
+    
+    const data: any = await apiFetch(`/movie/favorites/${memberId}?language=${encodeURIComponent(tmdbLocale)}`, {
+      auth: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    if (!Array.isArray(results)) {
-      console.warn("⚠️ 'results' não é um array:", results);
-      return [];
-    }
+    const results = Array.isArray(data) ? data : [];
 
-    return results.map((movie: any): Movie => ({
-      id: Number(movie.id ?? 0),
-      title: String(movie.title ?? "Desconhecido"),
+    return results.map((movie: any) => ({
+      id: movie.id,
+      title: movie.title,
       posterUrl: movie.poster_path
         ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-        : movie.posterUrl ?? "/fallback.jpg",
+        : movie.posterUrl || null,
       backdropUrl: movie.backdrop_path
         ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
-        : movie.backdropUrl ?? "/fallback.jpg",
-      vote_average: Number(movie.vote_average ?? 0),
-      release_date: movie.release_date ?? null,
-      overview: movie.overview || "Sem descrição disponível.",
+        : movie.backdropUrl || null,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date,
+      overview: movie.overview,
       genre: movie.genre || "Desconhecido",
     }));
   } catch (error) {
-    console.error("❌ Erro ao buscar filmes favoritos:", error);
+    console.error("Erro ao buscar filmes favoritos:", error);
     return [];
   }
 };

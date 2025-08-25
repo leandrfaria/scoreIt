@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Movie } from "@/types/Movie";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl"; // Adicionar useLocale
 import { fetchFavouriteMovies } from "@/services/movie/get_fav_movie";
 import { useMember } from "@/context/MemberContext";
 import { MovieCarousel } from "./MovieCarousel";
@@ -14,6 +14,7 @@ const FavouriteMoviesCarouselSection = ({ memberId }: Props) => {
   const [loading, setLoading] = useState(true);
   const t = useTranslations("NowPlayingCarousel");
   const { member } = useMember();
+  const locale = useLocale(); // Obter o locale atual
 
   useEffect(() => {
     let mounted = true;
@@ -24,14 +25,19 @@ const FavouriteMoviesCarouselSection = ({ memberId }: Props) => {
         return;
       }
       try {
-        const data = await fetchFavouriteMovies(localStorage.getItem("authToken") ?? "", idToUse);
+        // Passar o locale para fetchFavouriteMovies
+        const data = await fetchFavouriteMovies(
+          localStorage.getItem("authToken") ?? "", 
+          idToUse, 
+          locale // Adicionar locale aqui
+        );
         if (mounted) setMovies(data);
       } finally {
         if (mounted) setLoading(false);
       }
     })();
     return () => { mounted = false; };
-  }, [memberId, member]);
+  }, [memberId, member, locale]); // Adicionar locale como dependência
 
   if (loading) return <div className="text-center py-10 text-gray-300 animate-pulse">{t("loadingFav")}</div>;
   if (movies.length === 0)

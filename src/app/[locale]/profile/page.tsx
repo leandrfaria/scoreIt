@@ -25,6 +25,8 @@ import { countFollowers, countFollowing } from "@/services/followers/countStats"
 import { fetchMemberLists } from "@/services/customList/list";
 import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
+import { useLocale } from 'next-intl';
+
 
 // ------------------- API HELPERS -------------------
 
@@ -70,11 +72,11 @@ export default function Profile() {
 
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
-
+  const language = useLocale(); 
   // ----------- Data Fetching -----------
-  const loadCustomLists = async (token: string, memberId: number) => {
+  const loadCustomLists = async (token: string, memberId: number, language: string) => {
     try {
-      const lists = await fetchMemberLists(token, memberId);
+      const lists = await fetchMemberLists(token, memberId, language);
       setCustomLists(lists);
     } catch (err) {
       console.error("Erro ao carregar listas:", err);
@@ -100,7 +102,7 @@ export default function Profile() {
     const token = localStorage.getItem("authToken");
     if (!token) return;
 
-    Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id)]).catch(
+    Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id, language)]).catch(
       console.error
     );
   }, [member]);
@@ -128,7 +130,7 @@ export default function Profile() {
         bio: formData.bio,
         birthDate: formData.birthDate,
         gender: formData.gender,
-        handle: formData.handle, // novo atributo
+        handle: formData.handle,
       };
 
       const updated = await updateMember(member.id.toString(), payload);
@@ -152,7 +154,7 @@ export default function Profile() {
       await createCustomList(token, member.id, formData.name, formData.description);
       toast.success("Lista criada");
       setActiveModal(null);
-      await loadCustomLists(token, member.id);
+      await loadCustomLists(token, member.id, language);
     } catch (error) {
       toast.error("Erro ao criar lista");
       console.error(error);
@@ -231,11 +233,11 @@ export default function Profile() {
             listDescription={selectedList.list_description}
             onListDeleted={() => {
               const token = localStorage.getItem("authToken");
-              if (token) loadCustomLists(token, member.id);
+              if (token) loadCustomLists(token, member.id, language);
             }}
             onListUpdated={() => {
               const token = localStorage.getItem("authToken");
-              if (token) loadCustomLists(token, member.id);
+              if (token) loadCustomLists(token, member.id, language);
             }}
             member={member}
           />

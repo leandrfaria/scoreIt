@@ -16,9 +16,18 @@ import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { fetchMemberLists, addContentToList } from "@/services/customList/list";
 
+// Adicione esta função de mapeamento
+const mapLocaleToTMDBLanguage = (locale: string): string => {
+  const mapping: Record<string, string> = {
+    'pt': 'pt-BR',
+    'en': 'en-US',
+  };
+  return mapping[locale] || 'pt-BR';
+};
+
 interface SeriesCardProps extends Series {
   onRemoveSerie?: (id: number) => void;
-  priority?: boolean; // prioridade no carregamento do poster
+  priority?: boolean;
 }
 
 const BLUR_DATA_URL =
@@ -47,6 +56,7 @@ function SeriesCardBase({
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const locale = useLocale();
+  const tmdbLanguage = useMemo(() => mapLocaleToTMDBLanguage(locale), [locale]); // Mapear o locale para formato TMDB
   const t = useTranslations("MovieCard");
   const { member } = useMember();
 
@@ -101,20 +111,20 @@ function SeriesCardBase({
     (async () => {
       try {
         if (!member) return;
-        const favorited = await isFavoritedMedia(member.id, id);
+        const favorited = await isFavoritedMedia(member.id, id, tmdbLanguage); // Usar tmdbLanguage
         setIsFavorited(favorited);
       } catch (error) {
         console.error("Erro ao verificar favorito:", error);
       }
     })();
-  }, [id, member]);
+  }, [id, member, tmdbLanguage]);
 
   // Carregar listas ao abrir o modal
   useEffect(() => {
     if (!isOpen || !member) return;
     (async () => {
       try {
-        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id);
+        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id, tmdbLanguage); // Usar tmdbLanguage
         const uniqueListNames = Array.from(new Set(lists.map((item) => item.listName)));
         setCustomLists(uniqueListNames);
         if (uniqueListNames.length > 0) setSelectedList((prev) => prev || uniqueListNames[0]);
@@ -122,7 +132,7 @@ function SeriesCardBase({
         toast.error("Erro carregando listas");
       }
     })();
-  }, [isOpen, member]);
+  }, [isOpen, member, tmdbLanguage]);
 
   const handleFavorite = useCallback(async () => {
     if (!member) {
@@ -130,20 +140,20 @@ function SeriesCardBase({
       return;
     }
     if (isFavorited) {
-      const success = await removeFavouriteMedia(member.id, id, "series");
+      const success = await removeFavouriteMedia(member.id, id, tmdbLanguage, "series"); // Usar tmdbLanguage
       if (success) {
         toast.success(t("removedFromFavorites"));
         setIsFavorited(false);
         onRemoveSerie?.(id);
       } else toast.error(t("errorRemovingFavorite"));
     } else {
-      const success = await addFavouriteSeries(localStorage.getItem("authToken")!, member.id, id);
+      const success = await addFavouriteSeries(localStorage.getItem("authToken")!, member.id, id, tmdbLanguage); // Usar tmdbLanguage
       if (success) {
-        toast.success(t("SerieaddFavorite"));
+        toast.success(t("addedToFavorites"));
         setIsFavorited(true);
-      } else toast.error(t("SerieserrorAddingFavorite"));
+      } else toast.error(t("errorAddingFavorite"));
     }
-  }, [id, isFavorited, member, onRemoveSerie, t]);
+  }, [id, isFavorited, member, onRemoveSerie, t, tmdbLanguage]);
 
   const handleAddToList = useCallback(async () => {
     if (!selectedList) return toast.error("Selecione uma lista");
@@ -155,6 +165,7 @@ function SeriesCardBase({
         mediaId: String(id),
         mediaType: "series",
         listName: selectedList,
+        language: tmdbLanguage, // Usar tmdbLanguage
       });
       if (result === "duplicate") toast.error("Já está na lista");
       else if (result === "success") toast.success("Série adicionada!");
@@ -162,7 +173,7 @@ function SeriesCardBase({
     } finally {
       setIsAdding(false);
     }
-  }, [id, member, selectedList, t]);
+  }, [id, member, selectedList, t, tmdbLanguage]);
 
   const handleViewDetails = useCallback(() => {
     router.push(`/${locale}/series/${id}`);

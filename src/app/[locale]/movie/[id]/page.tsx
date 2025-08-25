@@ -13,6 +13,7 @@ import { addFavouriteMovie } from "@/services/movie/add_fav_movie";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
 import RatingModal from "@/components/features/review/RatingModal";
+import { useLocale } from 'next-intl';
 import ReviewSection from "@/components/features/review/ReviewSection";
 
 export default function MoviePage() {
@@ -22,42 +23,44 @@ export default function MoviePage() {
   const [showModal, setShowModal] = useState(false);
   const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
+  const locale = useLocale();
 
-  useEffect(() => {
-    const loadMovie = async () => {
-      const result = await fetchMovieById(id);
-      setMovie(result);
-    };
-    loadMovie();
-  }, [id]);
+useEffect(() => {
+  const loadMovie = async () => {
+    const result = await fetchMovieById(id, locale); // Passe o locale aqui
+    setMovie(result);
+  };
+  loadMovie();
+}, [id, locale]);
 
   useEffect(() => {
     const checkFavorite = async () => {
       if (member && id) {
-        const fav = await isFavoritedMedia(member.id, Number(id));
+        const fav = await isFavoritedMedia(member.id, Number(id), locale);
         setIsFavorited(fav);
       }
     };
     checkFavorite();
-  }, [member, id]);
+  }, [member, id, locale]);
 
-  const handleFavoriteToggle = async () => {
-    if (!member || !movie) return;
+const handleFavoriteToggle = async () => {
+  if (!member || !movie) return;
 
-    if (isFavorited) {
-      const success = await removeFavouriteMedia(member.id, movie.id, "movie");
-      if (success) {
-        toast.success("Removido dos favoritos");
-        setIsFavorited(false);
-      } else toast.error("Erro ao remover");
-    } else {
-      const success = await addFavouriteMovie("", member.id, movie.id);
-      if (success) {
-        toast.success("Adicionado aos favoritos");
-        setIsFavorited(true);
-      } else toast.error("Erro ao favoritar");
-    }
-  };
+  if (isFavorited) {
+    // Correção: passe os parâmetros na ordem correta
+    const success = await removeFavouriteMedia(member.id, movie.id, locale, "movie");
+    if (success) {
+      toast.success("Removido dos favoritos");
+      setIsFavorited(false);
+    } else toast.error("Erro ao remover");
+  } else {
+    const success = await addFavouriteMovie("", member.id, movie.id, locale);
+    if (success) {
+      toast.success("Adicionado aos favoritos");
+      setIsFavorited(true);
+    } else toast.error("Erro ao favoritar");
+  }
+};
 
   if (!movie) return <p className="text-white p-10">Carregando filme...</p>;
 
