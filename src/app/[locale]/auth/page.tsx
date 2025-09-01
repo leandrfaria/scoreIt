@@ -11,6 +11,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import { loginUser, registerUser, verifyToken } from "@/services/user/auth";
 
 type Tab = "login" | "signup";
+type BackendGender = "MASC" | "FEM" | "OTHER";
 
 export default function AuthPage() {
   const [tab, setTab] = useState<Tab>("login");
@@ -27,10 +28,10 @@ export default function AuthPage() {
   const [emailSign, setEmailSign] = useState("");
   const [senhaSign, setSenhaSign] = useState("");
   const [date, setDate] = useState("");
-  const [gender, setGender] = useState("");
-  const [handle, setHandle] = useState(""); 
+  const [gender, setGender] = useState<BackendGender | "">("");
+  const [handle, setHandle] = useState("");
   const [msgSign, setMsgSign] = useState("");
-  const [signupDone, setSignupDone] = useState(false); 
+  const [signupDone, setSignupDone] = useState(false);
 
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
 
@@ -89,7 +90,7 @@ export default function AuthPage() {
   const nameRegex = useMemo(() => /^[A-Za-zÀ-ÿ\s]{3,}$/, []);
   const emailRegex = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/, []);
   const passwordRegex = useMemo(() => /^(?=.*\d).{5,}$/, []);
-  const handleRegex = useMemo(() => /^[a-zA-Z0-9_]{3,15}$/, []); // handle válido
+  const handleRegex = useMemo(() => /^[a-zA-Z0-9_]{3,15}$/, []);
 
   const isValidDate = (str: string) => {
     const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/(\d{4})$/;
@@ -149,6 +150,7 @@ export default function AuthPage() {
       return;
     }
 
+    // Converte dd/MM/yyyy -> yyyy-MM-dd (zero-padding ok)
     const [d, m, y] = date.split("/");
     const birthDate = `${y}-${m}-${d}`;
 
@@ -159,7 +161,7 @@ export default function AuthPage() {
         email: emailSign.trim(),
         password: senhaSign,
         birthDate,
-        gender,
+        gender, // aqui já é BackendGender (MASC|FEM|OTHER)
         handle: handle.trim(),
       });
       if (resp.success) {
@@ -346,7 +348,7 @@ export default function AuthPage() {
                       />
                       <select
                         value={gender}
-                        onChange={(e) => setGender(e.target.value)}
+                        onChange={(e) => setGender((e.target.value as BackendGender))}
                         className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       >
                         <option value="" disabled hidden className="bg-black">
