@@ -6,18 +6,11 @@ function assertApiBase() {
   }
 }
 
-function withTimeout<T>(p: Promise<T>, ms = 30000): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const id = setTimeout(() => reject(new Error(`Timeout de ${ms}ms ao chamar a API`)), ms);
-    p.then((v) => { clearTimeout(id); resolve(v); }, (e) => { clearTimeout(id); reject(e); });
-  });
-}
-
 async function postJson<T = any>(path: string, body: unknown): Promise<T> {
   assertApiBase();
   const url = `${apiBase}${path}`;
 
-  const res = await withTimeout(fetch(url, {
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -25,8 +18,7 @@ async function postJson<T = any>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
     cache: "no-store",
-    mode: "cors",
-  }));
+  });
 
   const ct = res.headers.get("content-type") || "";
   const payload = ct.includes("application/json")
@@ -47,12 +39,11 @@ async function postJson<T = any>(path: string, body: unknown): Promise<T> {
 export async function verifyToken(token: string) {
   assertApiBase();
   const bearer = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
-  const res = await withTimeout(fetch(`${apiBase}/auth/verifyToken`, {
+  const res = await fetch(`${apiBase}/auth/verifyToken`, {
     method: "GET",
     headers: { Authorization: bearer },
     cache: "no-store",
-    mode: "cors",
-  }));
+  });
   if (!res.ok) throw new Error("Token inválido/expirado");
   return true;
 }
@@ -90,6 +81,7 @@ export async function registerUser(payload: {
     "MASC": "MASC",
     "FEM": "FEM",
     "OTHER": "OTHER",
+    // aceitaremos também atalhos caso algo escape no front:
     "M": "MASC",
     "F": "FEM",
     "O": "OTHER",
@@ -106,8 +98,8 @@ export async function registerUser(payload: {
     name: payload.name.trim(),
     email: payload.email.trim(),
     password: payload.password,
-    birthDate: payload.birthDate,
-    gender, // MASC | FEM | OTHER
+    birthDate: payload.birthDate, // já no formato yyyy-MM-dd
+    gender,                       // garantidamente MASC | FEM | OTHER
     handle: payload.handle.trim(),
   });
 
