@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import PageTransition from "@/components/layout/Others/PageTransition";
 import { Container } from "@/components/layout/Others/Container";
 import toast from "react-hot-toast";
@@ -32,14 +32,13 @@ export default function AuthPage() {
   const [handle, setHandle] = useState("");
   const [msgSign, setMsgSign] = useState("");
   const [signupDone, setSignupDone] = useState(false);
+  const [signupConfirmText, setSignupConfirmText] = useState("");
 
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
 
   const router = useRouter();
   const params = useSearchParams();
   const locale = useLocale();
-  const tLogin = useTranslations("login");
-  const tSign = useTranslations("cadastro");
   const { loadMemberData, setIsLoggedIn } = useAuthContext();
 
   useEffect(() => {
@@ -60,16 +59,17 @@ export default function AuthPage() {
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
 
-  // ====== UI CLASSES (padronização visual) ======
+  // ====== UI CLASSES ======
   const FORM_WRAP =
-    "w-full max-w-xl rounded-2xl border border-[var(--color-darkgreen)] bg-black/50 backdrop-blur-md shadow-[0_24px_80px_rgba(0,0,0,0.55)] px-6 sm:px-8 py-7";
+    "w-full max-w-xl rounded-2xl border border-[var(--color-darkgreen)] bg-black/55 backdrop-blur-md shadow-[0_24px_80px_rgba(0,0,0,0.55)] px-6 sm:px-8 py-7";
   const GROUP_CLS = "flex flex-col gap-1.5";
   const LABEL_CLS = "text-sm font-medium text-emerald-200";
-  const INPUT_CLS =
+  const INPUT_BASE =
     "w-full h-11 px-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 " +
     "focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500/70 transition disabled:opacity-60 disabled:cursor-not-allowed";
+  const INPUT_CLS = INPUT_BASE;
   const BTN_PRIMARY =
-    "w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md disabled:opacity-60 disabled:cursor-not-allowed";
+    "w-full bg-darkgreen/95 hover:brightness-110 transition text-white font-semibold py-3 rounded-md disabled:opacity-60 disabled:cursor-not-allowed";
   const LINK_CLS = "text-emerald-300 hover:text-emerald-200 transition cursor-pointer";
 
   // ====== LOGIN ======
@@ -86,14 +86,13 @@ export default function AuthPage() {
         await verifyToken(token);
         await loadMemberData();
         setIsLoggedIn(true);
-
-        toast.success(tLogin("login_sucesso"));
+        toast.success("login realizado com sucesso!");
         router.replace(`/${locale}`);
       }
     } catch (err: any) {
-      const errorMessage = err?.message || "Erro ao fazer login.";
+      const errorMessage = err?.message || "erro ao fazer login.";
       const finalMessage = errorMessage.includes("Credenciais inválidas ou conta não confirmada")
-        ? tLogin("login_erro")
+        ? "credenciais inválidas ou conta não confirmada."
         : errorMessage;
       toast.error(finalMessage);
       setMsgLogin(finalMessage);
@@ -138,27 +137,27 @@ export default function AuthPage() {
     setMsgSign("");
 
     if (!nameRegex.test(name)) {
-      toast.error(tSign("invalid_name"));
+      toast.error("nome inválido. use ao menos 3 letras.");
       return;
     }
     if (!handleRegex.test(handle)) {
-      toast.error("Handle inválido. Use 3-15 caracteres (letras, números ou _).");
+      toast.error("usuário inválido. use 3–15 caracteres (letras, números ou _).");
       return;
     }
     if (!emailRegex.test(emailSign)) {
-      toast.error(tSign("invalid_email"));
+      toast.error("e-mail inválido.");
       return;
     }
     if (!passwordRegex.test(senhaSign)) {
-      toast.error(tSign("invalid_senha"));
+      toast.error("senha inválida. mínimo de 5 caracteres e 1 número.");
       return;
     }
     if (!isValidDate(date)) {
-      toast.error(tSign("invalid_date"));
+      toast.error("data de nascimento inválida (use dd/mm/aaaa, 18+).");
       return;
     }
     if (!gender) {
-      toast.error(tSign("Select_Gender"));
+      toast.error("selecione um gênero.");
       return;
     }
 
@@ -176,57 +175,88 @@ export default function AuthPage() {
         handle: handle.trim(),
       });
       if (resp.success) {
-        toast.success(tSign("cadastro_sucesso"));
+        const confirmMsg =
+          `pronto! enviamos um e-mail de confirmação para ${emailSign.trim()}. ` +
+          `confirme sua conta para entrar no site. ` +
+          `(se não encontrar, verifique também as pastas spam/lixo eletrônico.)`;
+        toast.success(confirmMsg);
+        setSignupConfirmText(confirmMsg);
         setSignupDone(true);
       }
     } catch (err: any) {
-      const errorMessage = err?.message || "Falha no cadastro.";
-      toast.error(tSign("cadastro_erro"));
-      setMsgSign(errorMessage); // mensagem vinda do backend
+      const errorMessage = err?.message || "falha no cadastro.";
+      toast.error("não foi possível concluir seu cadastro.");
+      setMsgSign(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const Segmented = () => (
-    <div className="w-full max-w-md mx-auto mb-6">
-      <div className="relative flex bg-black/40 border border-[var(--color-darkgreen)] rounded-full p-1 backdrop-blur-sm overflow-hidden">
-        <span
-          className={[
-            "absolute top-1 bottom-1 w-[calc(50%-0.25rem)]",
-            "rounded-full bg-darkgreen shadow-[0_10px_30px_rgba(0,0,0,0.45)]",
-            "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            tab === "login" ? "left-1" : "left-[calc(50%+0.25rem)]",
-          ].join(" ")}
-          aria-hidden
-        />
-        <button
-          type="button"
-          onClick={() => setTab("login")}
-          className={[
-            "relative z-10 flex-1 py-2 text-sm md:text-base font-semibold rounded-full",
-            "transition-colors duration-300",
-            tab === "login" ? "text-white" : "text-emerald-300 hover:text-emerald-200",
-          ].join(" ")}
-          aria-pressed={tab === "login"}
+  // ====== segmented (corrigido com 'left' ao invés de translate) ======
+  const Segmented = () => {
+    const isLogin = tab === "login";
+    return (
+      <div className="w-full max-w-md mx-auto mb-6">
+        <div
+          className="
+            relative grid grid-cols-2 items-center
+            rounded-full h-12 p-1
+            bg-gradient-to-b from-black/30 to-black/50
+            border border-emerald-900/40
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
+            backdrop-blur-sm overflow-hidden
+          "
+          role="tablist"
+          aria-label="alternar entre entrar e criar conta"
         >
-          {tLogin("titulo")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("signup")}
-          className={[
-            "relative z-10 flex-1 py-2 text-sm md:text-base font-semibold rounded-full",
-            "transition-colors duration-300",
-            tab === "signup" ? "text-white" : "text-emerald-300 hover:text-emerald-200",
-          ].join(" ")}
-          aria-pressed={tab === "signup"}
-        >
-          {tSign("titulo")}
-        </button>
+          {/* pill com posicionamento por 'left' para simetria perfeita */}
+          <span
+            className="
+              pointer-events-none absolute top-1 bottom-1
+              w-[calc(50%-0.5rem)]
+              rounded-full
+              bg-[var(--color-darkgreen)]
+              shadow-[0_8px_32px_rgba(0,0,0,0.5)]
+              transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)]
+            "
+            style={{
+              left: isLogin ? "0.25rem" : "calc(50% + 0.25rem)",
+            }}
+            aria-hidden
+          />
+          {/* botões */}
+          <button
+            type="button"
+            onClick={() => setTab("login")}
+            role="tab"
+            aria-selected={isLogin}
+            className={[
+              "relative z-10 h-10 mx-1 rounded-full font-semibold px-3",
+              "text-sm md:text-base",
+              "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
+              isLogin ? "text-white" : "text-emerald-300 hover:text-emerald-200",
+            ].join(" ")}
+          >
+            entrar
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("signup")}
+            role="tab"
+            aria-selected={!isLogin}
+            className={[
+              "relative z-10 h-10 mx-1 rounded-full font-semibold px-3",
+              "text-sm md:text-base",
+              "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
+              !isLogin ? "text-white" : "text-emerald-300 hover:text-emerald-200",
+            ].join(" ")}
+          >
+            criar conta
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <PageTransition>
@@ -239,7 +269,7 @@ export default function AuthPage() {
           backgroundRepeat: "no-repeat",
         }}
       >
-        {/* overlays para contraste e leitura */}
+        {/* overlays */}
         <div className="absolute inset-0 -z-10 bg-black/75" />
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(transparent_60%,rgba(0,0,0,0.8))]" />
 
@@ -260,7 +290,7 @@ export default function AuthPage() {
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className={GROUP_CLS}>
                       <label className={LABEL_CLS} htmlFor="emailLogin">
-                        {tLogin("email")}
+                        e-mail
                       </label>
                       <input
                         id="emailLogin"
@@ -277,12 +307,12 @@ export default function AuthPage() {
 
                     <div className={GROUP_CLS}>
                       <label className={LABEL_CLS} htmlFor="senhaLogin">
-                        {tLogin("senha")}
+                        senha
                       </label>
                       <input
                         id="senhaLogin"
                         type="password"
-                        placeholder="********"
+                        placeholder="*****"
                         value={senhaLogin}
                         onChange={(e) => setSenhaLogin(e.target.value)}
                         className={INPUT_CLS}
@@ -292,7 +322,7 @@ export default function AuthPage() {
                     </div>
 
                     <button type="submit" className={BTN_PRIMARY} disabled={loadingLogin}>
-                      {loadingLogin ? tLogin("carregando") : tLogin("botao")}
+                      {loadingLogin ? "entrando..." : "entrar"}
                     </button>
 
                     {msgLogin && (
@@ -308,7 +338,7 @@ export default function AuthPage() {
                         role="button"
                         tabIndex={0}
                       >
-                        {tLogin("esqueceu_senha")}
+                        esqueci minha senha
                       </span>
                       <span
                         onClick={() => router.replace(`/${locale}/refaz_email`)}
@@ -316,7 +346,7 @@ export default function AuthPage() {
                         role="button"
                         tabIndex={0}
                       >
-                        {tLogin("mudar_email")}
+                        reenviar e-mail de confirmação
                       </span>
                     </div>
                   </form>
@@ -333,20 +363,20 @@ export default function AuthPage() {
                 >
                   {signupDone ? (
                     <div className="text-center text-emerald-300 font-semibold py-10">
-                      {/* mensagem de confirmação clara e curta */}
-                      {tSign("cadastro_sucesso") || "Cadastro realizado! Verifique seu e-mail para ativar a conta."}
+                      {signupConfirmText ||
+                        "pronto! enviamos um e-mail de confirmação. confirme sua conta para entrar. (olhe o spam/lixo eletrônico.)"}
                     </div>
                   ) : (
                     <form onSubmit={handleSignup} className="space-y-4">
                       <div className={GROUP_CLS}>
                         <label htmlFor="name" className={LABEL_CLS}>
-                          {tSign("nome")}
+                          nome
                         </label>
                         <input
                           id="name"
                           className={INPUT_CLS}
                           type="text"
-                          placeholder="Seu nome completo"
+                          placeholder="seu nome"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           autoComplete="name"
@@ -355,13 +385,13 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="handle" className={LABEL_CLS}>
-                          @ de usuário
+                          usuário (@)
                         </label>
                         <input
                           id="handle"
                           className={INPUT_CLS}
                           type="text"
-                          placeholder="@usuario"
+                          placeholder="usuario"
                           value={handle}
                           onChange={(e) => setHandle(e.target.value)}
                           autoComplete="username"
@@ -370,7 +400,7 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="emailSign" className={LABEL_CLS}>
-                          {tSign("email")}
+                          e-mail
                         </label>
                         <input
                           id="emailSign"
@@ -386,13 +416,13 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="senhaSign" className={LABEL_CLS}>
-                          {tSign("senha")}
+                          senha
                         </label>
                         <input
                           id="senhaSign"
                           className={INPUT_CLS}
                           type="password"
-                          placeholder="Mínimo de 5 caracteres e 1 número"
+                          placeholder="mínimo de 5 caracteres e 1 número"
                           value={senhaSign}
                           onChange={(e) => setSenhaSign(e.target.value)}
                           autoComplete="new-password"
@@ -401,7 +431,7 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="birth" className={LABEL_CLS}>
-                          {tSign("birthday")}
+                          data de nascimento
                         </label>
                         <input
                           id="birth"
@@ -414,33 +444,44 @@ export default function AuthPage() {
                         />
                       </div>
 
+                      {/* select de gênero */}
                       <div className={GROUP_CLS}>
                         <label htmlFor="gender" className={LABEL_CLS}>
-                          {tSign("Select_Gender")}
+                          gênero
                         </label>
-                        <select
-                          id="gender"
-                          value={gender}
-                          onChange={(e) => setGender(e.target.value as BackendGender)}
-                          className={INPUT_CLS}
-                        >
-                          <option value="" disabled hidden>
-                            {tSign("Select_Gender")}
-                          </option>
-                          <option value="MASC" className="bg-gray-900">
-                            {tSign("M_Gender")}
-                          </option>
-                          <option value="FEM" className="bg-gray-900">
-                            {tSign("F_Gender")}
-                          </option>
-                          <option value="OTHER" className="bg-gray-900">
-                            {tSign("O_Gender")}
-                          </option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            id="gender"
+                            value={gender}
+                            onChange={(e) => setGender(e.target.value as BackendGender)}
+                            className={[
+                              INPUT_BASE,
+                              "appearance-none pr-10",
+                              "bg-gradient-to-b from-black/30 to-black/40",
+                              "hover:bg-black/35",
+                            ].join(" ")}
+                          >
+                            <option value="" disabled hidden>
+                              selecione o gênero
+                            </option>
+                            <option value="MASC" className="bg-gray-900 text-white">masculino</option>
+                            <option value="FEM" className="bg-gray-900 text-white">feminino</option>
+                            <option value="OTHER" className="bg-gray-900 text-white">outro</option>
+                          </select>
+
+                          <svg
+                            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 opacity-80"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.17l3.71-2.94a.75.75 0 1 1 .94 1.17l-4.24 3.36a.75.75 0 0 1-.94 0L5.21 8.4a.75.75 0 0 1 .02-1.19z" />
+                          </svg>
+                        </div>
                       </div>
 
                       <button type="submit" disabled={isSubmitting} className={BTN_PRIMARY}>
-                        {isSubmitting ? "Finalizando cadastro..." : tSign("botao")}
+                        {isSubmitting ? "criando conta..." : "criar conta"}
                       </button>
 
                       {msgSign && (
