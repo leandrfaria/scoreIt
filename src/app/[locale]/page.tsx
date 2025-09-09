@@ -8,17 +8,17 @@ import { AlbumListByGenre } from "@/components/features/album/AlbumListByGenre";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
-import Link from "next/link";
 import PageTransition from "@/components/layout/Others/PageTransition";
 import OnAirSeriesCarouselSection from "@/components/features/serie/OnAirSeriesCarouselSection";
 import NowPlayingCarouselSection from "@/components/features/movie/NowPlayingCarouselSection";
 import { SeriesList } from "@/components/features/serie/SeriesList";
 import { MovieList } from "@/components/features/movie/MovieList";
+import LoggedOutHome from "@/components/layout/oggedOutHome";
+
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
   const { activeTab } = useTabContext();
-  const [randomImage, setRandomImage] = useState("");
   const [hasMounted, setHasMounted] = useState(false);
 
   const locale = useLocale();
@@ -26,32 +26,6 @@ export default function Home() {
 
   useEffect(() => {
     setHasMounted(true);
-
-    const posters = [
-      "poster1.png",
-      "poster2.png",
-      "poster3.png",
-      "poster4.png",
-      "poster5.png",
-      "poster6.png",
-      "poster7.png",
-      "poster8.png",
-      "poster9.png",
-      "poster10.png",
-      "poster11.png",
-      "poster12.png",
-      "poster13.png",
-      "poster14.png",
-      "poster15.png",
-      "poster16.png",
-      "poster17.png",
-      "poster18.png",
-      "poster19.png",
-      "poster20.png",
-      "poster21.png",
-    ];
-    const random = Math.floor(Math.random() * posters.length);
-    setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
 
   if (isLoggedIn === null) {
@@ -64,14 +38,11 @@ export default function Home() {
 
   return (
     <main className="w-full">
-      <Container>
-        {isLoggedIn ? (
-          <>
+      {isLoggedIn ? (
+        <Container>
+          <PageTransition>
             {activeTab === "musicas" ? (
-              <>
-                {/* TopArtists removido pelo back */}
-                <AlbumListByGenre />
-              </>
+              <AlbumListByGenre />
             ) : activeTab === "series" ? (
               <>
                 <RandomSeriesCarousel />
@@ -91,35 +62,11 @@ export default function Home() {
                 <MovieList />
               </>
             )}
-          </>
-        ) : (
-          <PageTransition>
-            <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh]">
-              <div className="w-full md:w-1/2 mb-10 md:mb-0">
-                {hasMounted && randomImage && (
-                  <img
-                    src={randomImage}
-                    alt="Poster aleatório"
-                    className="w-full h-[400px] object-cover rounded-lg shadow-lg"
-                  />
-                )}
-              </div>
-
-              <div className="w-full md:w-1/2 p-8 text-center md:text-left">
-                <h1 className="text-4xl font-bold text-white mb-12">
-                  {t("mensagem_login")}
-                </h1>
-                <Link
-                  href={`/${locale}/auth?tab=login`}
-                  className="px-6 py-3 bg-darkgreen text-white rounded-md hover:brightness-110 transition"
-                >
-                  {t("botao_login")}
-                </Link>
-              </div>
-            </div>
           </PageTransition>
-        )}
-      </Container>
+        </Container>
+      ) : (
+        <LoggedOutHome />
+      )}
     </main>
   );
 }

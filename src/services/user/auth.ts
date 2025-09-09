@@ -12,7 +12,10 @@ async function postJson<T = any>(path: string, body: unknown): Promise<T> {
 
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
     body: JSON.stringify(body),
     cache: "no-store",
   });
@@ -55,31 +58,50 @@ export async function loginUser(email: string, password: string) {
     throw new Error("Token JWT não retornado pelo servidor");
   }
 
-  // Salva o token CRU (sem 'Bearer') no localStorage
   if (typeof window !== "undefined") {
-    localStorage.setItem("authToken", data.token);
+    localStorage.setItem("authToken", data.token); // cru (sem 'Bearer')
   }
 
   return { success: true as const, token: data.token };
 }
 
+type BackendGender = "MASC" | "FEM" | "OTHER";
+
 export async function registerUser(payload: {
   name: string;
   email: string;
   password: string;
-  birthDate: string;
-  gender: string;
+  birthDate: string; // yyyy-MM-dd
+  gender: string;    // vindo do select
   handle: string;
 }) {
+  // Normaliza o gênero para o que o backend espera
+  const normalized = (payload.gender || "").trim().toUpperCase();
+  const map: Record<string, BackendGender> = {
+    "MASC": "MASC",
+    "FEM": "FEM",
+    "OTHER": "OTHER",
+    // aceitaremos também atalhos caso algo escape no front:
+    "M": "MASC",
+    "F": "FEM",
+    "O": "OTHER",
+    "MASCULINO": "MASC",
+    "FEMININO": "FEM",
+  };
+
+  const gender: BackendGender | undefined = map[normalized];
+  if (!gender) {
+    throw new Error("Gênero inválido. Selecione MASC, FEM ou OTHER.");
+  }
+
   await postJson(`/member/post`, {
     name: payload.name.trim(),
     email: payload.email.trim(),
     password: payload.password,
-    birthDate: payload.birthDate,
-    gender: payload.gender,
+    birthDate: payload.birthDate, // já no formato yyyy-MM-dd
+    gender,                       // garantidamente MASC | FEM | OTHER
     handle: payload.handle.trim(),
   });
 
   return { success: true as const, message: "Usuário cadastrado; verifique seu e-mail." };
 }
-

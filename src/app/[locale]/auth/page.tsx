@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import PageTransition from "@/components/layout/Others/PageTransition";
 import { Container } from "@/components/layout/Others/Container";
 import toast from "react-hot-toast";
@@ -11,6 +11,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import { loginUser, registerUser, verifyToken } from "@/services/user/auth";
 
 type Tab = "login" | "signup";
+type BackendGender = "MASC" | "FEM" | "OTHER";
 
 export default function AuthPage() {
   const [tab, setTab] = useState<Tab>("login");
@@ -27,18 +28,17 @@ export default function AuthPage() {
   const [emailSign, setEmailSign] = useState("");
   const [senhaSign, setSenhaSign] = useState("");
   const [date, setDate] = useState("");
-  const [gender, setGender] = useState("");
-  const [handle, setHandle] = useState(""); 
+  const [gender, setGender] = useState<BackendGender | "">("");
+  const [handle, setHandle] = useState("");
   const [msgSign, setMsgSign] = useState("");
-  const [signupDone, setSignupDone] = useState(false); 
+  const [signupDone, setSignupDone] = useState(false);
+  const [signupConfirmText, setSignupConfirmText] = useState("");
 
   const [randomImage, setRandomImage] = useState("/posters/poster1.png");
 
   const router = useRouter();
   const params = useSearchParams();
   const locale = useLocale();
-  const tLogin = useTranslations("login");
-  const tSign = useTranslations("cadastro");
   const { loadMemberData, setIsLoggedIn } = useAuthContext();
 
   useEffect(() => {
@@ -59,7 +59,20 @@ export default function AuthPage() {
     setRandomImage(`/postershorizont/${posters[random]}`);
   }, []);
 
-  // LOGIN
+  // ====== UI CLASSES ======
+  const FORM_WRAP =
+    "w-full max-w-xl rounded-2xl border border-[var(--color-darkgreen)] bg-black/55 backdrop-blur-md shadow-[0_24px_80px_rgba(0,0,0,0.55)] px-6 sm:px-8 py-7";
+  const GROUP_CLS = "flex flex-col gap-1.5";
+  const LABEL_CLS = "text-sm font-medium text-emerald-200";
+  const INPUT_BASE =
+    "w-full h-11 px-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 " +
+    "focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500/70 transition disabled:opacity-60 disabled:cursor-not-allowed";
+  const INPUT_CLS = INPUT_BASE;
+  const BTN_PRIMARY =
+    "w-full bg-darkgreen/95 hover:brightness-110 transition text-white font-semibold py-3 rounded-md disabled:opacity-60 disabled:cursor-not-allowed";
+  const LINK_CLS = "text-emerald-300 hover:text-emerald-200 transition cursor-pointer";
+
+  // ====== LOGIN ======
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsgLogin("");
@@ -73,23 +86,26 @@ export default function AuthPage() {
         await verifyToken(token);
         await loadMemberData();
         setIsLoggedIn(true);
-
-        toast.success(tLogin("login_sucesso"));
+        toast.success("login realizado com sucesso!");
         router.replace(`/${locale}`);
       }
     } catch (err: any) {
-      toast.error(tLogin("login_erro"));
-      setMsgLogin(err?.message || "Erro ao fazer login.");
+      const errorMessage = err?.message || "erro ao fazer login.";
+      const finalMessage = errorMessage.includes("Credenciais inválidas ou conta não confirmada")
+        ? "credenciais inválidas ou conta não confirmada."
+        : errorMessage;
+      toast.error(finalMessage);
+      setMsgLogin(finalMessage);
     } finally {
       setLoadingLogin(false);
     }
   };
 
-  // SIGNUP
+  // ====== SIGNUP ======
   const nameRegex = useMemo(() => /^[A-Za-zÀ-ÿ\s]{3,}$/, []);
   const emailRegex = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/, []);
   const passwordRegex = useMemo(() => /^(?=.*\d).{5,}$/, []);
-  const handleRegex = useMemo(() => /^[a-zA-Z0-9_]{3,15}$/, []); // handle válido
+  const handleRegex = useMemo(() => /^[a-zA-Z0-9_]{3,15}$/, []);
 
   const isValidDate = (str: string) => {
     const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/(\d{4})$/;
@@ -97,18 +113,14 @@ export default function AuthPage() {
     const [day, month, year] = str.split("/").map(Number);
     const parsed = new Date(year, month - 1, day);
     const today = new Date();
-    const age = today.getFullYear() - parsed.getFullYear();
+    let age = today.getFullYear() - parsed.getFullYear();
+    const m = today.getMonth() - parsed.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < parsed.getDate())) age--;
     return (
-      parsed instanceof Date &&
-      !isNaN(parsed.getTime()) &&
       parsed.getFullYear() === year &&
       parsed.getMonth() + 1 === month &&
       parsed.getDate() === day &&
-      (age > 18 ||
-        (age === 18 &&
-          (today.getMonth() > parsed.getMonth() ||
-            (today.getMonth() === parsed.getMonth() &&
-              today.getDate() >= parsed.getDate())))) &&
+      age >= 18 &&
       age < 120
     );
   };
@@ -125,27 +137,27 @@ export default function AuthPage() {
     setMsgSign("");
 
     if (!nameRegex.test(name)) {
-      toast.error(tSign("invalid_name"));
+      toast.error("nome inválido. use ao menos 3 letras.");
       return;
     }
     if (!handleRegex.test(handle)) {
-      toast.error("Handle inválido. Use apenas letras, números ou _ (3-15 chars).");
+      toast.error("usuário inválido. use 3–15 caracteres (letras, números ou _).");
       return;
     }
     if (!emailRegex.test(emailSign)) {
-      toast.error(tSign("invalid_email"));
+      toast.error("e-mail inválido.");
       return;
     }
     if (!passwordRegex.test(senhaSign)) {
-      toast.error(tSign("invalid_senha"));
+      toast.error("senha inválida. mínimo de 5 caracteres e 1 número.");
       return;
     }
     if (!isValidDate(date)) {
-      toast.error(tSign("invalid_date"));
+      toast.error("data de nascimento inválida (use dd/mm/aaaa, 18+).");
       return;
     }
     if (!gender) {
-      toast.error(tSign("Select_Gender"));
+      toast.error("selecione um gênero.");
       return;
     }
 
@@ -163,57 +175,88 @@ export default function AuthPage() {
         handle: handle.trim(),
       });
       if (resp.success) {
-        toast.success(tSign("cadastro_sucesso"));
+        const confirmMsg =
+          `pronto! enviamos um e-mail de confirmação para ${emailSign.trim()}. ` +
+          `confirme sua conta para entrar no site. ` +
+          `(se não encontrar, verifique também as pastas spam/lixo eletrônico.)`;
+        toast.success(confirmMsg);
+        setSignupConfirmText(confirmMsg);
         setSignupDone(true);
       }
     } catch (err: any) {
-      toast.error(tSign("cadastro_erro"));
-      setMsgSign(err?.message || "Falha no cadastro.");
+      const errorMessage = err?.message || "falha no cadastro.";
+      toast.error("não foi possível concluir seu cadastro.");
+      setMsgSign(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const Segmented = () => (
-    <div className="w-full max-w-md mx-auto mb-6">
-      <div className="relative flex bg-black/30 border border-[var(--color-darkgreen)] rounded-full p-1 backdrop-blur-sm overflow-hidden">
-        <span
-          className={[
-            "absolute top-1 bottom-1",
-            "w-[calc(50%-0.25rem)]",
-            "rounded-full bg-darkgreen shadow-[0_10px_30px_rgba(0,0,0,0.45)]",
-            "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            tab === "login" ? "left-1" : "left-[calc(50%+0.25rem)]",
-          ].join(" ")}
-          aria-hidden
-        />
-        <button
-          type="button"
-          onClick={() => setTab("login")}
-          className={[
-            "relative z-10 flex-1 py-2 text-sm md:text-base font-semibold rounded-full",
-            "transition-colors duration-300",
-            tab === "login" ? "text-white" : "text-emerald-300 hover:text-emerald-200",
-          ].join(" ")}
-          aria-pressed={tab === "login"}
+  // ====== segmented (corrigido com 'left' ao invés de translate) ======
+  const Segmented = () => {
+    const isLogin = tab === "login";
+    return (
+      <div className="w-full max-w-md mx-auto mb-6">
+        <div
+          className="
+            relative grid grid-cols-2 items-center
+            rounded-full h-12 p-1
+            bg-gradient-to-b from-black/30 to-black/50
+            border border-emerald-900/40
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
+            backdrop-blur-sm overflow-hidden
+          "
+          role="tablist"
+          aria-label="alternar entre entrar e criar conta"
         >
-          {tLogin("titulo")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("signup")}
-          className={[
-            "relative z-10 flex-1 py-2 text-sm md:text-base font-semibold rounded-full",
-            "transition-colors duration-300",
-            tab === "signup" ? "text-white" : "text-emerald-300 hover:text-emerald-200",
-          ].join(" ")}
-          aria-pressed={tab === "signup"}
-        >
-          {tSign("titulo")}
-        </button>
+          {/* pill com posicionamento por 'left' para simetria perfeita */}
+          <span
+            className="
+              pointer-events-none absolute top-1 bottom-1
+              w-[calc(50%-0.5rem)]
+              rounded-full
+              bg-[var(--color-darkgreen)]
+              shadow-[0_8px_32px_rgba(0,0,0,0.5)]
+              transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)]
+            "
+            style={{
+              left: isLogin ? "0.25rem" : "calc(50% + 0.25rem)",
+            }}
+            aria-hidden
+          />
+          {/* botões */}
+          <button
+            type="button"
+            onClick={() => setTab("login")}
+            role="tab"
+            aria-selected={isLogin}
+            className={[
+              "relative z-10 h-10 mx-1 rounded-full font-semibold px-3",
+              "text-sm md:text-base",
+              "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
+              isLogin ? "text-white" : "text-emerald-300 hover:text-emerald-200",
+            ].join(" ")}
+          >
+            entrar
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("signup")}
+            role="tab"
+            aria-selected={!isLogin}
+            className={[
+              "relative z-10 h-10 mx-1 rounded-full font-semibold px-3",
+              "text-sm md:text-base",
+              "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
+              !isLogin ? "text-white" : "text-emerald-300 hover:text-emerald-200",
+            ].join(" ")}
+          >
+            criar conta
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <PageTransition>
@@ -226,160 +269,246 @@ export default function AuthPage() {
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="absolute inset-0 -z-10 bg-black/80" />
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(transparent_62%,rgba(0,0,0,0.75))]" />
+        {/* overlays */}
+        <div className="absolute inset-0 -z-10 bg-black/75" />
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(transparent_60%,rgba(0,0,0,0.8))]" />
 
         <Container>
           <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center py-8">
-            <div
-              className={[
-                "w-full max-w-xl",
-                "rounded-2xl border border-[var(--color-darkgreen)]",
-                "bg-black/40 backdrop-blur-md",
-                "shadow-[0_24px_80px_rgba(0,0,0,0.55)]",
-                "px-6 sm:px-8 py-7",
-              ].join(" ")}
-            >
+            <div className={FORM_WRAP}>
               <Segmented />
               <div className="relative">
                 {/* LOGIN */}
-                <div
+                <section
                   className={[
                     "transition-opacity duration-300",
                     tab === "login"
-                      ? "opacity-100 pointer-events-auto"
+                      ? "opacity-100 pointer-events-auto relative"
                       : "opacity-0 pointer-events-none absolute inset-0",
                   ].join(" ")}
                 >
                   <form onSubmit={handleLogin} className="space-y-4">
-                    <input
-                      type="email"
-                      placeholder={tLogin("email")}
-                      value={emailLogin}
-                      onChange={(e) => setEmailLogin(e.target.value)}
-                      className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      required
-                    />
-                    <input
-                      type="password"
-                      placeholder={tLogin("senha")}
-                      value={senhaLogin}
-                      onChange={(e) => setSenhaLogin(e.target.value)}
-                      className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md disabled:opacity-60"
-                      disabled={loadingLogin}
-                    >
-                      {loadingLogin ? tLogin("carregando") : tLogin("botao")}
+                    <div className={GROUP_CLS}>
+                      <label className={LABEL_CLS} htmlFor="emailLogin">
+                        e-mail
+                      </label>
+                      <input
+                        id="emailLogin"
+                        type="email"
+                        placeholder="email@exemplo.com"
+                        value={emailLogin}
+                        onChange={(e) => setEmailLogin(e.target.value)}
+                        className={INPUT_CLS}
+                        autoComplete="email"
+                        inputMode="email"
+                        required
+                      />
+                    </div>
+
+                    <div className={GROUP_CLS}>
+                      <label className={LABEL_CLS} htmlFor="senhaLogin">
+                        senha
+                      </label>
+                      <input
+                        id="senhaLogin"
+                        type="password"
+                        placeholder="*****"
+                        value={senhaLogin}
+                        onChange={(e) => setSenhaLogin(e.target.value)}
+                        className={INPUT_CLS}
+                        autoComplete="current-password"
+                        required
+                      />
+                    </div>
+
+                    <button type="submit" className={BTN_PRIMARY} disabled={loadingLogin}>
+                      {loadingLogin ? "entrando..." : "entrar"}
                     </button>
+
                     {msgLogin && (
-                      <p className="text-red-400 text-sm text-center mt-2">{msgLogin}</p>
+                      <p className="text-red-400 text-sm text-center mt-2" aria-live="polite">
+                        {msgLogin}
+                      </p>
                     )}
+
                     <div className="mt-2 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
                       <span
                         onClick={() => router.replace(`/${locale}/envia_email`)}
-                        className="text-emerald-300 hover:text-emerald-200 transition cursor-pointer"
+                        className={LINK_CLS}
+                        role="button"
+                        tabIndex={0}
                       >
-                        {tLogin("esqueceu_senha")}
+                        esqueci minha senha
                       </span>
                       <span
                         onClick={() => router.replace(`/${locale}/refaz_email`)}
-                        className="text-emerald-300 hover:text-emerald-200 transition cursor-pointer"
+                        className={LINK_CLS}
+                        role="button"
+                        tabIndex={0}
                       >
-                        {tLogin("mudar_email")}
+                        reenviar e-mail de confirmação
                       </span>
                     </div>
                   </form>
-                </div>
+                </section>
 
                 {/* SIGNUP */}
-                <div
+                <section
                   className={[
                     "transition-opacity duration-300",
                     tab === "signup"
-                      ? "opacity-100 pointer-events-auto"
+                      ? "opacity-100 pointer-events-auto relative"
                       : "opacity-0 pointer-events-none absolute inset-0",
                   ].join(" ")}
                 >
                   {signupDone ? (
                     <div className="text-center text-emerald-300 font-semibold py-10">
-                      Antes de logar, confirme seu email!
+                      {signupConfirmText ||
+                        "pronto! enviamos um e-mail de confirmação. confirme sua conta para entrar. (olhe o spam/lixo eletrônico.)"}
                     </div>
                   ) : (
                     <form onSubmit={handleSignup} className="space-y-4">
-                      <input
-                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        type="text"
-                        placeholder={tSign("nome")}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                      />
-                      <input
-                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        type="text"
-                        placeholder="@ de usuário"
-                        value={handle}
-                        onChange={(e) => setHandle(e.target.value)}
-                      />
-                      <input
-                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        type="text"
-                        placeholder={tSign("email")}
-                        value={emailSign}
-                        onChange={(e) => setEmailSign(e.target.value)}
-                      />
-                      <input
-                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        type="password"
-                        placeholder={tSign("senha")}
-                        value={senhaSign}
-                        onChange={(e) => setSenhaSign(e.target.value)}
-                      />
-                      <input
-                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder={tSign("birthday")}
-                        value={date}
-                        onChange={handleDateChange}
-                      />
-                      <select
-                        value={gender}
-                        onChange={(e) => setGender(e.target.value)}
-                        className="w-full p-3 rounded-md border border-[var(--color-darkgreen)] bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        <option value="" disabled hidden className="bg-black">
-                          {tSign("Select_Gender")}
-                        </option>
-                        <option value="MASC" className="text-emerald-500 bg-black">
-                          {tSign("M_Gender")}
-                        </option>
-                        <option value="FEM" className="text-emerald-500 bg-black">
-                          {tSign("F_Gender")}
-                        </option>
-                        <option value="OTHER" className="text-emerald-500 bg-black">
-                          {tSign("O_Gender")}
-                        </option>
-                      </select>
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full bg-darkgreen hover:brightness-110 transition text-white font-semibold py-3 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {isSubmitting ? "Enviando..." : tSign("botao")}
+                      <div className={GROUP_CLS}>
+                        <label htmlFor="name" className={LABEL_CLS}>
+                          nome
+                        </label>
+                        <input
+                          id="name"
+                          className={INPUT_CLS}
+                          type="text"
+                          placeholder="seu nome"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          autoComplete="name"
+                        />
+                      </div>
+
+                      <div className={GROUP_CLS}>
+                        <label htmlFor="handle" className={LABEL_CLS}>
+                          usuário (@)
+                        </label>
+                        <input
+                          id="handle"
+                          className={INPUT_CLS}
+                          type="text"
+                          placeholder="usuario"
+                          value={handle}
+                          onChange={(e) => setHandle(e.target.value)}
+                          autoComplete="username"
+                        />
+                      </div>
+
+                      <div className={GROUP_CLS}>
+                        <label htmlFor="emailSign" className={LABEL_CLS}>
+                          e-mail
+                        </label>
+                        <input
+                          id="emailSign"
+                          className={INPUT_CLS}
+                          type="email"
+                          placeholder="email@exemplo.com"
+                          value={emailSign}
+                          onChange={(e) => setEmailSign(e.target.value)}
+                          autoComplete="email"
+                          inputMode="email"
+                        />
+                      </div>
+
+                      <div className={GROUP_CLS}>
+                        <label htmlFor="senhaSign" className={LABEL_CLS}>
+                          senha
+                        </label>
+                        <input
+                          id="senhaSign"
+                          className={INPUT_CLS}
+                          type="password"
+                          placeholder="mínimo de 5 caracteres e 1 número"
+                          value={senhaSign}
+                          onChange={(e) => setSenhaSign(e.target.value)}
+                          autoComplete="new-password"
+                        />
+                      </div>
+
+                      <div className={GROUP_CLS}>
+                        <label htmlFor="birth" className={LABEL_CLS}>
+                          data de nascimento
+                        </label>
+                        <input
+                          id="birth"
+                          className={INPUT_CLS}
+                          type="text"
+                          placeholder="dd/mm/aaaa"
+                          value={date}
+                          onChange={handleDateChange}
+                          inputMode="numeric"
+                        />
+                      </div>
+
+                      {/* select de gênero */}
+                      <div className={GROUP_CLS}>
+                        <label htmlFor="gender" className={LABEL_CLS}>
+                          gênero
+                        </label>
+                        <div className="relative">
+                          <select
+                            id="gender"
+                            value={gender}
+                            onChange={(e) => setGender(e.target.value as BackendGender)}
+                            className={[
+                              INPUT_BASE,
+                              "appearance-none pr-10",
+                              "bg-gradient-to-b from-black/30 to-black/40",
+                              "hover:bg-black/35",
+                            ].join(" ")}
+                          >
+                            <option value="" disabled hidden>
+                              selecione o gênero
+                            </option>
+                            <option value="MASC" className="bg-gray-900 text-white">masculino</option>
+                            <option value="FEM" className="bg-gray-900 text-white">feminino</option>
+                            <option value="OTHER" className="bg-gray-900 text-white">outro</option>
+                          </select>
+
+                          <svg
+                            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 opacity-80"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.17l3.71-2.94a.75.75 0 1 1 .94 1.17l-4.24 3.36a.75.75 0 0 1-.94 0L5.21 8.4a.75.75 0 0 1 .02-1.19z" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      <button type="submit" disabled={isSubmitting} className={BTN_PRIMARY}>
+                        {isSubmitting ? "criando conta..." : "criar conta"}
                       </button>
+
                       {msgSign && (
-                        <p className="text-red-400 text-sm text-center mt-2">{msgSign}</p>
+                        <p className="text-red-400 text-sm text-center mt-2" aria-live="polite">
+                          {msgSign}
+                        </p>
                       )}
                     </form>
                   )}
-                </div>
+                </section>
               </div>
             </div>
           </div>
         </Container>
       </main>
+
+      <style jsx global>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        select:-webkit-autofill {
+          -webkit-text-fill-color: #ffffff;
+          transition: background-color 5000s ease-in-out 0s;
+          caret-color: #ffffff;
+        }
+      `}</style>
     </PageTransition>
   );
 }
