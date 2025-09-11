@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Series } from "@/types/Series";
 import { FaHeart, FaStar } from "react-icons/fa";
@@ -13,6 +13,7 @@ import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
 import RatingModal from "@/components/features/review/RatingModal";
 import ReviewSection from "@/components/features/review/ReviewSection";
+import { apiFetch, AUTH_TOKEN_KEY } from "@/lib/api";
 
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();
@@ -22,33 +23,104 @@ export default function SeriePage() {
   const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
 
+  const mountedRef = useRef(true);
   useEffect(() => {
-    const loadSerie = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
+  // Carregar detalhes da série (tenta com auth; se falhar por falta de token, tenta sem auth)
+  useEffect(() => {
+    if (!id) return;
+    const ac = new AbortController();
+
+    const loadSerie = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL_DEV}/series/${id}/details`, {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        const data = await response.json();
-        setSerie(data);
-      } catch (err) {
-        console.error("Erro ao buscar detalhes da série:", err);
+        // 1) tenta com auth se houver token
+        const hasToken =
+          typeof window !== "undefined" &&
+          !!localStorage.getItem(AUTH_TOKEN_KEY);
+
+        if (hasToken) {
+          try {
+            const data = await apiFetch(`/series/${id}/details`, {
+              method: "GET",
+              auth: true,
+              signal: ac.signal,
+            });
+            if (!mountedRef.current || ac.signal.aborted) return;
+            setSerie(data as Series);
+            return;
+          } catch (e: any) {
+            const isAbort =
+              e?.name === "AbortError" ||
+              String(e?.message || "").toLowerCase().includes("abort");
+            const status = e?.status ?? e?.code;
+            const noToken =
+              typeof e?.message === "string" &&
+              e.message.toUpperCase().includes("NO_TOKEN");
+            if (isAbort) return;
+            if (!(status === 401 || status === 403 || noToken)) {
+              console.error("Erro ao buscar série (com auth):", e);
+            }
+          }
+        }
+
+        // 2) retry sem auth (caso seja endpoint público)
+        try {
+          const data = await apiFetch(`/series/${id}/details`, {
+            method: "GET",
+            auth: false,
+            signal: ac.signal,
+          });
+          if (!mountedRef.current || ac.signal.aborted) return;
+          setSerie(data as Series);
+        } catch (e: any) {
+          const isAbort =
+            e?.name === "AbortError" ||
+            String(e?.message || "").toLowerCase().includes("abort");
+          if (!isAbort) {
+            console.error("Erro ao buscar detalhes da série (sem auth):", e);
+          }
+        }
+      } catch (err: any) {
+        const isAbort =
+          err?.name === "AbortError" ||
+          String(err?.message || "").toLowerCase().includes("abort");
+        if (!isAbort) console.error("Erro inesperado ao carregar série:", err);
       }
     };
-    loadSerie();
+
+    void loadSerie();
+
+    return () => {
+      try {
+        ac.abort();
+      } catch {}
+    };
   }, [id]);
 
+  // Checar favorito — NÃO altera services; evita setState após unmount
   useEffect(() => {
+    let cancelled = false;
+
     const checkFavorite = async () => {
-      if (member && id) {
-        const fav = await isFavoritedMedia(member.id, Number(id));
-        setIsFavorited(fav);
+      try {
+        if (member && id) {
+          const fav = await isFavoritedMedia(member.id, Number(id)); // ← só 2 args
+          if (!cancelled) setIsFavorited(fav);
+        }
+      } catch (e) {
+        if (!cancelled) console.error("Erro ao checar favorito:", e);
       }
     };
-    checkFavorite();
+
+    void checkFavorite();
+    return () => {
+      cancelled = true;
+    };
   }, [member, id]);
 
   const handleFavoriteToggle = async () => {
@@ -69,9 +141,17 @@ export default function SeriePage() {
     }
   };
 
-  if (!serie) return <p className="text-white p-10">Carregando série...</p>;
+  if (!serie) {
+    return (
+      <p className="text-white p-10" aria-live="polite">
+        Carregando série...
+      </p>
+    );
+  }
 
-  const year = serie.release_date ? new Date(serie.release_date).getFullYear() : "Desconhecido";
+  const year = serie.release_date
+    ? new Date(serie.release_date).getFullYear()
+    : "Desconhecido";
 
   return (
     <main className="relative w-full min-h-screen text-white">
@@ -94,7 +174,9 @@ export default function SeriePage() {
         <div className="flex items-center gap-4 text-sm text-gray-300">
           <div className="flex items-center gap-1 text-yellow-400">
             <FaStar />
-            <span className="text-lg font-medium">{serie.vote_average.toFixed(1)}</span>
+            <span className="text-lg font-medium">
+              {Number(serie.vote_average || 0).toFixed(1)}
+            </span>
           </div>
           <span className="uppercase">{serie.genres?.[0] || "DESCONHECIDO"}</span>
           <span>{year}</span>

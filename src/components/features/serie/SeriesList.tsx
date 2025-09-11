@@ -39,11 +39,14 @@ export function SeriesList() {
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const t = useTranslations("MovieList"); // reutilizando o mesmo namespace
+  const t = useTranslations("MovieList"); // reaproveitando namespace
   const maxPage = 500;
 
   const searchRef = useRef<HTMLInputElement | null>(null);
   const mobileSearchRef = useRef<HTMLInputElement | null>(null);
+
+  // id para descartar respostas antigas quando filtros mudam
+  const requestIdRef = useRef(0);
 
   const years = useMemo(() => Array.from({ length: 100 }, (_, i) => 2025 - i), []);
 
@@ -51,47 +54,58 @@ export function SeriesList() {
     setSearchTerm(e.target.value);
   };
 
-  // debounce (mais curto, como no MovieList)
+  // debounce da busca
   useEffect(() => {
     const delay = setTimeout(() => setDebouncedSearchTerm(searchTerm.trim()), 400);
     return () => clearTimeout(delay);
   }, [searchTerm]);
 
-  // carregar gêneros (sem travar UI, com cancelamento)
+  // carregar gêneros (sem AbortController; evita setState pós-unmount com flag)
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
+
     (async () => {
       try {
-        const genresData = await fetchGenres({ signal: controller.signal });
-        if (!controller.signal.aborted) setGenres(genresData);
+        const genresData = await fetchGenres(); // sem signal
+        if (!cancelled) setGenres(genresData);
       } catch (error) {
-        if (!controller.signal.aborted) console.error("Erro ao carregar gêneros:", error);
+        if (!cancelled) console.error("Erro ao carregar gêneros:", error);
       }
     })();
-    return () => controller.abort();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // carregar séries por filtros/página (com cancelamento)
+  // carregar séries por filtros/página (sem AbortController; com requestId)
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
+    const myId = ++requestIdRef.current;
+
     (async () => {
-      setLoading(true);
       try {
+        setLoading(true);
         const data = await fetchSeriesByPage(
           page,
           selectedYear ? parseInt(selectedYear) : undefined,
           selectedGenre ? parseInt(selectedGenre) : undefined,
-          debouncedSearchTerm || undefined,
-          { signal: controller.signal }
+          debouncedSearchTerm || undefined
         );
-        if (!controller.signal.aborted) setSeries(data);
+        // só aplica se ainda for a requisição mais recente e não tiver desmontado
+        if (!cancelled && myId === requestIdRef.current) {
+          setSeries(data);
+        }
       } catch (error) {
-        if (!controller.signal.aborted) console.error("Erro ao carregar séries:", error);
+        if (!cancelled) console.error("Erro ao carregar séries:", error);
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!cancelled && myId === requestIdRef.current) setLoading(false);
       }
     })();
-    return () => controller.abort();
+
+    return () => {
+      cancelled = true;
+    };
   }, [page, selectedYear, selectedGenre, debouncedSearchTerm]);
 
   const handlePageChange = () => {
@@ -111,7 +125,6 @@ export function SeriesList() {
     }
   };
 
-  // limpa somente Ano/Gênero (mantém a busca), igual ao MovieList
   const clearFilters = () => {
     setSelectedYear("");
     setSelectedGenre("");
@@ -119,7 +132,7 @@ export function SeriesList() {
 
   return (
     <>
-      {/* Desktop/Tablet: busca + filtros inline (igual MovieList) */}
+      {/* Desktop/Tablet: busca + filtros inline */}
       <div className="hidden sm:flex items-center mb-6 gap-4">
         <button
           onClick={() => {
@@ -185,7 +198,7 @@ export function SeriesList() {
         )}
       </div>
 
-      {/* Mobile: barra de busca sempre visível + botão de filtros */}
+      {/* Mobile */}
       <div className="sm:hidden mb-3">
         <div className="flex items-center gap-2 mb-3">
           <div className="bg-neutral-800 rounded-md p-2">
@@ -211,7 +224,7 @@ export function SeriesList() {
         </button>
       </div>
 
-      {/* Bottom Sheet (Mobile): somente Ano/Gênero, igual MovieList */}
+      {/* Bottom Sheet (Mobile) */}
       {mobileFiltersOpen && (
         <>
           <div
