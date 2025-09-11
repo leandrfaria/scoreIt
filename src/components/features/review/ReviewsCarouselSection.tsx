@@ -36,66 +36,101 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
   const [err, setErr] = useState<string>("");
 
   const carouselRef = useRef<HTMLDivElement | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef<boolean>(false);
+  const requestSeqRef = useRef<number>(0); // evita race conditions sem usar AbortController
 
-  const userIdToUse = useMemo(() => memberId || (member?.id ? String(member.id) : ""), [memberId, member?.id]);
+  const userIdToUse = useMemo(
+    () => memberId || (member?.id ? String(member.id) : ""),
+    [memberId, member?.id]
+  );
 
   const fetchReviews = async () => {
+    // incrementa a sequência desta chamada
+    const mySeq = ++requestSeqRef.current;
+
     if (!userIdToUse) {
-      setLoading(false);
+      if (mountedRef.current && mySeq === requestSeqRef.current) {
+        setLoading(false);
+        setReviews([]);
+        setErr("");
+      }
       return;
     }
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     try {
-      setLoading(true);
-      setErr("");
+      if (mountedRef.current && mySeq === requestSeqRef.current) {
+        setLoading(true);
+        setErr("");
+      }
 
-      // service atualizado não precisa de token; aceita opts.signal
-      const res = await getReviewsByMemberId(Number(userIdToUse), { signal: controller.signal });
+      // NÃO passamos signal; evitamos aborts que causam ruído no console
+      const res = await getReviewsByMemberId(Number(userIdToUse));
 
-      // enriquece com dados de mídia (em paralelo)
-      const enriched: (ReviewWithMediaData | null)[] = await Promise.all(
+      // Enriquecimento tolerante a falhas
+      const settled = await Promise.allSettled(
         res.map(async (review) => {
-          try {
-            const media = await fetchMediaById(review.mediaId, review.mediaType);
-            if (!media) return null;
-            return { ...review, title: media.title, posterUrl: media.posterUrl };
-          } catch {
-            return null;
-          }
+          const media = await fetchMediaById(review.mediaId, review.mediaType);
+          if (!media) return null;
+          return {
+            ...review,
+            title: media.title,
+            posterUrl: media.posterUrl,
+          } as ReviewWithMediaData;
         })
       );
 
-      const valid = enriched.filter((x): x is ReviewWithMediaData => x !== null);
+      const valid: ReviewWithMediaData[] = [];
+      for (const r of settled) {
+        if (r.status === "fulfilled" && r.value) valid.push(r.value);
+      }
 
-      // ordena por data da review (mais recente primeiro)
-      valid.sort((a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime());
+      valid.sort(
+        (a, b) =>
+          new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime()
+      );
 
-      setReviews(valid);
+      if (mountedRef.current && mySeq === requestSeqRef.current) {
+        setReviews(valid);
+      }
     } catch (e: any) {
-      if (e?.name !== "AbortError") {
+      if (mountedRef.current && mySeq === requestSeqRef.current) {
         console.error("Erro ao buscar reviews:", e);
         setErr("Não foi possível carregar suas avaliações agora.");
       }
     } finally {
-      setLoading(false);
+      if (mountedRef.current && mySeq === requestSeqRef.current) {
+        setLoading(false);
+      }
     }
   };
 
+  // Montagem/Desmontagem
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      // invalida quaisquer respostas pendentes sem abortar fetch
+      requestSeqRef.current++;
+    };
+  }, []);
+
+  // Recarrega quando o usuário alvo muda
   useEffect(() => {
     fetchReviews();
-    return () => abortRef.current?.abort();
+    // ao mudar de usuário, invalida respostas anteriores
+    return () => {
+      requestSeqRef.current++;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userIdToUse]);
 
   const scrollContainer = (dir: "left" | "right") => {
     if (!carouselRef.current) return;
     const scrollAmount = 350;
-    carouselRef.current.scrollBy({ left: dir === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+    carouselRef.current.scrollBy({
+      left: dir === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
   };
 
   if (loading) {
@@ -103,12 +138,17 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
       <Container>
         <div className="py-10">
           <h2 className="text-2xl font-bold text-white mb-6 px-4 sm:px-6 lg:px-20">
-            {memberId ? "Últimas avaliações do usuário" : "Suas últimas avaliações"}
+            {memberId
+              ? "Últimas avaliações do usuário"
+              : "Suas últimas avaliações"}
           </h2>
           {/* Skeletons */}
           <div className="px-4 sm:px-6 lg:px-20 flex overflow-hidden gap-6">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="min-w-[360px] max-w-[360px] rounded-lg border border-white/10 bg-[#0D1117] p-6 animate-pulse">
+              <div
+                key={i}
+                className="min-w-[360px] max-w-[360px] rounded-lg border border-white/10 bg-[#0D1117] p-6 animate-pulse"
+              >
                 <div className="flex gap-4 mb-4">
                   <div className="w-16 h-24 bg-white/10 rounded" />
                   <div className="flex-1">
@@ -137,7 +177,9 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
   if (reviews.length === 0) {
     return (
       <Container>
-        <div className="text-white py-10 text-center">Nenhuma avaliação feita ainda.</div>
+        <div className="text-white py-10 text-center">
+          Nenhuma avaliação feita ainda.
+        </div>
       </Container>
     );
   }

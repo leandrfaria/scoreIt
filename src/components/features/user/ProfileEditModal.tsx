@@ -4,9 +4,30 @@ import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 
+/** Normaliza o handle removendo '@', deixando minúsculo e permitindo apenas a-z 0-9 . _ */
 function normalizeHandleInput(v: string) {
-  // não salva @ no input; deixa apenas caracteres válidos
   return v.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
+}
+
+/** Sugere um handle quando o usuário ainda não tem:
+ *  1) usa o handle existente (normalizado), se houver
+ *  2) usa a parte à esquerda do email
+ *  3) usa o nome, com espaços virando '.'
+ *  4) fallback "user{id}"
+ */
+function suggestHandle(member?: Member | null): string {
+  if (!member) return "usuario";
+  const fromHandle = normalizeHandleInput(member.handle || "");
+  if (fromHandle) return fromHandle;
+
+  const emailLeft = (member.email || "").split("@")[0] || "";
+  const fromEmail = normalizeHandleInput(emailLeft);
+  if (fromEmail) return fromEmail;
+
+  const fromName = normalizeHandleInput((member.name || "").replace(/\s+/g, "."));
+  if (fromName) return fromName;
+
+  return `user${member.id || ""}`;
 }
 
 const ProfileEditModal = ({
@@ -29,12 +50,14 @@ const ProfileEditModal = ({
 }) => {
   const t = useTranslations("ProfileEditModal");
 
+  // handle inicial sempre preenchido (normalizado ou sugerido)
+  const initialSuggested = useMemo(() => suggestHandle(member), [member]);
   const [formData, setFormData] = useState({
     name: member?.name || "",
     bio: member?.bio || "",
     birthDate: member?.birthDate || "",
     gender: member?.gender || "",
-    handle: member?.handle || "",
+    handle: normalizeHandleInput(member?.handle || "") || initialSuggested,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectOpen, setSelectOpen] = useState(false);
@@ -44,28 +67,30 @@ const ProfileEditModal = ({
   const MAX_HANDLE_LENGTH = 20;
   const MIN_HANDLE_LENGTH = 3;
 
+  // Sincroniza quando o modal abre ou quando o member atualiza
   useEffect(() => {
-    // sincroniza caso o modal seja aberto e o context atualize
+    const newSuggested = suggestHandle(member);
     setFormData({
       name: member?.name || "",
       bio: member?.bio || "",
       birthDate: member?.birthDate || "",
       gender: member?.gender || "",
-      handle: member?.handle || "",
+      handle: normalizeHandleInput(member?.handle || "") || newSuggested,
     });
-  }, [member?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member?.id, member?.name, member?.email, member?.handle, member?.bio, member?.birthDate, member?.gender]);
 
   const isNameTooLong = formData.name.length > MAX_NAME_LENGTH;
   const isBioTooLong = formData.bio.length > MAX_BIO_LENGTH;
 
   const isHandleValid = useMemo(() => {
-    const h = formData.handle;
+    const h = formData.handle || initialSuggested;
     return (
       h.length >= MIN_HANDLE_LENGTH &&
       h.length <= MAX_HANDLE_LENGTH &&
       /^[a-z0-9._]+$/.test(h)
     );
-  }, [formData.handle]);
+  }, [formData.handle, initialSuggested]);
 
   const isSaveDisabled = isNameTooLong || isBioTooLong || !isHandleValid;
 
@@ -122,7 +147,14 @@ const ProfileEditModal = ({
       return;
     }
 
-    if (!isHandleValid) {
+    // garante um handle válido mesmo se o campo ficar vazio
+    const finalHandle = normalizeHandleInput(formData.handle) || initialSuggested;
+
+    if (
+      finalHandle.length < MIN_HANDLE_LENGTH ||
+      finalHandle.length > MAX_HANDLE_LENGTH ||
+      !/^[a-z0-9._]+$/.test(finalHandle)
+    ) {
       toast.error("Handle inválido. Use 3–20 caracteres: letras, números, ponto ou underline.");
       return;
     }
@@ -133,11 +165,13 @@ const ProfileEditModal = ({
         bio: formData.bio.trim(),
         birthDate: formData.birthDate,
         gender: formData.gender,
-        handle: formData.handle,
+        handle: finalHandle, // sempre salvo normalizado/sugerido
       },
       imageFile
     );
   };
+
+  const previewHandle = formData.handle || initialSuggested;
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -181,7 +215,10 @@ const ProfileEditModal = ({
                 className="w-full p-3 rounded-r-lg bg-zinc-800 text-white outline-none"
                 maxLength={MAX_HANDLE_LENGTH}
                 autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
                 spellCheck={false}
+                inputMode="text"
               />
             </div>
             <div
@@ -189,7 +226,7 @@ const ProfileEditModal = ({
                 isHandleValid ? "text-gray-400" : "text-red-400"
               }`}
             >
-              {`Seu @ ficará assim: @${formData.handle || "seuusuario"} (3–20, letras/números/._)`}
+              {`Seu @ ficará assim: @${previewHandle} (3–20, letras/números/._)`}
             </div>
           </div>
 

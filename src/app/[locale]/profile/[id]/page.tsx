@@ -24,6 +24,27 @@ import { ProfileStats } from "@/components/features/user/ProfileStats";
 // Mural de conquistas (público sem polling)
 import BadgesWall from "@/components/features/badge/BadgesWall";
 
+/** Normaliza o handle removendo @, minúsculas e permitido [a-z0-9._] */
+function normalizeHandle(v: string) {
+  return (v || "").replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
+}
+
+/** Sugere um handle a partir do Member (se handle estiver vazio) */
+function suggestHandle(m?: Member | null) {
+  if (!m) return "usuario";
+  const fromHandle = normalizeHandle(m.handle || "");
+  if (fromHandle) return fromHandle;
+
+  const emailLeft = (m.email || "").split("@")[0] || "";
+  const fromEmail = normalizeHandle(emailLeft);
+  if (fromEmail) return fromEmail;
+
+  const fromName = normalizeHandle((m.name || "").replace(/\s+/g, "."));
+  if (fromName) return fromName;
+
+  return `user${m.id || ""}`;
+}
+
 export default function PublicProfilePage() {
   const [otherMember, setOtherMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
@@ -165,9 +186,7 @@ export default function PublicProfilePage() {
               >
                 <span>Ver listas</span>
                 <svg
-                  className={`w-5 h-5 transform transition-transform ${
-                    isListsOpen ? "rotate-180" : ""
-                  }`}
+                  className={`w-5 h-5 transform transition-transform ${isListsOpen ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -186,9 +205,7 @@ export default function PublicProfilePage() {
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
                   {customLists.length === 0 ? (
-                    <p className="text-gray-400 py-2">
-                      Este usuário não possui listas personalizadas!
-                    </p>
+                    <p className="text-gray-400 py-2">Este usuário não possui listas personalizadas!</p>
                   ) : (
                     <div className="grid grid-cols-2 gap-4">
                       {customLists.map((list) => (
@@ -240,57 +257,46 @@ interface ProfileHeaderProps {
   setFollowers: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const ProfileHeader = ({
-  member,
-  t,
-  followers,
-  following,
-  setFollowers,
-}: ProfileHeaderProps) => (
-  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-      <div className="w-16 h-16 rounded-full overflow-hidden relative ring-2 ring-white/10">
-        <Image
-          src={
-            member?.profileImageUrl ||
-            "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
-          }
-          alt="Foto de perfil"
-          fill
-          className="object-cover"
-        />
-      </div>
+const ProfileHeader = ({ member, t, followers, following, setFollowers }: ProfileHeaderProps) => {
+  const displayHandle = `@${normalizeHandle(member?.handle || "") || suggestHandle(member)}`;
 
-      <div className="flex-1 flex flex-col text-white space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-lg font-medium">{member?.name}</span>
-          {member?.handle && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
-              @{member.handle}
-            </span>
-          )}
+  return (
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
+        <div className="w-16 h-16 rounded-full overflow-hidden relative ring-2 ring-white/10">
+          <Image
+            src={
+              member?.profileImageUrl ||
+              "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
+            }
+            alt="Foto de perfil"
+            fill
+            className="object-cover"
+          />
         </div>
-        <p className="text-gray-400 text-sm max-w-md">
-          {member?.bio || t("no_bio")}
-        </p>
+
+        <div className="flex-1 flex flex-col text-white space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-lg font-medium">{member?.name}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
+              {displayHandle}
+            </span>
+          </div>
+          <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
+        </div>
+
+        <div className="sm:ml-auto">
+          <FollowButton
+            targetId={member.id.toString()}
+            onFollow={() => setFollowers((prev) => prev + 1)}
+            onUnfollow={() => setFollowers((prev) => Math.max(prev - 1, 0))}
+          />
+        </div>
       </div>
 
-      <div className="sm:ml-auto">
-        <FollowButton
-          targetId={member.id.toString()}
-          onFollow={() => setFollowers((prev) => prev + 1)}
-          onUnfollow={() => setFollowers((prev) => Math.max(prev - 1, 0))}
-        />
+      <div className="w-full md:w-auto">
+        <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()} />
       </div>
     </div>
-
-    <div className="w-full md:w-auto">
-      <ProfileStats
-        t={t}
-        followers={followers}
-        following={following}
-        memberId={member.id.toString()}
-      />
-    </div>
-  </div>
-);
+  );
+};
