@@ -1,20 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Container } from "@/components/layout/Others/Container";
 import { ProtectedRoute } from "@/components/layout/Others/ProtectedRoute";
-import { FiEdit2 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
-import { AnimatePresence, motion } from "framer-motion";
 
-import ProfileEditModal from "@/components/features/user/ProfileEditModal";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
 import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
-import { CustomListModal } from "@/components/features/user/CustomListModal";
+import CustomListModal from "@/components/features/customList/CustomListModal";
+import CreateCustomListModal from "@/components/features/customList/CreateCustomListModal";
+import CustomListsSection from "@/components/features/customList/CustomListsSection";
+import ProfileHeader from "@/components/features/user/ProfileHeader";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 
 import { useMember } from "@/context/MemberContext";
@@ -25,8 +24,6 @@ import { countFollowers, countFollowing } from "@/services/followers/countStats"
 import { fetchMemberLists } from "@/services/customList/list";
 import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
-
-// 🔥 Mural de Conquistas
 import BadgesWall from "@/components/features/badge/BadgesWall";
 
 // ------------------- UTILS -------------------
@@ -37,48 +34,14 @@ function normalizeHandle(v: string) {
 
 function suggestHandle(m?: Member | null) {
   if (!m) return "usuario";
-  const fromHandle = normalizeHandle(m.handle || "");
+  const fromHandle = normalizeHandle(m?.handle || "");
   if (fromHandle) return fromHandle;
-
-  // tenta a parte antes do @ do email
-  const emailLeft = m.email?.split("@")[0] || "";
+  const emailLeft = m?.email?.split("@")[0] || "";
   const fromEmail = normalizeHandle(emailLeft);
   if (fromEmail) return fromEmail;
-
-  // tenta do nome
-  const fromName = normalizeHandle((m.name || "").replace(/\s+/g, "."));
+  const fromName = normalizeHandle((m?.name || "").replace(/\s+/g, "."));
   if (fromName) return fromName;
-
-  // fallback pelo id
-  return `user${m.id || ""}`;
-}
-
-// ------------------- API HELPERS -------------------
-
-async function uploadProfileImage(token: string, memberId: number, imageFile: File) {
-  const formDataImage = new FormData();
-  formDataImage.append("file", imageFile);
-
-  const res = await fetch(`http://localhost:8080/api/images/upload/${memberId}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: formDataImage,
-  });
-
-  if (!res.ok) throw new Error("Erro ao fazer upload da imagem");
-}
-
-async function createCustomList(token: string, memberId: number, name: string, description: string) {
-  const res = await fetch("http://localhost:8080/customList/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ memberId, listName: name, description }),
-  });
-
-  if (!res.ok) throw new Error("Erro ao criar lista");
+  return `user${m?.id || ""}`;
 }
 
 // ------------------- COMPONENT -------------------
@@ -124,12 +87,10 @@ export default function Profile() {
 
   useEffect(() => {
     if (!member) return;
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
     if (!token) return;
 
-    Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id)]).catch(
-      console.error
-    );
+    Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id)]).catch(console.error);
   }, [member]);
 
   // ----------- Handlers -----------
@@ -141,11 +102,17 @@ export default function Profile() {
     if (!member) return;
 
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
       if (!token) return;
 
       if (imageFile) {
-        await uploadProfileImage(token, member.id, imageFile);
+        const formDataImage = new FormData();
+        formDataImage.append("file", imageFile);
+        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL_DEV || "http://localhost:8080"}/api/images/upload/${member.id}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formDataImage,
+        });
       }
 
       const payload = {
@@ -169,23 +136,6 @@ export default function Profile() {
     }
   };
 
-  const handleCreateList = async (formData: { name: string; description: string }) => {
-    if (!member) return;
-
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-
-      await createCustomList(token, member.id, formData.name, formData.description);
-      toast.success("Lista criada");
-      setActiveModal(null);
-      await loadCustomLists(token, member.id);
-    } catch (error) {
-      toast.error("Erro ao criar lista");
-      console.error(error);
-    }
-  };
-
   // ----------- Render -----------
 
   return (
@@ -196,10 +146,10 @@ export default function Profile() {
           <div className="mt-5">
             <ProfileHeader
               member={member}
-              onEditClick={() => setActiveModal("edit")}
               t={t}
               followers={followers}
               following={following}
+              onEditClick={() => setActiveModal("edit")}
             />
           </div>
         </Container>
@@ -255,23 +205,15 @@ export default function Profile() {
         </Container>
 
         {/* ----------- Modals ----------- */}
-        {activeModal === "edit" && member && (
-          <ProfileEditModal
-            member={{
-              ...member,
-              // garante que o modal receba um handle sugerido se vier vazio
-              handle: normalizeHandle(member.handle || "") || suggestHandle(member),
-            }}
-            onUpdateMember={handleUpdateMember}
-            onClose={() => setActiveModal(null)}
-          />
-        )}
-
         {activeModal === "createList" && member && (
-          <CustomListModal
+          <CreateCustomListModal
+            isOpen
             onClose={() => setActiveModal(null)}
-            onCreate={handleCreateList}
-            member={member}
+            memberId={member.id}
+            onCreated={() => {
+              const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
+              if (token) loadCustomLists(token, member.id);
+            }}
           />
         )}
 
@@ -283,11 +225,11 @@ export default function Profile() {
             listName={selectedList.listName}
             listDescription={selectedList.list_description}
             onListDeleted={() => {
-              const token = localStorage.getItem("authToken");
+              const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
               if (token) loadCustomLists(token, member.id);
             }}
             onListUpdated={() => {
-              const token = localStorage.getItem("authToken");
+              const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
               if (token) loadCustomLists(token, member.id);
             }}
             member={member}
@@ -297,92 +239,3 @@ export default function Profile() {
     </ProtectedRoute>
   );
 }
-
-// ------------------- SUBCOMPONENTS -------------------
-
-interface ProfileHeaderProps {
-  member: Member | null;
-  onEditClick: () => void;
-  t: any;
-  followers: number;
-  following: number;
-}
-
-const ProfileHeader = ({ member, onEditClick, t, followers, following }: ProfileHeaderProps) => {
-  const displayHandle = `@${normalizeHandle(member?.handle || "") || suggestHandle(member)}`;
-
-  return (
-    <div className="flex justify-between items-center">
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full overflow-hidden relative ring-2 ring-white/10">
-          <Image
-            src={
-              member?.profileImageUrl ||
-              "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
-            }
-            alt="Foto de perfil"
-            fill
-            className="object-cover"
-          />
-        </div>
-        <div className="flex flex-col text-white space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg font-medium">{member?.name}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
-              {displayHandle}
-            </span>
-            <button
-              onClick={onEditClick}
-              className="text-gray-400 hover:text-white ml-1"
-              title={t("edit_profile")}
-            >
-              <FiEdit2 size={18} />
-            </button>
-          </div>
-          <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
-        </div>
-      </div>
-      {member && (
-        <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()} />
-      )}
-    </div>
-  );
-};
-
-interface CustomListsSectionProps {
-  isOpen: boolean;
-  onToggle: () => void;
-  lists: CustomList[];
-  onSelect: (list: CustomList) => void;
-}
-
-const CustomListsSection = ({ isOpen, onToggle, lists, onSelect }: CustomListsSectionProps) => (
-  <section className="mt-2">
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-          animate={{ opacity: 1, height: "auto", overflow: "visible" }}
-          exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          {lists.length === 0 ? (
-            <p className="text-gray-400 py-2">Você não possui nenhuma lista!</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {lists.map((list) => (
-                <div
-                  key={list.id}
-                  className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700 ring-1 ring-white/10"
-                  onClick={() => onSelect(list)}
-                >
-                  <h3 className="text-lg font-semibold">{list.listName}</h3>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </section>
-);
