@@ -16,7 +16,8 @@ import { CustomList } from "@/types/CustomList";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 import { AnimatePresence, motion } from "framer-motion";
-import { CustomListModal } from "@/components/features/customList/CustomListModal";
+import CustomListModal from "@/components/features/customList/CustomListModal";
+import CustomListsSection from "@/components/features/customList/CustomListsSection";
 import { fetchMemberLists } from "@/services/customList/list";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
@@ -28,21 +29,25 @@ import BadgesWall from "@/components/features/badge/BadgesWall";
 function normalizeHandle(v: string) {
   return (v || "").replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
 }
-
 /** Sugere um handle a partir do Member (se handle estiver vazio) */
 function suggestHandle(m?: Member | null) {
   if (!m) return "usuario";
   const fromHandle = normalizeHandle(m.handle || "");
   if (fromHandle) return fromHandle;
-
   const emailLeft = (m.email || "").split("@")[0] || "";
   const fromEmail = normalizeHandle(emailLeft);
   if (fromEmail) return fromEmail;
-
   const fromName = normalizeHandle((m.name || "").replace(/\s+/g, "."));
   if (fromName) return fromName;
-
   return `user${m.id || ""}`;
+}
+
+function getToken(): string | null {
+  return (
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("authToken_dev") ||
+    localStorage.getItem("authToken_prod")
+  );
 }
 
 export default function PublicProfilePage() {
@@ -83,7 +88,7 @@ export default function PublicProfilePage() {
   useEffect(() => {
     const run = async () => {
       try {
-        const token = localStorage.getItem("authToken");
+        const token = getToken();
         if (!token || !id) return;
 
         const [followerCount, followingCount] = await Promise.all([
@@ -107,14 +112,15 @@ export default function PublicProfilePage() {
     }
   }, [member, id, router, locale]);
 
+  // Buscar listas públicas do usuário
   useEffect(() => {
     const controller = new AbortController();
     const run = async () => {
       if (!id) return;
       try {
-        const token = localStorage.getItem("authToken");
+        const token = getToken();
         if (!token) return;
-        const lists = await fetchMemberLists(token, Number(id));
+        const lists = await fetchMemberLists(token, Number(id), { signal: controller.signal });
         setCustomLists(lists);
       } catch (err) {
         console.error("Erro ao buscar listas customizadas:", err);
@@ -169,7 +175,7 @@ export default function PublicProfilePage() {
         </section>
       </Container>
 
-      {/* 3) Listas personalizadas */}
+      {/* 3) Listas personalizadas (reutilizando o componente separado) */}
       <Container>
         <section className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -177,52 +183,12 @@ export default function PublicProfilePage() {
             {/* público: sem botão de criar lista */}
           </div>
 
-          <section className="mt-2">
-            <div className="mb-4">
-              <button
-                className="flex items-center justify-between w-full text-xl font-semibold text-white"
-                onClick={() => setIsListsOpen(!isListsOpen)}
-                aria-expanded={isListsOpen}
-              >
-                <span>Ver listas</span>
-                <svg
-                  className={`w-5 h-5 transform transition-transform ${isListsOpen ? "rotate-180" : ""}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </div>
-
-            <AnimatePresence>
-              {isListsOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-                  animate={{ opacity: 1, height: "auto", overflow: "visible" }}
-                  exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                >
-                  {customLists.length === 0 ? (
-                    <p className="text-gray-400 py-2">Este usuário não possui listas personalizadas!</p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                      {customLists.map((list) => (
-                        <div
-                          key={list.id}
-                          className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700 ring-1 ring-white/10"
-                          onClick={() => handleOpenListModal(list)}
-                        >
-                          <h3 className="text-lg font-semibold">{list.listName}</h3>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
+          <CustomListsSection
+            isOpen={isListsOpen}
+            onToggle={() => setIsListsOpen(!isListsOpen)}
+            lists={customLists}
+            onSelect={(list) => handleOpenListModal(list)}
+          />
         </section>
       </Container>
 
@@ -234,7 +200,8 @@ export default function PublicProfilePage() {
         </section>
       </Container>
 
-      {selectedList && (
+      {/* Modal de visualização/edição de lista (público só visualiza/remover não aparece se não for dono, depende do backend) */}
+      {selectedList && otherMember && (
         <CustomListModal
           isOpen={true}
           onClose={handleCloseListModal}
