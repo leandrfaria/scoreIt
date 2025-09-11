@@ -22,9 +22,11 @@ const toNumber = (v: unknown): number => {
   return Number.isFinite(n) ? n : NaN;
 };
 
-const toBool = (v: unknown): boolean => v === true || v === "true" || v === 1 || v === "1";
+const toBool = (v: unknown): boolean =>
+  v === true || v === "true" || v === 1 || v === "1";
 
-const normStr = (v: unknown): string => (typeof v === "string" ? v : v != null ? String(v) : "");
+const normStr = (v: unknown): string =>
+  (typeof v === "string" ? v : v != null ? String(v) : "");
 
 function normalizeReview(r: unknown): ReviewFromApi | null {
   if (!isRecord(r)) return null;
@@ -69,7 +71,9 @@ export const getReviewsByMediaId = async (
       signal: opts.signal,
     });
 
-    const arr = Array.isArray(payload) ? payload : isRecord(payload) && Array.isArray((payload as Json).results)
+    const arr = Array.isArray(payload)
+      ? payload
+      : isRecord(payload) && Array.isArray((payload as Json).results)
       ? ((payload as { results: unknown[] }).results)
       : [];
 
@@ -78,7 +82,12 @@ export const getReviewsByMediaId = async (
       .filter((r): r is ReviewFromApi => r !== null);
 
     return normalized;
-  } catch (error) {
+  } catch (error: any) {
+    // Suprime aborts silenciosamente
+    const msg = String(error?.message || "").toLowerCase();
+    if (error?.name === "AbortError" || msg.includes("abort")) {
+      return [];
+    }
     console.error("❌ Erro ao buscar avaliações:", error);
     return [];
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Dialog } from "@headlessui/react";
 import { FaStar } from "react-icons/fa";
 import DatePicker from "react-datepicker";
@@ -10,11 +10,9 @@ import { postReview } from "@/services/review/post_review";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
 
-function formatDateTimeLocal(date: Date) {
+function formatDateYMD(date: Date) {
   const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
-    date.getHours()
-  )}:${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 export default function RatingModal({
@@ -35,32 +33,46 @@ export default function RatingModal({
   const { member } = useMember();
 
   const [score, setScore] = useState(0);
-  const [watchDate, setWatchDate] = useState<Date | null>(new Date());
+  const [watchDate, setWatchDate] = useState<Date | null>(null);
   const [memberReview, setMemberReview] = useState("");
   const [spoiler, setSpoiler] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // reset ao abrir
+  const acRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       setScore(0);
-      setWatchDate(new Date());
+      setWatchDate(null);
       setMemberReview("");
       setSpoiler(false);
       setIsSubmitting(false);
+      // prepara controller novo a cada abertura
+      acRef.current?.abort();
+      acRef.current = new AbortController();
+    } else {
+      acRef.current?.abort();
+      acRef.current = null;
     }
+    return () => {
+      acRef.current?.abort();
+      acRef.current = null;
+    };
   }, [isOpen]);
 
   const isDateValid = (date: Date | null) => {
     if (!date) return false;
     const now = new Date();
     const minDate = new Date("2020-01-01T00:00:00");
-    return date <= now && date >= minDate;
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return d <= today && d >= minDate;
   };
 
   const reviewLen = memberReview.trim().length;
   const isReviewValid = reviewLen <= 250;
-  const canSubmit = !!member && score > 0 && !!watchDate && isDateValid(watchDate) && isReviewValid && !isSubmitting;
+  const canSubmit =
+    !!member && score > 0 && !!watchDate && isDateValid(watchDate) && isReviewValid && !isSubmitting;
 
   const handleSubmit = async () => {
     if (!canSubmit || !watchDate || !member) return;
@@ -71,12 +83,14 @@ export default function RatingModal({
       mediaType,
       memberId: member.id,
       score,
-      watchDate: formatDateTimeLocal(watchDate),
+      watchDate: formatDateYMD(watchDate),
       memberReview: memberReview.trim(),
       spoiler,
     };
 
-    const success = await postReview(payload);
+    const signal = acRef.current?.signal;
+
+    const success = await postReview(payload, { signal });
     setIsSubmitting(false);
 
     if (success) {
@@ -84,7 +98,8 @@ export default function RatingModal({
       onClose();
       onSuccess?.();
     } else {
-      toast.error("Erro ao enviar avaliação.");
+      // Diferencia sessão expirada de erro genérico
+      toast.error("Erro ao enviar avaliação. Faça login novamente se a sessão expirou.");
     }
   };
 
@@ -121,17 +136,14 @@ export default function RatingModal({
             </div>
           </div>
 
-          {/* Data */}
+          {/* Data (sem horário) */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Data que assistiu</label>
             <DatePicker
               selected={watchDate}
               onChange={(date) => setWatchDate(date)}
-              showTimeSelect
-              timeFormat="HH:mm"
-              timeIntervals={15}
-              dateFormat="dd/MM/yyyy HH:mm"
-              placeholderText="Selecione a data e hora"
+              dateFormat="dd/MM/yyyy"
+              placeholderText="Selecione a data"
               className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-lightgreen)]"
               calendarClassName="react-datepicker"
               popperClassName="z-50"

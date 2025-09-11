@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useMember } from "./MemberContext";
 import { fetchCurrentMember } from "@/services/user/member";
 import { verifyToken } from "@/services/user/auth";
+import { AUTH_TOKEN_KEY } from "@/lib/api";
 
 interface AuthContextType {
   isLoggedIn: boolean | null;
@@ -25,7 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { setMember } = useMember();
 
   const loadMemberData = async () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
     if (!token) {
       setMember(null);
       setIsLoggedIn(false);
@@ -33,7 +34,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
-      // busca **um** membro garantido
       const me = await fetchCurrentMember();
       setMember(me);
       setIsLoggedIn(!!me);
@@ -41,13 +41,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Erro ao carregar membro:", err);
       setMember(null);
       setIsLoggedIn(false);
-      localStorage.removeItem("authToken");
+      localStorage.removeItem(AUTH_TOKEN_KEY);
     }
   };
 
   useEffect(() => {
     const init = async () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
 
       if (!token) {
         setMember(null);
@@ -57,11 +57,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        await verifyToken(token);  // normaliza Bearer internamente
+        await verifyToken(token);  // valida token atual
         await loadMemberData();    // popula contexto
-      } catch (error) {
+      } catch {
         console.warn("Token inválido/expirado. Limpando storage.");
-        localStorage.removeItem("authToken");
+        localStorage.removeItem(AUTH_TOKEN_KEY);
         setMember(null);
         setIsLoggedIn(false);
       } finally {
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    init();
+    void init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
