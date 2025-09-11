@@ -26,6 +26,9 @@ import { fetchMemberLists } from "@/services/customList/list";
 import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
 
+// 🔥 Mural de Conquistas
+import BadgesWall from "@/components/features/badge/BadgesWall";
+
 // ------------------- API HELPERS -------------------
 
 async function uploadProfileImage(token: string, memberId: number, imageFile: File) {
@@ -128,7 +131,7 @@ export default function Profile() {
         bio: formData.bio,
         birthDate: formData.birthDate,
         gender: formData.gender,
-        handle: formData.handle, // novo atributo
+        handle: formData.handle,
       };
 
       const updated = await updateMember(member.id.toString(), payload);
@@ -164,8 +167,9 @@ export default function Profile() {
   return (
     <ProtectedRoute>
       <main className="w-full">
+        {/* Header */}
         <Container>
-          <div className="mt-5 space-y-4">
+          <div className="mt-5">
             <ProfileHeader
               member={member}
               onEditClick={() => setActiveModal("edit")}
@@ -173,8 +177,32 @@ export default function Profile() {
               followers={followers}
               following={following}
             />
+          </div>
+        </Container>
 
-            <div className="flex justify-end">
+        {/* 1) Favoritos */}
+        <Container>
+          <section className="mt-6 space-y-4">
+            <h2 className="text-white text-xl font-semibold">Favoritos</h2>
+            {activeTab === "filmes" && <FavouriteMoviesCarouselSection />}
+            {activeTab === "musicas" && <FavouriteAlbumCarouselSection />}
+            {activeTab === "series" && <FavouriteSeriesCarouselSection />}
+          </section>
+        </Container>
+
+        {/* 2) Avaliações recentes */}
+        <Container>
+          <section className="mt-6 space-y-4">
+            <h2 className="text-white text-xl font-semibold">Avaliações recentes</h2>
+            <ReviewsCarouselSection />
+          </section>
+        </Container>
+
+        {/* 3) Listas personalizadas */}
+        <Container>
+          <section className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-white text-xl font-semibold">Listas personalizadas</h2>
               <button
                 onClick={() => setActiveModal("createList")}
                 className="bg-darkgreen text-white px-4 py-2 rounded hover:brightness-110"
@@ -192,17 +220,15 @@ export default function Profile() {
                 setActiveModal("viewList");
               }}
             />
-          </div>
+          </section>
         </Container>
 
+        {/* 4) Mural de conquistas */}
         <Container>
-          {activeTab === "filmes" && <FavouriteMoviesCarouselSection />}
-          {activeTab === "musicas" && <FavouriteAlbumCarouselSection />}
-          {activeTab === "series" && <FavouriteSeriesCarouselSection />}
-        </Container>
-
-        <Container>
-          <ReviewsCarouselSection />
+          <section className="mt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">Mural de conquistas</h2>
+            {member && <BadgesWall memberId={member.id} />}
+          </section>
         </Container>
 
         {/* ----------- Modals ----------- */}
@@ -302,24 +328,7 @@ interface CustomListsSectionProps {
 }
 
 const CustomListsSection = ({ isOpen, onToggle, lists, onSelect }: CustomListsSectionProps) => (
-  <section className="mt-6">
-    <div className="mb-2">
-      <button
-        className="flex items-center justify-between w-full text-xl font-semibold text-white"
-        onClick={onToggle}
-      >
-        <span>Suas Listas</span>
-        <svg
-          className={`w-5 h-5 transform transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-    </div>
-
+  <section className="mt-2">
     <AnimatePresence>
       {isOpen && (
         <motion.div

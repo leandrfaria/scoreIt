@@ -21,6 +21,9 @@ import { fetchMemberLists } from "@/services/customList/list";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 
+// Mural de conquistas (público sem polling)
+import BadgesWall from "@/components/features/badge/BadgesWall";
+
 export default function PublicProfilePage() {
   const [otherMember, setOtherMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,6 +116,7 @@ export default function PublicProfilePage() {
 
   return (
     <main className="w-full">
+      {/* Header */}
       <Container>
         <div className="mt-5">
           <ProfileHeader
@@ -124,68 +128,93 @@ export default function PublicProfilePage() {
             setFollowers={setFollowers}
           />
         </div>
+      </Container>
 
-        {/* Seção das Listas Customizadas */}
-        <section className="mt-6">
-          <div className="mb-4">
-            <button
-              className="flex items-center justify-between w-full text-xl font-semibold text-white"
-              onClick={() => setIsListsOpen(!isListsOpen)}
-              aria-expanded={isListsOpen}
-            >
-              <span>Listas Personalizadas</span>
-              <svg
-                className={`w-5 h-5 transform transition-transform ${
-                  isListsOpen ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-
-          <AnimatePresence>
-            {isListsOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-                animate={{ opacity: 1, height: "auto", overflow: "visible" }}
-                exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-              >
-                {customLists.length === 0 ? (
-                  <p className="text-gray-400 py-2">
-                    Este usuário não possui listas personalizadas!
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {customLists.map((list) => (
-                      <div
-                        key={list.id}
-                        className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700 ring-1 ring-white/10"
-                        onClick={() => handleOpenListModal(list)}
-                      >
-                        <h3 className="text-lg font-semibold">{list.listName}</h3>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+      {/* 1) Favoritos */}
+      <Container>
+        <section className="mt-6 space-y-4">
+          <h2 className="text-white text-xl font-semibold">Favoritos</h2>
+          {activeTab == "filmes" && <FavouriteMoviesCarouselSection memberId={id as string} />}
+          {activeTab == "musicas" && <FavouriteAlbumCarouselSection memberId={id as string} />}
+          {activeTab == "series" && <FavouriteSeriesCarouselSection memberId={id as string} />}
         </section>
       </Container>
 
+      {/* 2) Avaliações recentes */}
       <Container>
-        {activeTab == "filmes" && <FavouriteMoviesCarouselSection memberId={id as string} />}
-        {activeTab == "musicas" && <FavouriteAlbumCarouselSection memberId={id as string} />}
-        {activeTab == "series" && <FavouriteSeriesCarouselSection memberId={id as string} />}
+        <section className="mt-6 space-y-4">
+          <h2 className="text-white text-xl font-semibold">Avaliações recentes</h2>
+          <ReviewsCarouselSection memberId={id as string} />
+        </section>
       </Container>
 
+      {/* 3) Listas personalizadas */}
       <Container>
-        <ReviewsCarouselSection memberId={id as string} />
+        <section className="mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-white text-xl font-semibold">Listas personalizadas</h2>
+            {/* público: sem botão de criar lista */}
+          </div>
+
+          <section className="mt-2">
+            <div className="mb-4">
+              <button
+                className="flex items-center justify-between w-full text-xl font-semibold text-white"
+                onClick={() => setIsListsOpen(!isListsOpen)}
+                aria-expanded={isListsOpen}
+              >
+                <span>Ver listas</span>
+                <svg
+                  className={`w-5 h-5 transform transition-transform ${
+                    isListsOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {isListsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+                  animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+                  exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  {customLists.length === 0 ? (
+                    <p className="text-gray-400 py-2">
+                      Este usuário não possui listas personalizadas!
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      {customLists.map((list) => (
+                        <div
+                          key={list.id}
+                          className="bg-neutral-800 p-4 rounded-lg cursor-pointer hover:bg-neutral-700 ring-1 ring-white/10"
+                          onClick={() => handleOpenListModal(list)}
+                        >
+                          <h3 className="text-lg font-semibold">{list.listName}</h3>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+        </section>
+      </Container>
+
+      {/* 4) Mural de conquistas */}
+      <Container>
+        <section className="mt-6">
+          <h2 className="text-white text-xl font-semibold mb-3">Mural de conquistas</h2>
+          <BadgesWall memberId={Number(id)} pollMs={0} />
+        </section>
       </Container>
 
       {selectedList && (
