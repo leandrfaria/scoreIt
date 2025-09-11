@@ -1,12 +1,12 @@
+// src/components/features/review/ReviewsCarouselSection.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMember } from "@/context/MemberContext";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import ReviewProfileCard from "./ReviewProfileCard";
 import { getReviewsByMemberId } from "@/services/review/get_member_review";
 import { fetchMediaById } from "@/services/review/fetchMediaById";
-import { Container } from "@/components/layout/Others/Container";
+import { ArrowLeft as IconArrowLeft, ArrowRight as IconArrowRight } from "lucide-react";
 
 interface Props {
   memberId?: string;
@@ -35,19 +35,45 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string>("");
 
-  const carouselRef = useRef<HTMLDivElement | null>(null);
+  // --- Carrossel ---
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const [showLeftButton, setShowLeftButton] = useState(false);
+  const [showRightButton, setShowRightButton] = useState(true);
+
   const mountedRef = useRef<boolean>(false);
-  const requestSeqRef = useRef<number>(0); // evita race conditions sem usar AbortController
+  const requestSeqRef = useRef<number>(0);
 
   const userIdToUse = useMemo(
     () => memberId || (member?.id ? String(member.id) : ""),
     [memberId, member?.id]
   );
 
-  const fetchReviews = async () => {
-    // incrementa a sequência desta chamada
-    const mySeq = ++requestSeqRef.current;
+  const updateButtons = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setShowLeftButton(scrollLeft > 0);
+    setShowRightButton(scrollLeft < scrollWidth - clientWidth - 10);
+  };
 
+  const scheduleUpdateButtons = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(updateButtons);
+  };
+
+  const scroll = (direction: "left" | "right") => {
+    const el = trackRef.current;
+    if (!el) return;
+    const scrollAmount = el.clientWidth * 0.8;
+    const newLeft =
+      direction === "left" ? el.scrollLeft - scrollAmount : el.scrollLeft + scrollAmount;
+    el.scrollTo({ left: newLeft, behavior: "smooth" });
+  };
+
+  // --- Fetch das reviews ---
+  const fetchReviews = async () => {
+    const mySeq = ++requestSeqRef.current;
     if (!userIdToUse) {
       if (mountedRef.current && mySeq === requestSeqRef.current) {
         setLoading(false);
@@ -63,10 +89,8 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
         setErr("");
       }
 
-      // NÃO passamos signal; evitamos aborts que causam ruído no console
       const res = await getReviewsByMemberId(Number(userIdToUse));
 
-      // Enriquecimento tolerante a falhas
       const settled = await Promise.allSettled(
         res.map(async (review) => {
           const media = await fetchMediaById(review.mediaId, review.mediaType);
@@ -84,155 +108,147 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
         if (r.status === "fulfilled" && r.value) valid.push(r.value);
       }
 
-      valid.sort(
-        (a, b) =>
-          new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime()
-      );
+      valid.sort((a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime());
 
-      if (mountedRef.current && mySeq === requestSeqRef.current) {
-        setReviews(valid);
-      }
+      if (mountedRef.current && mySeq === requestSeqRef.current) setReviews(valid);
     } catch (e: any) {
       if (mountedRef.current && mySeq === requestSeqRef.current) {
         console.error("Erro ao buscar reviews:", e);
         setErr("Não foi possível carregar suas avaliações agora.");
       }
     } finally {
-      if (mountedRef.current && mySeq === requestSeqRef.current) {
-        setLoading(false);
-      }
+      if (mountedRef.current && mySeq === requestSeqRef.current) setLoading(false);
+      scheduleUpdateButtons();
     }
   };
 
-  // Montagem/Desmontagem
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      // invalida quaisquer respostas pendentes sem abortar fetch
       requestSeqRef.current++;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
-  // Recarrega quando o usuário alvo muda
   useEffect(() => {
     fetchReviews();
-    // ao mudar de usuário, invalida respostas anteriores
     return () => {
       requestSeqRef.current++;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userIdToUse]);
 
-  const scrollContainer = (dir: "left" | "right") => {
-    if (!carouselRef.current) return;
-    const scrollAmount = 350;
-    carouselRef.current.scrollBy({
-      left: dir === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const onScroll = () => scheduleUpdateButtons();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    scheduleUpdateButtons();
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [reviews.length]);
 
+  useEffect(() => {
+    const onResize = () => scheduleUpdateButtons();
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // --- Render ---
   if (loading) {
     return (
-      <Container>
-        <div className="py-10">
-          <h2 className="text-2xl font-bold text-white mb-6 px-4 sm:px-6 lg:px-20">
-            {memberId
-              ? "Últimas avaliações do usuário"
-              : "Suas últimas avaliações"}
-          </h2>
-          {/* Skeletons */}
-          <div className="px-4 sm:px-6 lg:px-20 flex overflow-hidden gap-6">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="min-w-[360px] max-w-[360px] rounded-lg border border-white/10 bg-[#0D1117] p-6 animate-pulse"
-              >
-                <div className="flex gap-4 mb-4">
-                  <div className="w-16 h-24 bg-white/10 rounded" />
-                  <div className="flex-1">
-                    <div className="h-4 bg-white/10 rounded w-3/4 mb-2" />
-                    <div className="h-3 bg-white/10 rounded w-1/3" />
-                  </div>
+      <section className="w-full py-4">
+        <div className="flex overflow-hidden gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="min-w-[300px] max-w-[300px] sm:min-w-[340px] sm:max-w-[340px] rounded-2xl border border-white/10 bg-[#0D1117] p-5 animate-pulse"
+            >
+              <div className="flex gap-4">
+                <div className="w-16 h-24 bg-white/10 rounded-md" />
+                <div className="flex-1">
+                  <div className="h-4 bg-white/10 rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-white/10 rounded w-1/3 mb-4" />
+                  <div className="h-3 bg-white/10 rounded w-2/3" />
                 </div>
-                <div className="h-4 bg-white/10 rounded w-1/2 mb-3" />
-                <div className="h-3 bg-white/10 rounded w-full" />
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </Container>
+
+        {/* Setas sem fundo, centralizadas, desabilitadas no loading */}
+        <div className="flex justify-center mt-5 gap-6">
+          <button disabled className="p-1 text-white/60 cursor-not-allowed" aria-label="Anterior">
+            <IconArrowLeft className="h-5 w-5" />
+          </button>
+          <button disabled className="p-1 text-white/60 cursor-not-allowed" aria-label="Próximo">
+            <IconArrowRight className="h-5 w-5" />
+          </button>
+        </div>
+      </section>
     );
   }
 
-  if (err) {
-    return (
-      <Container>
-        <div className="text-red-400 py-10 text-center">{err}</div>
-      </Container>
-    );
-  }
+  if (err) return <div className="text-red-400 py-6 text-center">{err}</div>;
 
   if (reviews.length === 0) {
     return (
-      <Container>
-        <div className="text-white py-10 text-center">
-          Nenhuma avaliação feita ainda.
-        </div>
-      </Container>
+      <div className="text-center py-8 text-gray-400">
+        <p className="text-sm">Nenhuma avaliação feita ainda.</p>
+      </div>
     );
   }
 
   return (
-    <section className="relative py-10">
-      <h2 className="text-2xl font-bold text-white mb-6 px-4 sm:px-6 lg:px-20">
-        {memberId ? "Últimas avaliações do usuário" : "Suas últimas avaliações"}
-      </h2>
-
-      {/* Botão esquerda */}
-      <button
-        onClick={() => scrollContainer("left")}
-        aria-label="Rolagem para a esquerda"
-        className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
-      >
-        <FaChevronLeft className="text-white" />
-      </button>
-
-      {/* Carrossel */}
+    <section className="w-full py-4">
+      {/* trilho */}
       <div
-        ref={carouselRef}
-        id="review-carousel"
-        className="px-4 sm:px-6 lg:px-20 flex overflow-x-auto gap-6 scroll-smooth py-2"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        ref={trackRef}
+        className="flex overflow-x-auto gap-4 sm:gap-6 scroll-smooth px-1 sm:px-0 snap-x snap-mandatory"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+        role="list"
+        aria-label="Reviews recentes"
       >
-        <style>{`
-          #review-carousel::-webkit-scrollbar { display: none; }
-        `}</style>
-
         {reviews.map((review) => (
-          <ReviewProfileCard
+          <div
             key={review.id}
-            title={review.title}
-            posterUrl={review.posterUrl}
-            date={review.reviewDate}
-            rating={review.score}
-            comment={review.memberReview}
-            canEdit={!!member && member.id === review.memberId}
-            reviewId={review.id}
-            onDelete={fetchReviews}
-          />
+            className="flex-shrink-0 snap-start"
+            style={{ width: "340px", maxWidth: "340px" }}
+            role="listitem"
+          >
+            <ReviewProfileCard
+              title={review.title}
+              posterUrl={review.posterUrl}
+              date={review.reviewDate}
+              rating={review.score}
+              comment={review.memberReview}
+              canEdit={!!member && member.id === review.memberId}
+              reviewId={review.id}
+              onDelete={fetchReviews}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Botão direita */}
-      <button
-        onClick={() => scrollContainer("right")}
-        aria-label="Rolagem para a direita"
-        className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--color-darkgreen)] p-2 rounded-full z-20 hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
-      >
-        <FaChevronRight className="text-white" />
-      </button>
+      {/* Controles ABAIXO — sem fundo, brancos, centralizados (20px) */}
+      <div className="flex justify-center mt-5 gap-6">
+        <button
+          onClick={() => scroll("left")}
+          aria-label="Anterior"
+          className="p-1 text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          disabled={!showLeftButton}
+        >
+          <IconArrowLeft className="h-5 w-5 transition-transform hover:scale-110" />
+        </button>
+        <button
+          onClick={() => scroll("right")}
+          aria-label="Próximo"
+          className="p-1 text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          disabled={!showRightButton}
+        >
+          <IconArrowRight className="h-5 w-5 transition-transform hover:scale-110" />
+        </button>
+      </div>
     </section>
   );
 }
