@@ -10,9 +10,16 @@ import { postReview } from "@/services/review/post_review";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
 
+/** Garante "YYYY-MM-DD" (sem horário/UTC) */
 function formatDateYMD(date: Date) {
   const pad = (n: number) => n.toString().padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Trunca para a meia-noite local (removendo hora/min/seg/ms) */
+function stripTimeLocal(d: Date | null): Date | null {
+  if (!d) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 export default function RatingModal({
@@ -47,7 +54,6 @@ export default function RatingModal({
       setMemberReview("");
       setSpoiler(false);
       setIsSubmitting(false);
-      // prepara controller novo a cada abertura
       acRef.current?.abort();
       acRef.current = new AbortController();
     } else {
@@ -83,7 +89,7 @@ export default function RatingModal({
       mediaType,
       memberId: member.id,
       score,
-      watchDate: formatDateYMD(watchDate),
+      watchDate: formatDateYMD(watchDate), // <-- só data
       memberReview: memberReview.trim(),
       spoiler,
     };
@@ -98,7 +104,6 @@ export default function RatingModal({
       onClose();
       onSuccess?.();
     } else {
-      // Diferencia sessão expirada de erro genérico
       toast.error("Erro ao enviar avaliação. Faça login novamente se a sessão expirou.");
     }
   };
@@ -136,12 +141,12 @@ export default function RatingModal({
             </div>
           </div>
 
-          {/* Data (sem horário) */}
+          {/* Data (SEM horário) */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Data que assistiu</label>
             <DatePicker
               selected={watchDate}
-              onChange={(date) => setWatchDate(date)}
+              onChange={(date) => setWatchDate(stripTimeLocal(date))}
               dateFormat="dd/MM/yyyy"
               placeholderText="Selecione a data"
               className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-lightgreen)]"
@@ -149,6 +154,8 @@ export default function RatingModal({
               popperClassName="z-50"
               maxDate={new Date()}
               minDate={new Date("2020-01-01")}
+              // garante que o usuário não mexa em hora
+              showTimeSelect={false}
             />
             {!isDateValid(watchDate) && (
               <span className="text-xs text-red-400">Data inválida (entre 01/01/2020 e hoje).</span>

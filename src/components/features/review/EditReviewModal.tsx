@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog } from "@headlessui/react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "@/styles/react-datepicker-dark.css";
@@ -9,11 +9,16 @@ import { updateReview } from "@/services/review/update_review";
 import toast from "react-hot-toast";
 import { FaStar } from "react-icons/fa";
 
-function formatDateTimeLocal(date: Date) {
+/** Garante "YYYY-MM-DD" (sem horário/UTC) */
+function formatDateYMD(date: Date) {
   const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
-    date.getHours()
-  )}:${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Trunca para a meia-noite local */
+function stripTimeLocal(d: Date | null): Date | null {
+  if (!d) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 interface EditReviewModalProps {
@@ -23,7 +28,7 @@ interface EditReviewModalProps {
   review: {
     id: number;
     score: number;
-    watchDate: string;
+    watchDate: string; // pode vir "YYYY-MM-DD" ou ISO
     memberReview: string;
     spoiler: boolean;
   };
@@ -33,16 +38,22 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
   const titleId = useId();
   const descId = useId();
 
+  // normaliza entrada pra Date local sem hora
+  const initialDate = useMemo(() => {
+    const d = new Date(review.watchDate);
+    return stripTimeLocal(isNaN(d.getTime()) ? new Date() : d);
+  }, [review.watchDate]);
+
   const [score, setScore] = useState(review.score);
-  const [watchDate, setWatchDate] = useState<Date | null>(new Date(review.watchDate));
+  const [watchDate, setWatchDate] = useState<Date | null>(initialDate);
   const [memberReview, setMemberReview] = useState(review.memberReview || "");
   const [spoiler, setSpoiler] = useState(review.spoiler);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // controle fino para evitar perder estado quando modal reabre
   useEffect(() => {
     setScore(review.score);
-    setWatchDate(new Date(review.watchDate));
+    const d = new Date(review.watchDate);
+    setWatchDate(stripTimeLocal(isNaN(d.getTime()) ? new Date() : d));
     setMemberReview(review.memberReview || "");
     setSpoiler(review.spoiler);
   }, [review]);
@@ -51,7 +62,9 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
     if (!date) return false;
     const now = new Date();
     const minDate = new Date("2020-01-01T00:00:00");
-    return date <= now && date >= minDate;
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return d <= today && d >= minDate;
   };
 
   const reviewLen = memberReview.trim().length;
@@ -60,13 +73,14 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
   const changed = useMemo(() => {
     const curr = {
       score,
-      watchDate: watchDate ? formatDateTimeLocal(watchDate) : "",
+      watchDate: watchDate ? formatDateYMD(watchDate) : "",
       memberReview: memberReview.trim(),
       spoiler,
     };
     const orig = {
       score: review.score,
-      watchDate: formatDateTimeLocal(new Date(review.watchDate)),
+      // normaliza original pra comparar com o mesmo formato
+      watchDate: formatDateYMD(stripTimeLocal(new Date(review.watchDate)) || new Date()),
       memberReview: (review.memberReview || "").trim(),
       spoiler: review.spoiler,
     };
@@ -82,7 +96,7 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
     const payload = {
       id: review.id,
       score,
-      watchDate: formatDateTimeLocal(watchDate),
+      watchDate: formatDateYMD(watchDate), // <-- só data
       memberReview: memberReview.trim(),
       spoiler,
     };
@@ -107,7 +121,7 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
           <Dialog.Title id={titleId} className="text-2xl font-bold">Editar Avaliação</Dialog.Title>
           <p id={descId} className="sr-only">Atualize sua nota, data, comentário e se contém spoiler.</p>
 
-          {/* Nota (acessível como radiogroup) */}
+          {/* Nota */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Sua nota</label>
             <div role="radiogroup" aria-label="Nota de 1 a 5" className="flex gap-1">
@@ -132,22 +146,20 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
             </div>
           </div>
 
-          {/* Data */}
+          {/* Data (SEM horário) */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Data que assistiu</label>
             <DatePicker
               selected={watchDate}
-              onChange={(date) => setWatchDate(date)}
-              showTimeSelect
-              timeFormat="HH:mm"
-              timeIntervals={15}
-              dateFormat="dd/MM/yyyy HH:mm"
+              onChange={(date) => setWatchDate(stripTimeLocal(date))}
+              dateFormat="dd/MM/yyyy"
               className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-lightgreen)]"
               calendarClassName="react-datepicker"
               popperClassName="z-50"
               maxDate={new Date()}
               minDate={new Date("2020-01-01")}
-              placeholderText="Selecione a data e hora"
+              placeholderText="Selecione a data"
+              showTimeSelect={false}
             />
             {!isDateValid(watchDate) && (
               <span className="text-xs text-red-400">Data inválida (entre 01/01/2020 e hoje).</span>

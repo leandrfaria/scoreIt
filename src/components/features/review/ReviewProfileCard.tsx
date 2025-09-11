@@ -9,7 +9,7 @@ import { deleteReview } from "@/services/review/delete_review";
 type ReviewProfileCardProps = {
   title: string;
   posterUrl: string;
-  date: string;
+  date: string;       // "YYYY-MM-DD" vindo do backend
   rating: number;
   comment?: string;
   canEdit?: boolean;
@@ -18,6 +18,18 @@ type ReviewProfileCardProps = {
 };
 
 const FALLBACK_POSTER = "/fallback.jpg";
+
+/** Converte "YYYY-MM-DD" para "dd/MM/yyyy" sem timezone */
+function formatYMDToPtBR(ymd: string) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd?.trim() ?? "");
+  if (!m) {
+    // fallback seguro (tenta Date local)
+    const d = new Date(ymd);
+    return isNaN(d.getTime()) ? ymd : d.toLocaleDateString("pt-BR");
+  }
+  const [, y, mo, d] = m;
+  return `${d}/${mo}/${y}`;
+}
 
 export default function ReviewProfileCard({
   title,
@@ -62,7 +74,7 @@ export default function ReviewProfileCard({
     return stars;
   };
 
-  const formattedDate = new Date(date).toLocaleDateString("pt-BR");
+  const formattedDate = formatYMDToPtBR(date);
   const hasComment = !!comment?.trim();
 
   return (
@@ -109,7 +121,6 @@ export default function ReviewProfileCard({
             </div>
           </div>
 
-          {/* bloco do comentário com altura mínima fixa em ambos os casos */}
           <div className="mt-3 min-h-[32px] sm:min-h-[32px]">
             {hasComment && (
               <p className="text-sm leading-relaxed text-gray-200 break-words whitespace-pre-wrap">

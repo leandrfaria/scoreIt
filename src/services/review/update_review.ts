@@ -1,33 +1,30 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch, clearToken } from "@/lib/api";
 
-export interface UpdateReviewPayload {
+export interface ReviewUpdatePayload {
   id: number;
   score: number;
-  watchDate: string;
+  watchDate: string; // "YYYY-MM-DD"
   memberReview: string;
   spoiler: boolean;
 }
 
-type PutOpts = { signal?: AbortSignal };
-
-export const updateReview = async (
-  payload: UpdateReviewPayload,
-  opts: PutOpts = {}
-): Promise<boolean> => {
+export const updateReview = async (payload: ReviewUpdatePayload): Promise<boolean> => {
   try {
-    if (!payload?.id || !Number.isFinite(payload.id)) return false;
-
     await apiFetch("/review/update", {
       method: "PUT",
       auth: true,
-      signal: opts.signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
     return true;
-  } catch (error) {
-    console.error("❌ Erro ao atualizar avaliação:", error);
+  } catch (error: any) {
+    const status = error?.status ?? error?.code;
+    if (status === 401 || status === 403 || String(error?.message || "").startsWith("NO_TOKEN")) {
+      clearToken();
+      console.warn("🔒 Sessão expirada ou inválida. Limpando token.");
+    } else {
+      console.error("❌ Erro ao atualizar avaliação:", error);
+    }
     return false;
   }
 };

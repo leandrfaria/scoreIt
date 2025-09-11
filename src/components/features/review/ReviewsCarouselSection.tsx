@@ -35,7 +35,6 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string>("");
 
-  // --- Carrossel ---
   const trackRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const [showLeftButton, setShowLeftButton] = useState(false);
@@ -71,7 +70,6 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
     el.scrollTo({ left: newLeft, behavior: "smooth" });
   };
 
-  // --- Fetch das reviews ---
   const fetchReviews = async () => {
     const mySeq = ++requestSeqRef.current;
     if (!userIdToUse) {
@@ -108,6 +106,7 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
         if (r.status === "fulfilled" && r.value) valid.push(r.value);
       }
 
+      // pode continuar ordenando pela data de criação da review (ok)
       valid.sort((a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime());
 
       if (mountedRef.current && mySeq === requestSeqRef.current) setReviews(valid);
@@ -154,7 +153,6 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // --- Render ---
   if (loading) {
     return (
       <section className="w-full py-4">
@@ -176,7 +174,6 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
           ))}
         </div>
 
-        {/* Setas sem fundo, centralizadas, desabilitadas no loading */}
         <div className="flex justify-center mt-5 gap-6">
           <button disabled className="p-1 text-white/60 cursor-not-allowed" aria-label="Anterior">
             <IconArrowLeft className="h-5 w-5" />
@@ -201,7 +198,6 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
 
   return (
     <section className="w-full py-4">
-      {/* trilho */}
       <div
         ref={trackRef}
         className="flex overflow-x-auto gap-4 sm:gap-6 scroll-smooth px-1 sm:px-0 snap-x snap-mandatory"
@@ -219,7 +215,7 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
             <ReviewProfileCard
               title={review.title}
               posterUrl={review.posterUrl}
-              date={review.reviewDate}
+              date={review.watchDate}       
               rating={review.score}
               comment={review.memberReview}
               canEdit={!!member && member.id === review.memberId}
@@ -230,7 +226,6 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
         ))}
       </div>
 
-      {/* Controles ABAIXO — sem fundo, brancos, centralizados (20px) */}
       <div className="flex justify-center mt-5 gap-6">
         <button
           onClick={() => scroll("left")}
