@@ -15,6 +15,7 @@ import CreateCustomListModal from "@/components/features/customList/CreateCustom
 import CustomListsSection from "@/components/features/customList/CustomListsSection";
 import ProfileHeader from "@/components/features/user/ProfileHeader";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
+import ProfileEditModal from "@/components/features/user/ProfileEditModal"; // ✅ IMPORTA O MODAL
 
 import { useMember } from "@/context/MemberContext";
 import { useTabContext } from "@/context/TabContext";
@@ -25,7 +26,7 @@ import { fetchMemberLists } from "@/services/customList/list";
 import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
 import BadgesWall from "@/components/features/badge/BadgesWall";
-import { getToken } from "@/lib/api"; // ✅ novo
+import { getToken } from "@/lib/api";
 
 function normalizeHandle(v: string) {
   return v.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
@@ -83,7 +84,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!member) return;
-    const token = getToken(); // ✅ padronizado
+    const token = getToken();
     if (!token) return;
     Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id)]).catch(console.error);
   }, [member]);
@@ -95,7 +96,7 @@ export default function Profile() {
     if (!member) return;
 
     try {
-      const token = getToken(); // ✅ padronizado
+      const token = getToken();
       if (!token) return;
 
       if (imageFile) {
@@ -132,6 +133,7 @@ export default function Profile() {
   return (
     <ProtectedRoute>
       <main className="w-full">
+        {/* Header */}
         <Container>
           <div className="mt-5">
             <ProfileHeader
@@ -139,11 +141,12 @@ export default function Profile() {
               t={t}
               followers={followers}
               following={following}
-              onEditClick={() => setActiveModal("edit")}
+              onEditClick={() => setActiveModal("edit")} // ✅ abre o modal
             />
           </div>
         </Container>
 
+        {/* 1) Favoritos */}
         <Container>
           <section className="mt-6 space-y-4">
             {activeTab === "filmes" && <FavouriteMoviesCarouselSection />}
@@ -152,6 +155,7 @@ export default function Profile() {
           </section>
         </Container>
 
+        {/* 2) Avaliações recentes */}
         <Container>
           <section className="mt-6 space-y-4">
             <h2 className="text-white text-xl font-semibold">Avaliações recentes</h2>
@@ -159,6 +163,7 @@ export default function Profile() {
           </section>
         </Container>
 
+        {/* 3) Listas personalizadas */}
         <Container>
           <section className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -183,6 +188,7 @@ export default function Profile() {
           </section>
         </Container>
 
+        {/* 4) Mural de conquistas */}
         <Container>
           <section className="mt-6">
             <h2 className="text-white text-xl font-semibold mb-3">Mural de conquistas</h2>
@@ -190,13 +196,22 @@ export default function Profile() {
           </section>
         </Container>
 
+        {/* ===== Modals ===== */}
+        {activeModal === "edit" && (
+          <ProfileEditModal
+            member={member}
+            onUpdateMember={handleUpdateMember}
+            onClose={() => setActiveModal(null)}
+          />
+        )}
+
         {activeModal === "createList" && member && (
           <CreateCustomListModal
             isOpen
             onClose={() => setActiveModal(null)}
             memberId={member.id}
             onCreated={() => {
-              const token = getToken(); // ✅
+              const token = getToken();
               if (token) loadCustomLists(token, member.id);
             }}
           />
@@ -210,11 +225,11 @@ export default function Profile() {
             listName={selectedList.listName}
             listDescription={selectedList.list_description}
             onListDeleted={() => {
-              const token = getToken(); // ✅
+              const token = getToken();
               if (token) loadCustomLists(token, member.id);
             }}
             onListUpdated={() => {
-              const token = getToken(); // ✅
+              const token = getToken();
               if (token) loadCustomLists(token, member.id);
             }}
             member={member}

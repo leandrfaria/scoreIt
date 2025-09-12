@@ -1,3 +1,5 @@
+"use client";
+
 import { Member } from "@/types/Member";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -9,12 +11,7 @@ function normalizeHandleInput(v: string) {
   return v.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
 }
 
-/** Sugere um handle quando o usuário ainda não tem:
- *  1) usa o handle existente (normalizado), se houver
- *  2) usa a parte à esquerda do email
- *  3) usa o nome, com espaços virando '.'
- *  4) fallback "user{id}"
- */
+/** Sugere um handle quando o usuário ainda não tem */
 function suggestHandle(member?: Member | null): string {
   if (!member) return "usuario";
   const fromHandle = normalizeHandleInput(member.handle || "");
@@ -30,11 +27,7 @@ function suggestHandle(member?: Member | null): string {
   return `user${member.id || ""}`;
 }
 
-const ProfileEditModal = ({
-  member,
-  onUpdateMember,
-  onClose,
-}: {
+type Props = {
   member: Member | null;
   onUpdateMember: (
     formData: {
@@ -47,8 +40,14 @@ const ProfileEditModal = ({
     imageFile: File | null
   ) => void;
   onClose: () => void;
-}) => {
+};
+
+const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
   const t = useTranslations("ProfileEditModal");
+
+  // controla montagem para evitar portal antes do DOM existir
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // handle inicial sempre preenchido (normalizado ou sugerido)
   const initialSuggested = useMemo(() => suggestHandle(member), [member]);
@@ -165,7 +164,7 @@ const ProfileEditModal = ({
         bio: formData.bio.trim(),
         birthDate: formData.birthDate,
         gender: formData.gender,
-        handle: finalHandle, // sempre salvo normalizado/sugerido
+        handle: finalHandle,
       },
       imageFile
     );
@@ -173,8 +172,15 @@ const ProfileEditModal = ({
 
   const previewHandle = formData.handle || initialSuggested;
 
+  if (!mounted) return null; // evita portal antes do DOM
+
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
@@ -221,11 +227,7 @@ const ProfileEditModal = ({
                 inputMode="text"
               />
             </div>
-            <div
-              className={`text-xs mt-1 ${
-                isHandleValid ? "text-gray-400" : "text-red-400"
-              }`}
-            >
+            <div className={`text-xs mt-1 ${isHandleValid ? "text-gray-400" : "text-red-400"}`}>
               {`Seu @ ficará assim: @${previewHandle} (3–20, letras/números/._)`}
             </div>
           </div>

@@ -13,42 +13,37 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/utils/shadcn";
+import { getToken } from "@/lib/api";
 
 export default function UserMenu() {
-  const { isLoggedIn, setIsLoggedIn } = useAuthContext();
+  const { isLoggedIn, logout } = useAuthContext();
   const { member } = useMember();
   const locale = useLocale();
   const t = useTranslations("header");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Caso o estado de auth ainda não esteja resolvido, não renderiza nada
   if (isLoggedIn === null) return null;
 
   const handleLogout = () => {
-  localStorage.removeItem("authToken");
-  setIsLoggedIn(false);
-  window.location.href = `/${locale}/auth?tab=login`;
-};
-
+    logout(); // <- aborta requests + limpa tudo
+    window.location.href = `/${locale}/auth?tab=login`;
+  };
 
   const deleteUser = async () => {
     try {
-      const token = localStorage.getItem("authToken");
+      const token = getToken();
       if (!token || !member) return;
 
       const response = await fetch(
         `http://localhost:8080/member/delete/${member.id}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       if (response.ok) {
-        localStorage.removeItem("authToken");
-        setIsLoggedIn(false);
+        logout();
         window.location.href = `/${locale}/auth`;
       } else {
         console.error("Erro ao deletar usuário:", response.statusText);
@@ -58,19 +53,17 @@ export default function UserMenu() {
     }
   };
 
- // Se não estiver logado, mostra o botão de login
-if (!isLoggedIn) {
-  return (
-    <Link
-      href={`/${locale}/auth?tab=login`}
-      className="text-white bg-darkgreen px-5 py-2 rounded-md hover:brightness-110 transition-all text-sm sm:text-base"
-    >
-      {t("login")}
-    </Link>
-  );
-}
+  if (!isLoggedIn) {
+    return (
+      <Link
+        href={`/${locale}/auth?tab=login`}
+        className="text-white bg-darkgreen px-5 py-2 rounded-md hover:brightness-110 transition-all text-sm sm:text-base"
+      >
+        {t("login")}
+      </Link>
+    );
+  }
 
-  // Logado → avatar + dropdown
   return (
     <>
       <DropdownMenu>
@@ -94,19 +87,13 @@ if (!isLoggedIn) {
           className="w-48 bg-black shadow-lg rounded-md p-2 border border-gray-700"
         >
           <DropdownMenuItem asChild>
-            <Link
-              href={`/${locale}/profile`}
-              className="block px-2 py-1 hover:bg-gray-900 rounded text-white"
-            >
+            <Link href={`/${locale}/profile`} className="block px-2 py-1 hover:bg-gray-900 rounded text-white">
               {t("perfil")}
             </Link>
           </DropdownMenuItem>
 
           <DropdownMenuItem asChild>
-            <Link
-              href={`/${locale}/feed`}
-              className="block px-2 py-1 hover:bg-gray-900 rounded text-white"
-            >
+            <Link href={`/${locale}/feed`} className="block px-2 py-1 hover:bg-gray-900 rounded text-white">
               Feed
             </Link>
           </DropdownMenuItem>
@@ -131,7 +118,6 @@ if (!isLoggedIn) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Modal de confirmação de exclusão */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 p-6 rounded-lg w-full max-w-md shadow-lg">
