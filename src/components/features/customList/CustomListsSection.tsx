@@ -1,65 +1,161 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { CustomList } from "@/types/CustomList";
+import { useRef, useMemo, useEffect, useState } from "react";
+import type { CustomList } from "@/types/CustomList";
+import { ArrowLeft as IconArrowLeft, ArrowRight as IconArrowRight } from "lucide-react";
 
 type Props = {
-  isOpen: boolean;
-  onToggle: () => void;
+  /** mantido por compat, mas ignorado */
+  isOpen?: boolean;
+  /** mantido por compat, mas ignorado */
+  onToggle?: () => void;
   lists: CustomList[];
   onSelect: (list: CustomList) => void;
 };
 
-export default function CustomListsSection({ isOpen, onToggle, lists, onSelect }: Props) {
+export default function CustomListsSection({ lists, onSelect }: Props) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  const hasLists = (lists?.length || 0) > 0;
+
+  // === mesmas setas do ReviewsCarouselSection ===
+  const [showLeftButton, setShowLeftButton] = useState(false);
+  const [showRightButton, setShowRightButton] = useState(true);
+  const rafRef = useRef<number | null>(null);
+
+  const updateButtons = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setShowLeftButton(scrollLeft > 0);
+    setShowRightButton(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  const scheduleUpdateButtons = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(updateButtons);
+  };
+
+  const scroll = (direction: "left" | "right") => {
+    const el = trackRef.current;
+    if (!el) return;
+    const scrollAmount = el.clientWidth * 0.8; // igual ao reviews
+    const newLeft = direction === "left" ? el.scrollLeft - scrollAmount : el.scrollLeft + scrollAmount;
+    el.scrollTo({ left: newLeft, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const onScroll = () => scheduleUpdateButtons();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    scheduleUpdateButtons();
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [lists.length]);
+
+  useEffect(() => {
+    const onResize = () => scheduleUpdateButtons();
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // quantidade de scroll por clique (backup p/ teclas antigas, se você quiser reaproveitar)
+  const scrollByAmount = useMemo(() => {
+    if (typeof window === "undefined") return 560;
+    const w = window.innerWidth;
+    if (w >= 1536) return 900;
+    if (w >= 1280) return 760;
+    if (w >= 1024) return 640;
+    if (w >= 640) return 460;
+    return 320;
+  }, []);
+
+  if (!hasLists) {
+    return <p className="text-gray-400 py-2">você não possui nenhuma lista!</p>;
+  }
+
   return (
-    <section className="mt-2">
-      <div className="mb-4">
-        <button
-          className="flex items-center justify-between w-full text-xl font-semibold text-white"
-          onClick={onToggle}
-          aria-expanded={isOpen}
-        >
-          <span>Ver listas</span>
-          <svg
-            className={`w-5 h-5 transform transition-transform ${isOpen ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+    <section className="relative">
+      {/* faixa do carrossel — sem máscara nas bordas (removi o maskImage/WebkitMaskImage) */}
+      <div
+        ref={trackRef}
+        className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none]"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any, WebkitOverflowScrolling: "touch" }}
+        role="list"
+        aria-label="Listas personalizadas"
+      >
+        {/* hack leve p/ esconder scrollbar no webkit */}
+        <div className="absolute w-0 h-0 overflow-hidden" aria-hidden />
+
+        {lists.map((list) => (
+          <button
+            key={list.id}
+            onClick={() => onSelect(list)}
+            className="
+              group snap-start shrink-0
+              w-[62vw] sm:w-[40vw] md:w-[28vw] lg:w-[22vw] xl:w-[18vw]
+              rounded-xl overflow-hidden
+              bg-neutral-900/70 ring-1 ring-white/10 hover:ring-white/20
+              transition-all duration-200
+            "
+            aria-label={`abrir lista ${list.listName}`}
+            title={list.listName}
+            role="listitem"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+            {/* header do card (mantido) */}
+            <div className="h-20 sm:h-24 md:h-28 bg-[var(--color-darkgreen)]/60 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-tr from-[var(--color-darkgreen)]/80 via-[var(--color-mediumgreen)]/30 to-transparent" />
+              <div className="absolute bottom-2 left-3 text-left">
+                <h3 className="text-sm sm:text-base font-semibold text-white">{list.listName}</h3>
+
+              </div>
+            </div>
+
+            {/* corpo */}
+            <div className="p-3">
+              {list.list_description ? (
+                <p className="text-xs sm:text-sm text-white/70 line-clamp-2">{list.list_description}</p>
+              ) : (
+                <p className="text-xs italic text-white/40">sem descrição</p>
+              )}
+
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs text-white/50">id: {list.id}</span>
+                <span
+                  className="
+                    inline-flex items-center gap-1 text-[10px] sm:text-xs
+                    px-3 py-1 rounded-md
+                    bg-[var(--color-mediumgreen)]/15 ring-1 ring-[var(--color-mediumgreen)]/25
+                    text-[var(--color-lightgreen)]
+                  "
+                >
+                  ver lista
+                </span>
+              </div>
+            </div>
+          </button>
+        ))}
       </div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-            animate={{ opacity: 1, height: "auto", overflow: "visible" }}
-            exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          >
-            {lists.length === 0 ? (
-              <p className="text-gray-400 py-2">Você não possui nenhuma lista!</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                {lists.map((list) => (
-                  <button
-                    key={list.id}
-                    className="bg-neutral-800 p-4 rounded-lg text-left hover:bg-neutral-700 ring-1 ring-white/10"
-                    onClick={() => onSelect(list)}
-                  >
-                    <h3 className="text-lg font-semibold">{list.listName}</h3>
-                    {list.list_description && (
-                      <p className="text-sm text-white/60 mt-1">{list.list_description}</p>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* setas embaixo — exatamente como o ReviewsCarouselSection */}
+      <div className="flex justify-center mt-5 gap-6">
+        <button
+          onClick={() => scroll("left")}
+          aria-label="Anterior"
+          className="p-1 text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          disabled={!showLeftButton}
+        >
+          <IconArrowLeft className="h-5 w-5 transition-transform hover:scale-110" />
+        </button>
+        <button
+          onClick={() => scroll("right")}
+          aria-label="Próximo"
+          className="p-1 text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          disabled={!showRightButton}
+        >
+          <IconArrowRight className="h-5 w-5 transition-transform hover:scale-110" />
+        </button>
+      </div>
     </section>
   );
 }

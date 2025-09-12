@@ -25,7 +25,7 @@ const fetchMap: Record<"movie" | "series" | "album", Fetcher> = {
 function validCustomItem(item: CustomList): boolean {
   if (!item.mediaId || item.mediaId === "null") return false;
   if (item.mediaType === "series" && isNaN(Number(item.mediaId))) return false;
-  if (item.mediaType === "movie" && /^[A-Za-z0-9]{22}$/.test(item.mediaId)) return false;
+  if (item.mediaType === "movie" && isNaN(Number(item.mediaId))) return false;
   return true;
 }
 
@@ -36,7 +36,7 @@ function coerceType(t: string): "movie" | "series" | "album" | null {
 }
 
 // ---------- API ----------
-/** Cria uma lista personalizada */
+/** Cria uma lista personalizada — backend espera `description` */
 export async function createCustomList(
   memberId: number,
   name: string,
@@ -46,11 +46,17 @@ export async function createCustomList(
   const token = getToken();
   if (!token) throw new Error("NO_TOKEN: usuário não autenticado ou sessão expirada");
 
+  const payload = {
+    memberId,
+    listName: name,
+    description: list_description, // <- campo exato do backend
+  };
+
   await apiFetch("/customList/register", {
     auth: true,
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ memberId, listName: name, list_description }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
     signal: opts?.signal,
   });
 }
@@ -74,7 +80,6 @@ export async function fetchListContent(
       try {
         const type = coerceType(item.mediaType);
         if (!type) return null;
-
         const media = await fetchMap[type](String(item.mediaId));
         return media ? ({ ...media, internalId: item.id } as MediaType) : null;
       } catch {
@@ -86,67 +91,78 @@ export async function fetchListContent(
   return resolved.filter(Boolean) as MediaType[];
 }
 
-/** Adiciona conteúdo à lista (com tratamento de duplicidade) */
+/** Adiciona conteúdo à lista */
 export async function addContentToList(
-  token: string,
+  _token: string | undefined,
   data: AddToCustomListRequest,
   opts?: { signal?: AbortSignal }
 ): Promise<"success" | "duplicate" | "error"> {
   try {
+    // backend ignora campos extras, mas mandamos só os necessários:
+    const payload = {
+      memberId: data.memberId,
+      mediaId: data.mediaId,
+      mediaType: data.mediaType,
+      listName: data.listName,
+    };
+
     await apiFetch("/customList/addContent", {
       auth: true,
       method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
       signal: opts?.signal,
     });
     return "success";
   } catch (e: any) {
     const msg = String(e?.message || "");
-    if (msg.includes("already in your list") || msg.toLowerCase().includes("duplicate")) {
-      return "duplicate";
-    }
+    if (msg.includes("already in your list") || msg.toLowerCase().includes("duplicate")) return "duplicate";
     return "error";
   }
 }
 
-/** Remove conteúdo de uma lista */
-export async function removeContentFromList(
-  token: string,
+/** Remove conteúdo da lista — backend exige exatamente estes 4 campos */
+export function removeContentFromList(
   data: CustomList,
   opts?: { signal?: AbortSignal }
-): Promise<void> {
+): Promise<void>;
+export function removeContentFromList(
+  _token: string | undefined,
+  data: CustomList,
+  opts?: { signal?: AbortSignal }
+): Promise<void>;
+export async function removeContentFromList(a: any, b?: any, c?: any): Promise<void> {
+  const body: Pick<CustomList, "memberId" | "mediaId" | "mediaType" | "listName"> =
+    typeof a === "object"
+      ? { memberId: a.memberId, mediaId: a.mediaId, mediaType: a.mediaType, listName: a.listName }
+      : { memberId: b.memberId, mediaId: b.mediaId, mediaType: b.mediaType, listName: b.listName };
+
+  const opts = typeof a === "object" ? b : c;
+
   await apiFetch("/customList/deleteContent", {
     auth: true,
     method: "DELETE",
-    body: JSON.stringify(data),
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
     signal: opts?.signal,
   });
 }
 
 /** Busca todas as listas de um membro */
 export async function fetchMemberLists(
-  token: string,
+  _token: string | undefined,
   memberId: number,
   opts?: { signal?: AbortSignal }
 ): Promise<CustomList[]> {
   const lists = await apiFetch(`/customList/getList/${memberId}`, {
     auth: true,
     method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
     signal: opts?.signal,
   });
   return (Array.isArray(lists) ? lists : []) as CustomList[];
 }
 
-/** Deleta uma lista personalizada (usa token via apiFetch/auth:true) */
+/** Deleta uma lista personalizada */
 export async function deleteCustomList(
   id: number,
   opts?: { signal?: AbortSignal }
@@ -158,20 +174,31 @@ export async function deleteCustomList(
   });
 }
 
-/** Atualiza nome/descrição da lista */
-export async function updateCustomList(
-  token: string,
+/** Atualiza nome/descrição da lista — backend espera `list_description` */
+export function updateCustomList(
   data: { id: number; listName: string; list_description: string },
   opts?: { signal?: AbortSignal }
-): Promise<void> {
+): Promise<void>;
+export function updateCustomList(
+  _token: string | undefined,
+  data: { id: number; listName: string; list_description: string },
+  opts?: { signal?: AbortSignal }
+): Promise<void>;
+export async function updateCustomList(a: any, b?: any, c?: any): Promise<void> {
+  const data = typeof a === "object" ? a : b;
+  const opts = typeof a === "object" ? b : c;
+
+  const payload = {
+    id: data.id,
+    listName: data.listName,
+    list_description: data.list_description, // <- campo exato do backend
+  };
+
   await apiFetch("/customList/update", {
     auth: true,
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
     signal: opts?.signal,
   });
 }
