@@ -25,8 +25,7 @@ import { fetchMemberLists } from "@/services/customList/list";
 import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
 import BadgesWall from "@/components/features/badge/BadgesWall";
-
-// ------------------- UTILS -------------------
+import { getToken } from "@/lib/api"; // ✅ novo
 
 function normalizeHandle(v: string) {
   return v.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
@@ -44,8 +43,6 @@ function suggestHandle(m?: Member | null) {
   return `user${m?.id || ""}`;
 }
 
-// ------------------- COMPONENT -------------------
-
 type ModalType = "edit" | "createList" | "viewList" | null;
 
 export default function Profile() {
@@ -61,7 +58,6 @@ export default function Profile() {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
-  // ----------- Data Fetching -----------
   const loadCustomLists = async (token: string, memberId: number) => {
     try {
       const lists = await fetchMemberLists(token, memberId);
@@ -87,13 +83,10 @@ export default function Profile() {
 
   useEffect(() => {
     if (!member) return;
-    const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
+    const token = getToken(); // ✅ padronizado
     if (!token) return;
-
     Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id)]).catch(console.error);
   }, [member]);
-
-  // ----------- Handlers -----------
 
   const handleUpdateMember = async (
     formData: { name: string; bio: string; birthDate: string; gender: string; handle: string },
@@ -102,7 +95,7 @@ export default function Profile() {
     if (!member) return;
 
     try {
-      const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
+      const token = getToken(); // ✅ padronizado
       if (!token) return;
 
       if (imageFile) {
@@ -136,12 +129,9 @@ export default function Profile() {
     }
   };
 
-  // ----------- Render -----------
-
   return (
     <ProtectedRoute>
       <main className="w-full">
-        {/* Header */}
         <Container>
           <div className="mt-5">
             <ProfileHeader
@@ -154,7 +144,6 @@ export default function Profile() {
           </div>
         </Container>
 
-        {/* 1) Favoritos */}
         <Container>
           <section className="mt-6 space-y-4">
             {activeTab === "filmes" && <FavouriteMoviesCarouselSection />}
@@ -163,7 +152,6 @@ export default function Profile() {
           </section>
         </Container>
 
-        {/* 2) Avaliações recentes */}
         <Container>
           <section className="mt-6 space-y-4">
             <h2 className="text-white text-xl font-semibold">Avaliações recentes</h2>
@@ -171,7 +159,6 @@ export default function Profile() {
           </section>
         </Container>
 
-        {/* 3) Listas personalizadas */}
         <Container>
           <section className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -196,7 +183,6 @@ export default function Profile() {
           </section>
         </Container>
 
-        {/* 4) Mural de conquistas */}
         <Container>
           <section className="mt-6">
             <h2 className="text-white text-xl font-semibold mb-3">Mural de conquistas</h2>
@@ -204,14 +190,13 @@ export default function Profile() {
           </section>
         </Container>
 
-        {/* ----------- Modals ----------- */}
         {activeModal === "createList" && member && (
           <CreateCustomListModal
             isOpen
             onClose={() => setActiveModal(null)}
             memberId={member.id}
             onCreated={() => {
-              const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
+              const token = getToken(); // ✅
               if (token) loadCustomLists(token, member.id);
             }}
           />
@@ -225,11 +210,11 @@ export default function Profile() {
             listName={selectedList.listName}
             listDescription={selectedList.list_description}
             onListDeleted={() => {
-              const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
+              const token = getToken(); // ✅
               if (token) loadCustomLists(token, member.id);
             }}
             onListUpdated={() => {
-              const token = localStorage.getItem("authToken") || localStorage.getItem("authToken_dev") || localStorage.getItem("authToken_prod");
+              const token = getToken(); // ✅
               if (token) loadCustomLists(token, member.id);
             }}
             member={member}

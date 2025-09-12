@@ -15,39 +15,27 @@ import { useMember } from "@/context/MemberContext";
 import { CustomList } from "@/types/CustomList";
 import { countFollowers, countFollowing } from "@/services/followers/countStats";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
-import { AnimatePresence, motion } from "framer-motion";
 import CustomListModal from "@/components/features/customList/CustomListModal";
 import CustomListsSection from "@/components/features/customList/CustomListsSection";
 import { fetchMemberLists } from "@/services/customList/list";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
-
-// Mural de conquistas (público sem polling)
 import BadgesWall from "@/components/features/badge/BadgesWall";
+import { getToken } from "@/lib/api"; // ✅ novo
 
-/** Normaliza o handle removendo @, minúsculas e permitido [a-z0-9._] */
 function normalizeHandle(v: string) {
   return (v || "").replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
 }
-/** Sugere um handle a partir do Member (se handle estiver vazio) */
 function suggestHandle(m?: Member | null) {
   if (!m) return "usuario";
-  const fromHandle = normalizeHandle(m.handle || "");
+  const fromHandle = normalizeHandle(m?.handle || "");
   if (fromHandle) return fromHandle;
-  const emailLeft = (m.email || "").split("@")[0] || "";
+  const emailLeft = (m?.email || "").split("@")[0] || "";
   const fromEmail = normalizeHandle(emailLeft);
   if (fromEmail) return fromEmail;
-  const fromName = normalizeHandle((m.name || "").replace(/\s+/g, "."));
+  const fromName = normalizeHandle((m?.name || "").replace(/\s+/g, "."));
   if (fromName) return fromName;
-  return `user${m.id || ""}`;
-}
-
-function getToken(): string | null {
-  return (
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("authToken_dev") ||
-    localStorage.getItem("authToken_prod")
-  );
+  return `user${m?.id || ""}`;
 }
 
 export default function PublicProfilePage() {
@@ -67,7 +55,6 @@ export default function PublicProfilePage() {
   const [isListsOpen, setIsListsOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
-  // Buscar o membro
   useEffect(() => {
     const controller = new AbortController();
     const run = async () => {
@@ -84,11 +71,10 @@ export default function PublicProfilePage() {
     return () => controller.abort();
   }, [id]);
 
-  // Buscar contadores
   useEffect(() => {
     const run = async () => {
       try {
-        const token = getToken();
+        const token = getToken(); // ✅ padronizado
         if (!token || !id) return;
 
         const [followerCount, followingCount] = await Promise.all([
@@ -105,20 +91,18 @@ export default function PublicProfilePage() {
     run();
   }, [id]);
 
-  // Redirecionar para perfil próprio caso o id seja do usuário logado
   useEffect(() => {
     if (member?.id && String(member.id) === id) {
       router.replace(`/${locale}/profile`);
     }
   }, [member, id, router, locale]);
 
-  // Buscar listas públicas do usuário
   useEffect(() => {
     const controller = new AbortController();
     const run = async () => {
       if (!id) return;
       try {
-        const token = getToken();
+        const token = getToken(); // ✅ padronizado
         if (!token) return;
         const lists = await fetchMemberLists(token, Number(id), { signal: controller.signal });
         setCustomLists(lists);
@@ -143,7 +127,6 @@ export default function PublicProfilePage() {
 
   return (
     <main className="w-full">
-      {/* Header */}
       <Container>
         <div className="mt-5">
           <ProfileHeader
@@ -157,7 +140,6 @@ export default function PublicProfilePage() {
         </div>
       </Container>
 
-      {/* 1) Favoritos */}
       <Container>
         <section className="mt-6 space-y-4">
           <h2 className="text-white text-xl font-semibold">Favoritos</h2>
@@ -167,7 +149,6 @@ export default function PublicProfilePage() {
         </section>
       </Container>
 
-      {/* 2) Avaliações recentes */}
       <Container>
         <section className="mt-6 space-y-4">
           <h2 className="text-white text-xl font-semibold">Avaliações recentes</h2>
@@ -175,12 +156,10 @@ export default function PublicProfilePage() {
         </section>
       </Container>
 
-      {/* 3) Listas personalizadas (reutilizando o componente separado) */}
       <Container>
         <section className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-white text-xl font-semibold">Listas personalizadas</h2>
-            {/* público: sem botão de criar lista */}
           </div>
 
           <CustomListsSection
@@ -192,7 +171,6 @@ export default function PublicProfilePage() {
         </section>
       </Container>
 
-      {/* 4) Mural de conquistas */}
       <Container>
         <section className="mt-6">
           <h2 className="text-white text-xl font-semibold mb-3">Mural de conquistas</h2>
@@ -200,7 +178,6 @@ export default function PublicProfilePage() {
         </section>
       </Container>
 
-      {/* Modal de visualização/edição de lista (público só visualiza/remover não aparece se não for dono, depende do backend) */}
       {selectedList && otherMember && (
         <CustomListModal
           isOpen={true}
