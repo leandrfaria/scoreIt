@@ -8,15 +8,32 @@ import type { BadgeResponse } from "@/types/Badge";
 import AchievementModal from "./AchievementModal";
 import { BADGE_CATALOG, findCatalogEntry, getBadgeImage } from "./badgeCatalog";
 
-/** Compara listas de badges e retorna as que são novas */
+const seenKey = (memberId: number) => `scoreit_badges_seen:${memberId}`;
+
+function loadSeen(memberId: number): Set<string> {
+  try {
+    const raw = localStorage.getItem(seenKey(memberId));
+    const arr = raw ? (JSON.parse(raw) as string[]) : [];
+    return new Set(arr);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeen(memberId: number, seen: Set<string>) {
+  try {
+    localStorage.setItem(seenKey(memberId), JSON.stringify(Array.from(seen)));
+  } catch {}
+}
+
 function diffNewBadges(prev: BadgeResponse[], next: BadgeResponse[]) {
-  const prevSet = new Set(prev.map(b => (b as any).code || b.name));
-  return next.filter(b => !prevSet.has((b as any).code || b.name));
+  const key = (b: BadgeResponse) => (b.code || b.name || "").toString();
+  const prevSet = new Set(prev.map(key));
+  return next.filter(b => !prevSet.has(key(b)));
 }
 
 type Props = {
   memberId: number;
-  /** polling em ms para detectar desbloqueios em tempo real (ex.: após reviews). 0 = desliga */
   pollMs?: number;
   className?: string;
 };
@@ -25,60 +42,71 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
   const [unlocked, setUnlocked] = useState<BadgeResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // modal-state para quando detectar nova badge
   const [modalOpen, setModalOpen] = useState(false);
   const [modalBadge, setModalBadge] = useState<BadgeResponse | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  async function load() {
+  const unlockedRef = useRef<BadgeResponse[]>([]);
+  const seenRef = useRef<Set<string>>(new Set());
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  async function loadInitial() {
     try {
       const list = await fetchMemberBadges(memberId);
+      unlockedRef.current = list;
       setUnlocked(list);
+      seenRef.current = loadSeen(memberId);
       setLoading(false);
-      return list;
     } catch (e) {
       console.error("Erro ao carregar badges:", e);
       setLoading(false);
-      return [];
     }
   }
 
   useEffect(() => {
-    load();
-    if (pollMs > 0) {
-      pollingRef.current = setInterval(async () => {
-        const previous = unlocked;
-        const current = await fetchMemberBadges(memberId).catch(() => previous);
-        const gained = diffNewBadges(previous, current);
-        if (gained.length > 0) {
-          // pega a primeira nova e mostra modal/toast
-          const b = gained[0];
-          setModalBadge(b);
-          setModalOpen(true);
+    setLoading(true);
+    setModalOpen(false);
+    setModalBadge(null);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    loadInitial();
 
-          const entry = findCatalogEntry(b);
-          if (entry) {
-            toast.success(`Parabéns! Você desbloqueou: ${b.name}`, {
-              icon: "🏅",
-            });
-          } else {
-            toast.success(`Parabéns! Nova conquista desbloqueada.`, { icon: "🏅" });
+    if (pollMs > 0) {
+      intervalRef.current = setInterval(async () => {
+        try {
+          const previous = unlockedRef.current;
+          const current = await fetchMemberBadges(memberId);
+          unlockedRef.current = current;
+          setUnlocked(current);
+
+          const gained = diffNewBadges(previous, current);
+          if (gained.length > 0) {
+            const notSeen = gained.find(b => !seenRef.current.has((b.code || b.name || "").toString()));
+            if (notSeen) {
+              setModalBadge(notSeen);
+              setModalOpen(true);
+
+              const entry = findCatalogEntry(notSeen);
+              toast.success(
+                entry ? `Parabéns! Você desbloqueou: ${notSeen.name}` : `Parabéns! Nova conquista desbloqueada.`,
+                { icon: "🏅" }
+              );
+            }
           }
+        } catch (e) {
         }
-        setUnlocked(current);
       }, pollMs);
     }
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memberId]);
 
-  const catalog = BADGE_CATALOG;
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [memberId, pollMs]);
 
   const unlockedKeySet = useMemo(() => {
     const s = new Set<string>();
-    unlocked.forEach((b) => s.add((b as any).code || b.name));
+    unlocked.forEach((b) => s.add((b.code || b.name || "").toString()));
     return s;
   }, [unlocked]);
 
@@ -89,11 +117,9 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
       <section className={className}>
         <h2 className="text-white text-xl font-semibold mb-3">Mural de Conquistas</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {catalog.map((entry) => {
-            // unlocked se existe badge com mesmo code (ou mesmo name no fallback)
-            const isUnlocked = Array.from(unlockedKeySet).some(k => k === entry.code || k.includes(entry.name));
+          {BADGE_CATALOG.map((entry) => {
+            const isUnlocked = unlockedKeySet.has(entry.code);
             const img = getBadgeImage(entry, isUnlocked);
-
             return (
               <div
                 key={entry.code}
@@ -116,12 +142,21 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
         </div>
       </section>
 
-      {/* Modal de parabéns */}
       <AchievementModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          if (modalBadge) {
+            const key = (modalBadge.code || modalBadge.name || "").toString();
+            if (key) {
+              seenRef.current.add(key);
+              saveSeen(memberId, seenRef.current);
+            }
+          }
+          setModalBadge(null);
+        }}
         title={modalBadge?.name ?? "Conquista"}
-        description={modalBadge?.description}
+        description={modalBadge?.description || undefined}
         imageUrl={
           modalBadge
             ? (() => {

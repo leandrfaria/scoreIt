@@ -6,6 +6,6 @@ export type BadgeCode =
 export type BadgeResponse = {
   id: number;
   name: string;
-  description: string;
-  code?: BadgeCode | string;
+  description?: string | null;
+  code?: BadgeCode | string; 
 };
