@@ -129,17 +129,18 @@
     "noDescription": "Sem descrição disponível."
   },
   "ProfileEditModal": {
-    "title": "Editar Perfil",
-    "namePlaceholder": "Digite seu nome",
-    "bioPlaceholder": "Digite sua biografia",
-    "maxCharacters": "Máximo de {max} caracteres",
-    "undefined": "Indefinido",
-    "male": "Masculino",
-    "female": "Feminino",
-    "other": "Outro",
-    "cancelButton": "Cancelar",
-    "saveButton": "Salvar",
-    "invalidBirthDate": "Data de nascimento inválida"
+      "title": "Editar Perfil",
+      "namePlaceholder": "Digite seu nome",
+      "bioPlaceholder": "Digite sua biografia",
+      "maxCharacters": "Máximo de {max} caracteres",
+      "undefined": "Indefinido",
+      "male": "Masculino",
+      "female": "Feminino",
+      "other": "Outro",
+      "cancelButton": "Cancelar",
+      "saveButton": "Salvar",
+      "invalidBirthDate": "Data de nascimento inválida",
+      "profileImageAlt": "Foto de perfil"
   },
   "NowPlayingCarousel": {
     "loading": "Carregando conteudos em cartaz...",
@@ -439,6 +440,67 @@
   "modal": {
     "title": "Conquista"
   }
+},
+"ReviewProfileCard":{
+  "delete": "Excluir",
+  "confirmDelete": "Tem certeza que deseja excluir esta avaliação?",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar",
+  "deleting": "Excluindo...",
+  "deletedSuccess": "Avaliação excluída com sucesso!",
+  "deletedError": "Erro ao deletar a avaliação.",
+  "noScore": "sem nota",
+  "score": "Nota"
+},
+"ReviewCard":{
+    "edit": "Editar",
+    "delete": "Excluir",
+    "confirmDelete": "Tem certeza que deseja excluir esta avaliação?",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "deleting": "Excluindo...",
+    "deletedSuccess": "Avaliação excluída com sucesso!",
+    "deletedError": "Erro ao excluir a avaliação.",
+    "deletedUnexpected": "Erro inesperado ao excluir.",
+    "viewReview": "Ver Avaliação",
+    "comments": "Comentários",
+    "avatarOf": "Avatar de"
+},
+"CommentItem":{
+  "loginToComment": "Faça login para comentar",
+  "commentPosted": "Comentário enviado!",
+  "commentPostError": "Erro ao enviar comentário",
+  "unauthorized": "Não autorizado",
+  "commentDeleted": "Comentário excluído!",
+  "commentDeleteError": "Erro ao excluir comentário",
+  "reply": "Responder",
+  "delete": "Deletar",
+  "deleting": "Deletando...",
+  "unknownUser": "Usuário",
+  "confirmDeleteComment": "Deseja realmente deletar este comentário?",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar"
+},
+"CommentForm":{
+  "placeholder": "Escreva seu comentário...",
+  "submit": "Enviar",
+  "submitting": "Enviando...",
+  "cancel": "Cancelar",
+  "submitError": "Erro ao enviar comentário"
+},
+"CommentsSection":{
+  "commentsTitle": "Comentários ({count})",
+  "seeMore": "Ver mais",
+  "seeLess": "Ver menos",
+  "leaveComment": "Deixe um comentário",
+  "comment": "Comentar",
+  "loading": "Carregando comentários...",
+  "firstComment": "Seja o primeiro a comentar.",
+  "loadError": "Erro ao carregar comentários",
+  "loginRequired": "Faça login para comentar",
+  "commentCreated": "Comentário criado!",
+  "commentCreateError": "Erro ao criar comentário"
 }
+
 
 }

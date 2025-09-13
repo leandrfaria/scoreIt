@@ -288,7 +288,7 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
 
           {/* Upload de imagem */}
           <label className="block">
-            <span className="text-sm text-gray-300 mb-1 block">Foto de perfil</span>
+            <span className="text-sm text-gray-300 mb-1 block">{t("profileImageAlt")}</span>
             <input
               type="file"
               accept="image/*"

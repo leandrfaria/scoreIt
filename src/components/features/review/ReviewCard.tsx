@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { FaStar, FaPen, FaTrash, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { FaStar, FaPen, FaTrash, FaStarHalfAlt, FaRegStar, FaComments } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { deleteReview } from "@/services/review/delete_review";
+import { useMember } from "@/context/MemberContext";
+import CommentsSection from "@/components/features/comment/CommentSection";
+import { useTranslations } from "next-intl";
 
 type ReviewProps = {
   name: string;
@@ -32,10 +35,22 @@ export default function ReviewCard({
   spoiler = false,
   reviewId,
 }: ReviewProps) {
+  const { member } = useMember();
+  const t = useTranslations("ReviewCard"); // internacionalização
+
   const [showSpoiler, setShowSpoiler] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState(avatar || FALLBACK_AVATAR);
   const [deleting, setDeleting] = useState(false);
+  const mountedRef = useRef(true);
+  const [showComments, setShowComments] = useState(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleDelete = async () => {
     if (!reviewId || deleting) return;
@@ -43,14 +58,14 @@ export default function ReviewCard({
     try {
       const result = await deleteReview(reviewId);
       if (result) {
-        toast.success("Avaliação excluída com sucesso!");
+        toast.success(t("deletedSuccess"));
         onDelete?.();
       } else {
-        toast.error("Erro ao excluir a avaliação.");
+        toast.error(t("deletedError"));
       }
     } catch (err) {
       console.error("❌ Erro ao executar deleteReview:", err);
-      toast.error("Erro inesperado ao excluir.");
+      toast.error(t("deletedUnexpected"));
     } finally {
       setDeleting(false);
       setShowConfirm(false);
@@ -61,11 +76,11 @@ export default function ReviewCard({
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       if (rating >= i) {
-        stars.push(<FaStar key={i} className="text-xl text-[var(--color-lightgreen)]" aria-hidden />);
+        stars.push(<FaStar key={i} className="text-xl text-[var(--color-lightgreen)]" />);
       } else if (rating >= i - 0.5) {
-        stars.push(<FaStarHalfAlt key={i} className="text-xl text-[var(--color-lightgreen)]" aria-hidden />);
+        stars.push(<FaStarHalfAlt key={i} className="text-xl text-[var(--color-lightgreen)]" />);
       } else {
-        stars.push(<FaRegStar key={i} className="text-xl text-gray-700" aria-hidden />);
+        stars.push(<FaRegStar key={i} className="text-xl text-gray-700" />);
       }
     }
     return stars;
@@ -74,21 +89,22 @@ export default function ReviewCard({
   return (
     <div className="relative">
       <article className="bg-[#0D1117] rounded-lg p-6 shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
+        {/* Edit/Delete */}
         {canEdit && (
           <div className="absolute top-4 right-4 flex gap-3">
             <button
               onClick={onEdit}
-              className="text-white/70 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded"
-              title="Editar"
-              aria-label="Editar avaliação"
+              className="text-white/70 hover:text-white rounded"
+              title={t("edit")}
+              aria-label={t("edit")}
             >
               <FaPen />
             </button>
             <button
               onClick={() => setShowConfirm(true)}
-              className="text-white/70 hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 rounded"
-              title="Excluir"
-              aria-label="Excluir avaliação"
+              className="text-white/70 hover:text-red-500 rounded"
+              title={t("delete")}
+              aria-label={t("delete")}
             >
               <FaTrash />
             </button>
@@ -99,20 +115,18 @@ export default function ReviewCard({
         <div className="flex items-center gap-4 mb-4">
           <img
             src={avatarSrc}
-            alt={`Avatar de ${name}`}
+            alt={`${t("avatarOf")} ${name}`}
             onError={() => setAvatarSrc(FALLBACK_AVATAR)}
             className="w-12 h-12 rounded-full object-cover border border-white/10"
           />
           <div>
             <p className="text-white font-semibold">{name}</p>
-            <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString("pt-BR")}</p>
+            <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString()}</p>
           </div>
         </div>
 
         {/* Stars */}
-        <div className="flex items-center gap-1 mb-3" aria-label={`Nota: ${rating} de 5`}>
-          {renderStars()}
-        </div>
+        <div className="flex items-center gap-1 mb-3">{renderStars()}</div>
 
         {/* Comment + spoiler */}
         {comment?.trim() && (
@@ -122,9 +136,9 @@ export default function ReviewCard({
                 <p className="select-none transition duration-300 blur-sm">{comment}</p>
                 <button
                   onClick={() => setShowSpoiler(true)}
-                  className="mt-3 px-4 py-2 bg-transparent border border-[var(--color-lightgreen)] text-[var(--color-lightgreen)] hover:bg-[var(--color-lightgreen)] hover:text-black transition font-medium text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)] rounded"
+                  className="mt-3 px-4 py-2 bg-transparent border border-[var(--color-lightgreen)] text-[var(--color-lightgreen)] hover:bg-[var(--color-lightgreen)] hover:text-black transition font-medium text-sm rounded"
                 >
-                  Ver Avaliação
+                  {t("viewReview")}
                 </button>
               </div>
             ) : (
@@ -132,9 +146,21 @@ export default function ReviewCard({
             )}
           </div>
         )}
+
+        {/* Botão mostrar comentários */}
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <button
+            title={t("comments")}
+            onClick={() => setShowComments((s) => !s)}
+            className="p-2 rounded hover:bg-white/5 transition text-white/80"
+            aria-pressed={showComments}
+          >
+            <FaComments />
+          </button>
+        </div>
       </article>
 
-      {/* Confirm delete (simples e acessível) */}
+      {/* Confirm delete */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
           <div
@@ -144,24 +170,31 @@ export default function ReviewCard({
             className="bg-[#0D1117] p-6 rounded-lg shadow-md border border-white/10 w-[90%] max-w-md"
           >
             <h2 id="confirm-title" className="text-white text-lg font-semibold mb-4">
-              Tem certeza que deseja excluir esta avaliação?
+              {t("confirmDelete")}
             </h2>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 border border-gray-500 text-gray-300 hover:bg-gray-700 rounded transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                className="px-4 py-2 border border-gray-500 text-gray-300 hover:bg-gray-700 rounded"
               >
-                Cancelar
+                {t("cancel")}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50"
               >
-                {deleting ? "Excluindo..." : "Confirmar"}
+                {deleting ? t("deleting") : t("confirm")}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Comentários */}
+      {showComments && reviewId && (
+        <div className="mt-4 pt-4 border-t border-white/5">
+          <CommentsSection reviewId={reviewId} />
         </div>
       )}
     </div>

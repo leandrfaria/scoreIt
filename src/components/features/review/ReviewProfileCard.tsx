@@ -1,15 +1,15 @@
-// src/components/features/review/ReviewProfileCard.tsx
 "use client";
 
 import { useMemo, useState } from "react";
 import { FaStar, FaTrash, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { deleteReview } from "@/services/review/delete_review";
+import { useTranslations } from "next-intl";
 
 type ReviewProfileCardProps = {
   title: string;
   posterUrl: string;
-  date: string;       // "YYYY-MM-DD" vindo do backend
+  date: string; // "YYYY-MM-DD"
   rating: number;
   comment?: string;
   canEdit?: boolean;
@@ -19,13 +19,11 @@ type ReviewProfileCardProps = {
 
 const FALLBACK_POSTER = "/fallback.jpg";
 
-/** Converte "YYYY-MM-DD" para "dd/MM/yyyy" sem timezone */
 function formatYMDToPtBR(ymd: string) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd?.trim() ?? "");
   if (!m) {
-    // fallback seguro (tenta Date local)
     const d = new Date(ymd);
-    return isNaN(d.getTime()) ? ymd : d.toLocaleDateString("pt-BR");
+    return isNaN(d.getTime()) ? ymd : d.toLocaleDateString();
   }
   const [, y, mo, d] = m;
   return `${d}/${mo}/${y}`;
@@ -41,6 +39,7 @@ export default function ReviewProfileCard({
   onDelete,
   reviewId,
 }: ReviewProfileCardProps) {
+  const t = useTranslations("ReviewProfileCard"); // <-- internacionalização
   const [showConfirm, setShowConfirm] = useState(false);
   const [posterSrc, setPosterSrc] = useState(posterUrl || FALLBACK_POSTER);
   const [deleting, setDeleting] = useState(false);
@@ -53,13 +52,13 @@ export default function ReviewProfileCard({
     const success = await deleteReview(reviewId);
     setDeleting(false);
     if (success) {
-      toast.success("Avaliação excluída com sucesso!", {
+      toast.success(t("deletedSuccess"), {
         style: { background: "#101418", color: "#fff", border: "1px solid #4ade80" },
         icon: "🗑️",
       });
       onDelete?.();
     } else {
-      toast.error("Erro ao deletar a avaliação.");
+      toast.error(t("deletedError"));
     }
     setShowConfirm(false);
   };
@@ -67,8 +66,10 @@ export default function ReviewProfileCard({
   const renderStars = () => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-      if (score >= i) stars.push(<FaStar key={i} className="text-base text-emerald-400" aria-hidden />);
-      else if (score >= i - 0.5) stars.push(<FaStarHalfAlt key={i} className="text-base text-emerald-400" aria-hidden />);
+      if (score >= i)
+        stars.push(<FaStar key={i} className="text-base text-emerald-400" aria-hidden />);
+      else if (score >= i - 0.5)
+        stars.push(<FaStarHalfAlt key={i} className="text-base text-emerald-400" aria-hidden />);
       else stars.push(<FaRegStar key={i} className="text-base text-zinc-600" aria-hidden />);
     }
     return stars;
@@ -85,8 +86,8 @@ export default function ReviewProfileCard({
             <button
               onClick={() => setShowConfirm(true)}
               className="rounded-full p-2 bg-black/30 text-white/80 hover:text-red-400 hover:bg-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-              title="Excluir"
-              aria-label="Excluir avaliação"
+              title={t("delete")}
+              aria-label={t("delete")}
             >
               <FaTrash />
             </button>
@@ -109,12 +110,12 @@ export default function ReviewProfileCard({
 
               <div className="mt-2">
                 {score > 0 ? (
-                  <div className="flex items-center gap-1" aria-label={`Nota: ${score} de 5`}>
+                  <div className="flex items-center gap-1" aria-label={`${t("score")}: ${score} / 5`}>
                     {renderStars()}
                   </div>
                 ) : (
                   <span className="inline-block text-[11px] px-2 py-1 rounded-full border border-dashed border-zinc-600 text-zinc-300">
-                    sem nota
+                    {t("noScore")}
                   </span>
                 )}
               </div>
@@ -140,14 +141,14 @@ export default function ReviewProfileCard({
             className="bg-[#0D1117] p-6 rounded-lg shadow-md border border-white/10 w-[90%] max-w-md"
           >
             <h2 id="confirm-title-profile" className="text-white text-lg font-semibold mb-4">
-              Tem certeza que deseja excluir esta avaliação?
+              {t("confirmDelete")}
             </h2>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowConfirm(false)}
                 className="px-4 py-2 border border-gray-500 text-gray-300 hover:bg-gray-700 rounded transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
               >
-                Cancelar
+                {t("cancel")}
               </button>
               <button
                 onClick={(e) => {
@@ -158,7 +159,7 @@ export default function ReviewProfileCard({
                 disabled={deleting}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               >
-                {deleting ? "Excluindo..." : "Confirmar"}
+                {deleting ? t("deleting") : t("confirm")}
               </button>
             </div>
           </div>
