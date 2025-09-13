@@ -96,7 +96,7 @@ export default function CustomListModal({
     controllerRef.current = controller;
 
     setLoading(true);
-    fetchListContent(member.id, listName, { signal: controller.signal })
+    fetchListContent(member.id, listName, locale, { signal: controller.signal })
       .then((items) => {
         const normalized = items.map(normalizeMediaItem);
         setMediaItems(normalized);
