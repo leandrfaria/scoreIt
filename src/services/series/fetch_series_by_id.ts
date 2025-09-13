@@ -1,44 +1,76 @@
-import { Series } from "@/types/Series";
+// services/series/fetch_series_by_id.ts
 import { apiFetch } from "@/lib/api";
+import { Series } from "@/types/Series";
+import { mapNextIntlToTMDB, isTMDBLocale } from "@/i18n/localeMapping";
 
-export const fetchSerieById = async (id: string): Promise<Series | null> => {
+export const fetchSerieById = async (id: string, locale?: any): Promise<Series | null> => {
+  if (!id) {
+    console.error("fetchSerieById: id vazio");
+    return null;
+  }
+
+  let localeParam = "en-US"; // Padrão para TMDB
+  
+  // Se locale for um objeto (pode acontecer em alguns casos), extrair a string
+  let localeString = locale;
+  if (locale && typeof locale === 'object') {
+    if (locale.locale) localeString = locale.locale;
+    else if (locale.language) localeString = locale.language;
+    else localeString = String(locale);
+  }
+  
+  // Se for uma string válida, mapear para o formato TMDB
+  if (typeof localeString === "string" && localeString.trim() !== "") {
+    localeParam = isTMDBLocale(localeString) ? localeString : mapNextIntlToTMDB(localeString);
+  }
+
+  const encodedId = encodeURIComponent(id);
+  const encodedLocale = encodeURIComponent(localeParam);
+  const url = `/series/${encodedId}/details?language=${encodedLocale}`;
+
   try {
-    const data = await apiFetch(`/series/${id}/details`, { auth: true, cache: "no-store" });
+    console.debug("[fetchSerieById] requesting:", url);
+    const data: any = await apiFetch(url, { auth: true });
 
-    const posterPath = String((data as any).posterUrl ?? (data as any).poster_path ?? "").trim();
-    const backdropPath = String((data as any).backdropUrl ?? (data as any).backdrop_path ?? "").trim();
+    if (!data) {
+      console.warn("[fetchSerieById] resposta vazia (null/undefined)", url);
+      return null;
+    }
 
-    const genres: string[] =
-      Array.isArray((data as any).genres)
-        ? ((data as any).genres as unknown[]).map((g) =>
-            typeof g === "string" ? g : String((g as any).name ?? g)
-          )
-        : (data as any).genre
-        ? [String((data as any).genre)]
-        : [];
+    const posterPath = data.posterUrl ?? data.poster_path ?? null;
+    const backdropPath = data.backdropUrl ?? data.backdrop_path ?? null;
+
+    const genresFromArray = Array.isArray(data.genres)
+      ? data.genres.map((g: any) => (typeof g === "string" ? g : g?.name)).filter(Boolean)
+      : [];
 
     const serie: Series = {
-      id: Number((data as any).id ?? 0),
-      name: String((data as any).name ?? (data as any).title ?? "").trim(),
-      overview: String((data as any).overview ?? "").trim(),
-      release_date:
-        ((data as any).first_air_date as string) ??
-        ((data as any).release_date as string) ??
-        null,
-      posterUrl: posterPath ? posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}` : null,
+      id: Number(data.id ?? 0),
+      name: String(data.name ?? data.title ?? "").trim(),
+      overview: String(data.overview ?? "").trim(),
+      release_date: data.first_air_date ?? data.release_date ?? null,
+      posterUrl: posterPath
+        ? posterPath.startsWith("http")
+          ? posterPath
+          : `https://image.tmdb.org/t/p/w300${posterPath}`
+        : null,
       backdropUrl: backdropPath
         ? backdropPath.startsWith("http")
           ? backdropPath
           : `https://image.tmdb.org/t/p/original${backdropPath}`
         : "/fallback.jpg",
-      vote_average: Number((data as any).vote_average ?? 0),
-      genres,
+      vote_average: Number(data.vote_average ?? 0),
+      genres: genresFromArray,
     };
 
-    if (!serie.id || !serie.name) return null;
+    if (!serie.id || !serie.name) {
+      console.warn("[fetchSerieById] dados incompletos", data);
+      return null;
+    }
+
     return serie;
-  } catch (error) {
-    console.error("Erro ao buscar detalhes da série:", error);
+  } catch (error: any) {
+    console.error("[fetchSerieById] erro ao buscar série:", { url, message: error?.message ?? error, error });
     return null;
   }
 };

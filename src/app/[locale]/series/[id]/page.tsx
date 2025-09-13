@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import RatingModal from "@/components/features/review/RatingModal";
 import ReviewSection from "@/components/features/review/ReviewSection";
 import { apiFetch, AUTH_TOKEN_KEY } from "@/lib/api";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,8 @@ export default function SeriePage() {
   const [showModal, setShowModal] = useState(false);
   const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
+  const locale = useLocale();
+  const t = useTranslations("Series"); // <-- Adicionado
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -31,14 +34,12 @@ export default function SeriePage() {
     };
   }, []);
 
-  // Carregar detalhes da série (tenta com auth; se falhar por falta de token, tenta sem auth)
   useEffect(() => {
     if (!id) return;
     const ac = new AbortController();
 
     const loadSerie = async () => {
       try {
-        // 1) tenta com auth se houver token
         const hasToken =
           typeof window !== "undefined" &&
           !!localStorage.getItem(AUTH_TOKEN_KEY);
@@ -68,7 +69,6 @@ export default function SeriePage() {
           }
         }
 
-        // 2) retry sem auth (caso seja endpoint público)
         try {
           const data = await apiFetch(`/series/${id}/details`, {
             method: "GET",
@@ -102,14 +102,13 @@ export default function SeriePage() {
     };
   }, [id]);
 
-  // Checar favorito — NÃO altera services; evita setState após unmount
   useEffect(() => {
     let cancelled = false;
 
     const checkFavorite = async () => {
       try {
         if (member && id) {
-          const fav = await isFavoritedMedia(member.id, Number(id)); // ← só 2 args
+          const fav = await isFavoritedMedia(member.id, Number(id), locale);
           if (!cancelled) setIsFavorited(fav);
         }
       } catch (e) {
@@ -127,31 +126,31 @@ export default function SeriePage() {
     if (!member || !serie) return;
 
     if (isFavorited) {
-      const success = await removeFavouriteMedia(member.id, serie.id, "series");
+      const success = await removeFavouriteMedia(member.id, serie.id, locale, "series");
       if (success) {
-        toast.success("Removido dos favoritos");
+        toast.success(t("toastRemoved"));
         setIsFavorited(false);
-      } else toast.error("Erro ao remover");
+      } else toast.error(t("toastErrorRemove"));
     } else {
-      const success = await addFavouriteSeries("", member.id, serie.id);
+      const success = await addFavouriteSeries("", member.id, serie.id, locale);
       if (success) {
-        toast.success("Adicionado aos favoritos");
+        toast.success(t("toastAdded"));
         setIsFavorited(true);
-      } else toast.error("Erro ao favoritar");
+      } else toast.error(t("toastErrorAdd"));
     }
   };
 
   if (!serie) {
     return (
       <p className="text-white p-10" aria-live="polite">
-        Carregando série...
+        {t("loadingSerie")}
       </p>
     );
   }
 
   const year = serie.release_date
     ? new Date(serie.release_date).getFullYear()
-    : "Desconhecido";
+    : t("unknown");
 
   return (
     <main className="relative w-full min-h-screen text-white">
@@ -178,12 +177,12 @@ export default function SeriePage() {
               {Number(serie.vote_average || 0).toFixed(1)}
             </span>
           </div>
-          <span className="uppercase">{serie.genres?.[0] || "DESCONHECIDO"}</span>
+          <span className="uppercase">{serie.genres?.[0] || t("unknown")}</span>
           <span>{year}</span>
         </div>
 
         <p className="max-w-2xl text-gray-200 text-base leading-relaxed">
-          {serie.overview || "Sem descrição disponível."}
+          {serie.overview || t("noDescription")}
         </p>
 
         <div className="flex gap-4 flex-wrap">
@@ -191,20 +190,20 @@ export default function SeriePage() {
             onClick={() => setShowModal(true)}
             className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition"
           >
-            Avaliar
+            {t("rate")}
           </button>
           <button
             onClick={handleFavoriteToggle}
             className="bg-darkgreen/80 border border-white/20 text-white px-6 py-3 rounded hover:bg-darkgreen hover:brightness-110 transition flex items-center gap-2"
-            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+            aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
           >
             {isFavorited ? (
               <>
-                <FaHeart className="text-red-500" /> Remover
+                <FaHeart className="text-red-500" /> {t("remove")}
               </>
             ) : (
               <>
-                <FiHeart /> Favoritar
+                <FiHeart /> {t("favorite")}
               </>
             )}
           </button>

@@ -24,9 +24,10 @@ function extractResults(payload: unknown): Json[] {
   return [];
 }
 
-export const fetchMovies = async (): Promise<Movie[]> => {
+export const fetchMovies = async (locale: string): Promise<Movie[]> => {
   try {
-    const data: unknown = await apiFetch(`/movie/get/page/1`, { auth: true });
+    // Adicione o parâmetro de idioma à URL
+    const data: unknown = await apiFetch(`/movie/get/page/1?language=${locale}`, { auth: true });
     const results = extractResults(data);
 
     const transformed: Movie[] = results.map((m): Movie => {

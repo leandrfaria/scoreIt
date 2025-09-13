@@ -16,6 +16,7 @@ import { MovieList } from "@/components/features/movie/MovieList";
 import LoggedOutHome from "@/components/layout/oggedOutHome";
 
 
+
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
   const { activeTab } = useTabContext();

@@ -8,7 +8,6 @@ export const routing = defineRouting({
     '/': { pt: '/', en: '/' },
     '/login': { pt: '/login', en: '/login' },
     '/cadastro': { pt: '/cadastro', en: '/register' },
-    // adicione mais rotas conforme necessário
   }
 });
 

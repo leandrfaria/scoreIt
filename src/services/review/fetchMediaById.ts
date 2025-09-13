@@ -1,3 +1,4 @@
+// services/review/fetchMediaById.ts
 import { fetchMovieById } from "@/services/movie/fetch_movie_by_id";
 import { fetchSerieById } from "@/services/series/fetch_series_by_id";
 import { fetchAlbumById } from "@/services/album/fetch_album_by_id";
@@ -5,7 +6,7 @@ import { Movie } from "@/types/Movie";
 import { Series } from "@/types/Series";
 import { Album } from "@/types/Album";
 
-type MediaType = "movie" | "series" | "album";
+type MediaType = "movie" | "series" | "album";  
 
 export type UnifiedMedia = {
   id: number | string;
@@ -22,17 +23,36 @@ function pickString(...vals: Array<string | null | undefined>): string {
   return FALLBACK_POSTER;
 }
 
+// Função para extrair o locale da URL
+const getLocaleFromPath = (): string => {
+  if (typeof window === 'undefined') return 'en';
+  
+  const path = window.location.pathname;
+  const localeMatch = path.match(/^\/([a-z]{2})(?=\/|$)/);
+  
+  if (localeMatch && localeMatch[1]) {
+    return localeMatch[1];
+  }
+  
+  return 'en'; // default
+};
+
 export const fetchMediaById = async (
   id: string | number,
-  mediaType: MediaType
+  mediaType: MediaType,
+  locale?: string
 ): Promise<UnifiedMedia | null> => {
   if (id === undefined || id === null || String(id).trim() === "") return null;
   if (!mediaType) return null;
 
+  // Se não foi passado um locale, tenta extrair da URL
+  let effectiveLocale = locale || getLocaleFromPath();
+  console.log("[fetchMediaById] Locale detectado:", effectiveLocale);
+
   try {
     switch (mediaType) {
       case "movie": {
-        const movie: Movie | null = await fetchMovieById(String(id));
+        const movie: Movie | null = await fetchMovieById(String(id), effectiveLocale);
         if (!movie) return null;
         return {
           id: movie.id,
@@ -41,7 +61,7 @@ export const fetchMediaById = async (
         };
       }
       case "series": {
-        const serie: Series | null = await fetchSerieById(String(id));
+        const serie: Series | null = await fetchSerieById(String(id), effectiveLocale);
         if (!serie) return null;
         return {
           id: serie.id,
@@ -50,7 +70,7 @@ export const fetchMediaById = async (
         };
       }
       case "album": {
-        const album: Album | null = await fetchAlbumById(String(id));
+        const album: Album | null = await fetchAlbumById(String(id), effectiveLocale);
         if (!album) return null;
         return {
           id: album.id,

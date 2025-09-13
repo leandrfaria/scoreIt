@@ -7,7 +7,8 @@ export interface Movie {
   backdropUrl: string;
   vote_average: number;
   genre: string;
-  genres?: string[];
+  genre_ids?: number[];
+  genres?: { id: number; name: string }[];
   runtime?: number;
   language?: string;
   certification?: string;

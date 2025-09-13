@@ -3,22 +3,21 @@
 import { useRef, useMemo, useEffect, useState } from "react";
 import type { CustomList } from "@/types/CustomList";
 import { ArrowLeft as IconArrowLeft, ArrowRight as IconArrowRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Props = {
-  /** mantido por compat, mas ignorado */
   isOpen?: boolean;
-  /** mantido por compat, mas ignorado */
   onToggle?: () => void;
   lists: CustomList[];
   onSelect: (list: CustomList) => void;
 };
 
 export default function CustomListsSection({ lists, onSelect }: Props) {
+  const t = useTranslations("CustomListsSection");
   const trackRef = useRef<HTMLDivElement>(null);
 
   const hasLists = (lists?.length || 0) > 0;
 
-  // === mesmas setas do ReviewsCarouselSection ===
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(true);
   const rafRef = useRef<number | null>(null);
@@ -39,7 +38,7 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
   const scroll = (direction: "left" | "right") => {
     const el = trackRef.current;
     if (!el) return;
-    const scrollAmount = el.clientWidth * 0.8; // igual ao reviews
+    const scrollAmount = el.clientWidth * 0.8;
     const newLeft = direction === "left" ? el.scrollLeft - scrollAmount : el.scrollLeft + scrollAmount;
     el.scrollTo({ left: newLeft, behavior: "smooth" });
   };
@@ -59,7 +58,6 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // quantidade de scroll por clique (backup p/ teclas antigas, se você quiser reaproveitar)
   const scrollByAmount = useMemo(() => {
     if (typeof window === "undefined") return 560;
     const w = window.innerWidth;
@@ -71,20 +69,18 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
   }, []);
 
   if (!hasLists) {
-    return <p className="text-gray-400 py-2">você não possui nenhuma lista!</p>;
+    return <p className="text-gray-400 py-2">{t("noLists")}</p>;
   }
 
   return (
     <section className="relative">
-      {/* faixa do carrossel — sem máscara nas bordas (removi o maskImage/WebkitMaskImage) */}
       <div
         ref={trackRef}
         className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none]"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any, WebkitOverflowScrolling: "touch" }}
         role="list"
-        aria-label="Listas personalizadas"
+        aria-label={t("customLists")}
       >
-        {/* hack leve p/ esconder scrollbar no webkit */}
         <div className="absolute w-0 h-0 overflow-hidden" aria-hidden />
 
         {lists.map((list) => (
@@ -98,25 +94,22 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
               bg-neutral-900/70 ring-1 ring-white/10 hover:ring-white/20
               transition-all duration-200
             "
-            aria-label={`abrir lista ${list.listName}`}
+            aria-label={t("openList", { listName: list.listName })}
             title={list.listName}
             role="listitem"
           >
-            {/* header do card (mantido) */}
             <div className="h-20 sm:h-24 md:h-28 bg-[var(--color-darkgreen)]/60 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-[var(--color-darkgreen)]/80 via-[var(--color-mediumgreen)]/30 to-transparent" />
               <div className="absolute bottom-2 left-3 text-left">
                 <h3 className="text-sm sm:text-base font-semibold text-white">{list.listName}</h3>
-
               </div>
             </div>
 
-            {/* corpo */}
             <div className="p-3">
               {list.list_description ? (
                 <p className="text-xs sm:text-sm text-white/70 line-clamp-2">{list.list_description}</p>
               ) : (
-                <p className="text-xs italic text-white/40">sem descrição</p>
+                <p className="text-xs italic text-white/40">{t("noDescription")}</p>
               )}
 
               <div className="mt-3 flex items-center justify-between">
@@ -129,7 +122,7 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
                     text-[var(--color-lightgreen)]
                   "
                 >
-                  ver lista
+                  {t("viewList")}
                 </span>
               </div>
             </div>
@@ -137,11 +130,10 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
         ))}
       </div>
 
-      {/* setas embaixo — exatamente como o ReviewsCarouselSection */}
       <div className="flex justify-center mt-5 gap-6">
         <button
           onClick={() => scroll("left")}
-          aria-label="Anterior"
+          aria-label={t("previous")}
           className="p-1 text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           disabled={!showLeftButton}
         >
@@ -149,7 +141,7 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
         </button>
         <button
           onClick={() => scroll("right")}
-          aria-label="Próximo"
+          aria-label={t("next")}
           className="p-1 text-white/70 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           disabled={!showRightButton}
         >

@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@formatjs/intl-datetimeformat": "^6.18.0",
+    "@formatjs/intl-numberformat": "^8.15.4",
     "@headlessui/react": "^2.2.4",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-dropdown-menu": "^2.1.6",

@@ -1,3 +1,4 @@
+// ClientProviders.tsx
 "use client";
 
 import { MemberProvider } from "@/context/MemberContext";
@@ -6,33 +7,28 @@ import { TabProvider } from "@/context/TabContext";
 import { NextIntlClientProvider } from "next-intl";
 import { Toaster } from "react-hot-toast";
 import dynamic from "next/dynamic";
+import { type Locale } from "@/i18n/routing";
 
-// Header export nomeado
-const Header = dynamic(
-  () => import("@/components/layout/Header/Header").then((m) => m.Header),
-  { ssr: false }
-);
-
-type Messages = Record<string, unknown>;
+// Carregar o Header normalmente sem SSR false
+import { Header } from "@/components/layout/Header/Header";
 
 export default function ClientProviders({
   locale,
   messages,
   children,
 }: {
-  locale: "pt" | "en";
-  messages: Messages;
+  locale: Locale;
+  messages: any;
   children: React.ReactNode;
 }) {
   return (
-    <MemberProvider>
-      <AuthProvider>
-        <NextIntlClientProvider
-          locale={locale}
-          messages={messages}
-          timeZone="America/Sao_Paulo"
-          now={new Date()}
-        >
+    <NextIntlClientProvider
+      locale={locale}
+      messages={messages}
+      timeZone="America/Sao_Paulo"
+    >
+      <MemberProvider>
+        <AuthProvider>
           <TabProvider>
             <Header locale={locale} />
             <Toaster
@@ -44,8 +40,8 @@ export default function ClientProviders({
             />
             {children}
           </TabProvider>
-        </NextIntlClientProvider>
-      </AuthProvider>
-    </MemberProvider>
+        </AuthProvider>
+      </MemberProvider>
+    </NextIntlClientProvider>
   );
 }

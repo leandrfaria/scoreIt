@@ -13,7 +13,7 @@ export type MediaType = (Movie | Series | Album) & {
   imageUrl?: string | null;
 };
 
-type Fetcher = (id: string) => Promise<Movie | Series | Album | null>;
+type Fetcher = (id: string, locale: string) => Promise<Movie | Series | Album | null>;
 
 const fetchMap: Record<"movie" | "series" | "album", Fetcher> = {
   movie: fetchMovieById,
@@ -65,6 +65,7 @@ export async function createCustomList(
 export async function fetchListContent(
   memberId: number,
   listName: string,
+  locale: string, // Adicionar locale como parâmetro
   opts?: { signal?: AbortSignal }
 ): Promise<MediaType[]> {
   const items = (await apiFetch(`/customList/getContent/${memberId}/${encodeURIComponent(listName)}`, {
@@ -80,7 +81,7 @@ export async function fetchListContent(
       try {
         const type = coerceType(item.mediaType);
         if (!type) return null;
-        const media = await fetchMap[type](String(item.mediaId));
+          const media = await fetchMap[type](String(item.mediaId), locale);
         return media ? ({ ...media, internalId: item.id } as MediaType) : null;
       } catch {
         return null;
@@ -152,9 +153,11 @@ export async function removeContentFromList(a: any, b?: any, c?: any): Promise<v
 export async function fetchMemberLists(
   _token: string | undefined,
   memberId: number,
+  language: string, // Novo parâmetro para idioma
   opts?: { signal?: AbortSignal }
 ): Promise<CustomList[]> {
-  const lists = await apiFetch(`/customList/getList/${memberId}`, {
+  const url = `/customList/getList/${memberId}?language=${encodeURIComponent(language)}`;
+  const lists = await apiFetch(url, {
     auth: true,
     method: "GET",
     signal: opts?.signal,

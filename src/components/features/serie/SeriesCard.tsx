@@ -18,7 +18,7 @@ import { fetchMemberLists, addContentToList } from "@/services/customList/list";
 
 interface SeriesCardProps extends Series {
   onRemoveSerie?: (id: number) => void;
-  priority?: boolean; // prioridade no carregamento do poster
+  priority?: boolean;
 }
 
 const BLUR_DATA_URL =
@@ -35,6 +35,7 @@ function SeriesCardBase({
   genres = [],
   onRemoveSerie,
   priority = false,
+  ...series
 }: SeriesCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -47,7 +48,7 @@ function SeriesCardBase({
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations("MovieCard");
+  const t = useTranslations("SeriesCard");
   const { member } = useMember();
 
   const year = useMemo(() => {
@@ -56,7 +57,10 @@ function SeriesCardBase({
     return isNaN(d.getTime()) ? "" : d.getFullYear().toString();
   }, [release_date]);
 
-  const genre = useMemo(() => (genres && genres.length > 0 ? genres[0] : "Drama"), [genres]);
+  const genreLabel = useMemo(() => {
+    // Usa o campo 'genre' do service, ou fallback para array de strings
+    return (series as any).genre || genres.join(", ") || t("noGenreAvailable");
+  }, [genres, series, t]);
 
   const handleOpen = useCallback(() => setIsOpen(true), []);
   const handleClose = useCallback(() => setIsOpen(false), []);
@@ -98,71 +102,103 @@ function SeriesCardBase({
 
   // Checar favorito
   useEffect(() => {
+    let mounted = true;
     (async () => {
       try {
         if (!member) return;
-        const favorited = await isFavoritedMedia(member.id, id);
-        setIsFavorited(favorited);
+        const favorited = await isFavoritedMedia(member.id, id, locale);
+        if (mounted) setIsFavorited(Boolean(favorited));
       } catch (error) {
         console.error("Erro ao verificar favorito:", error);
       }
     })();
-  }, [id, member]);
+    return () => {
+      mounted = false;
+    };
+  }, [id, member, locale]);
 
-  // Carregar listas ao abrir o modal
+  // Carregar listas ao abrir modal
   useEffect(() => {
+    let mounted = true;
     if (!isOpen || !member) return;
     (async () => {
       try {
-        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id);
-        const uniqueListNames = Array.from(new Set(lists.map((item) => item.listName)));
+        const token = localStorage.getItem("authToken") ?? "";
+        const lists = await fetchMemberLists(token, member.id, locale);
+        const uniqueListNames = Array.from(new Set(lists.map((item: any) => String(item.listName ?? ""))).values()).filter(Boolean);
+        if (!mounted) return;
         setCustomLists(uniqueListNames);
         if (uniqueListNames.length > 0) setSelectedList((prev) => prev || uniqueListNames[0]);
-      } catch {
-        toast.error("Erro carregando listas");
+      } catch (err) {
+        console.error("Erro carregando listas:", err);
+        if (mounted) toast.error(t("errorLoadingLists"));
       }
     })();
-  }, [isOpen, member]);
+    return () => {
+      mounted = false;
+    };
+  }, [isOpen, member, locale, t]);
 
   const handleFavorite = useCallback(async () => {
     if (!member) {
       toast.error(t("userNotAuthenticated"));
       return;
     }
-    if (isFavorited) {
-      const success = await removeFavouriteMedia(member.id, id, "series");
-      if (success) {
-        toast.success(t("removedFromFavorites"));
-        setIsFavorited(false);
-        onRemoveSerie?.(id);
-      } else toast.error(t("errorRemovingFavorite"));
-    } else {
-      const success = await addFavouriteSeries(localStorage.getItem("authToken")!, member.id, id);
-      if (success) {
-        toast.success(t("SerieaddFavorite"));
-        setIsFavorited(true);
-      } else toast.error(t("SerieserrorAddingFavorite"));
+
+    try {
+      if (isFavorited) {
+        const success = await removeFavouriteMedia(member.id, id, locale, "series");
+        if (success) {
+          toast.success(t("removedFromFavorites"));
+          setIsFavorited(false);
+          onRemoveSerie?.(id);
+        } else {
+          toast.error(t("errorRemovingFavorite"));
+        }
+      } else {
+        const token = localStorage.getItem("authToken") ?? "";
+        const success = await addFavouriteSeries(token, member.id, id, locale);
+        if (success) {
+          toast.success(t("addedToFavorites"));
+          setIsFavorited(true);
+        } else {
+          toast.error(t("errorAddingFavorite"));
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao alternar favorito:", err);
+      toast.error(t("errorProcessingFavorite"));
     }
-  }, [id, isFavorited, member, onRemoveSerie, t]);
+  }, [id, isFavorited, member, onRemoveSerie, t, locale]);
 
   const handleAddToList = useCallback(async () => {
-    if (!selectedList) return toast.error("Selecione uma lista");
+    if (!selectedList) return toast.error(t("selectAList"));
+    if (!member) {
+      toast.error(t("userNotAuthenticated"));
+      return;
+    }
+
+    setIsAdding(true);
     try {
-      setIsAdding(true);
-      if (!member) return toast.error(t("userNotAuthenticated"));
-      const result = await addContentToList(localStorage.getItem("authToken")!, {
+      const token = localStorage.getItem("authToken") ?? "";
+      const result = await addContentToList(token, {
         memberId: member.id,
         mediaId: String(id),
         mediaType: "series",
         listName: selectedList,
+        language: locale,
       });
-      if (result === "duplicate") toast.error("Já está na lista");
-      else if (result === "success") toast.success("Série adicionada!");
-      else toast.error("Erro ao adicionar");
+
+      if (result === "duplicate") toast.error(t("alreadyInList"));
+      else if (result === "success") toast.success(t("seriesAdded"));
+      else toast.error(t("errorAddingToList"));
+    } catch (err) {
+      console.error("Erro ao adicionar à lista:", err);
+      toast.error(t("errorAddingToList"));
     } finally {
       setIsAdding(false);
     }
-  }, [id, member, selectedList, t]);
+  }, [id, member, selectedList, t, locale]);
 
   const handleViewDetails = useCallback(() => {
     router.push(`/${locale}/series/${id}`);
@@ -177,7 +213,7 @@ function SeriesCardBase({
         aria-label={`Abrir detalhes de ${name}`}
       >
         <div className="relative w-full aspect-[2/3] bg-neutral-900">
-          {posterUrl && posterUrl !== "null" ? (
+          {posterUrl ? (
             <Image
               src={posterUrl}
               alt={name}
@@ -192,22 +228,18 @@ function SeriesCardBase({
               draggable={false}
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-              {t("noImageAvailable")}
-            </div>
+            <div className="flex items-center justify-center h-full text-gray-500 text-sm">{t("noImageAvailable")}</div>
           )}
           {!posterLoaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
 
-          {/* ⭐ nota */}
           <div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded-full flex items-center gap-1">
             <FaStar size={12} />
-            <span>{vote_average?.toFixed(1) ?? "0.0"}</span>
+            <span>{(vote_average ?? 0).toFixed(1)}</span>
           </div>
 
-          {/* título + meta */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2 sm:p-3">
             <h3 className="text-white text-[12px] sm:text-sm font-semibold line-clamp-2">{name}</h3>
-            <p className="text-gray-300 text-[10px] sm:text-xs">{genre}{year ? ` • ${year}` : ""}</p>
+            <p className="text-gray-300 text-[10px] sm:text-xs">{year}</p>
           </div>
         </div>
       </div>
@@ -234,7 +266,7 @@ function SeriesCardBase({
                     <button onClick={handleClose} className="text-red-400 text-2xl" aria-label="Fechar">×</button>
                   </div>
 
-                  {backdropUrl && backdropUrl !== "null" ? (
+                  {backdropUrl ? (
                     <div className="relative w-full h-[180px] sm:h-[250px] rounded-md overflow-hidden mb-6">
                       <Image
                         src={backdropUrl}
@@ -249,22 +281,21 @@ function SeriesCardBase({
                         draggable={false}
                       />
                       {!backdropLoaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
-
-                      {/* ❤️ favorito somente no MODAL */}
                       <button
-                        onClick={handleFavorite}
+                        onClick={(e) => { e.stopPropagation(); handleFavorite(); }}
                         className="absolute bottom-2 right-2 bg-black/60 p-2 rounded-full"
-                        aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                        aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
                       >
                         {isFavorited ? <FaHeart className="text-red-500 w-6 h-6" /> : <FiHeart className="text-white w-6 h-6" />}
                       </button>
                     </div>
                   ) : (
-                    <div className="w-full h-[200px] bg-gray-800 flex items-center justify-center text-gray-500">Sem imagem</div>
+                    <div className="w-full h-[200px] bg-gray-800 flex items-center justify-center text-gray-500">{t("noImageAvailable")}</div>
                   )}
 
                   <div className="space-y-3">
-                    {release_date && <p className="text-gray-400 text-sm">{t("releaseDate")}: {new Date(release_date).toLocaleDateString()}</p>}
+                    {release_date && <p className="text-gray-400 text-sm">{t("releaseDate")}: {new Date(release_date).toLocaleDateString(locale)}</p>}
+                    {genreLabel && <p className="text-gray-400 text-sm">{t("genres")}: {genreLabel}</p>}
                     <p className="text-gray-300 text-sm">{overview?.trim() || t("noDescription")}</p>
                   </div>
 
@@ -275,23 +306,26 @@ function SeriesCardBase({
                       className="bg-neutral-800 text-white p-2 rounded flex-grow text-sm"
                       disabled={customLists.length === 0}
                     >
-                      <option value="">Selecione uma lista</option>
+                      <option value="">{t("selectAList")}</option>
                       {customLists.map((listName) => (
-                        <option key={listName}>{listName}</option>
+                        <option key={listName} value={listName}>{listName}</option>
                       ))}
                     </select>
 
                     <button
-                      onClick={handleAddToList}
+                      onClick={(e) => { e.stopPropagation(); handleAddToList(); }}
                       disabled={isAdding || !selectedList}
-                      className="bg-darkgreen text-white px-4 py-2 rounded-md hover:brightness-110 transition text-sm"
+                      className="bg-darkgreen text-white px-4 py-2 rounded-md hover:brightness-110 transition text-sm disabled:opacity-60"
                     >
-                      {isAdding ? "Adicionando..." : "Adicionar"}
+                      {isAdding ? t("adding") : t("add")}
                     </button>
                   </div>
 
                   <div className="mt-4 flex justify-end">
-                    <button onClick={handleViewDetails} className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition text-sm">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleViewDetails(); }}
+                      className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition text-sm"
+                    >
                       {t("viewDetails")}
                     </button>
                   </div>

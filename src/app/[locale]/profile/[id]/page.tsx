@@ -21,13 +21,14 @@ import { fetchMemberLists } from "@/services/customList/list";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 import BadgesWall from "@/components/features/badge/BadgesWall";
-import { getToken } from "@/lib/api"; // ✅ novo
+import { getToken } from "@/lib/api";
 
 function normalizeHandle(v: string) {
   return (v || "").replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
 }
+
 function suggestHandle(m?: Member | null) {
-  if (!m) return "usuario";
+  if (!m) return "user";
   const fromHandle = normalizeHandle(m?.handle || "");
   if (fromHandle) return fromHandle;
   const emailLeft = (m?.email || "").split("@")[0] || "";
@@ -55,6 +56,7 @@ export default function PublicProfilePage() {
   const [isListsOpen, setIsListsOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
+  // Buscar dados do usuário
   useEffect(() => {
     const controller = new AbortController();
     const run = async () => {
@@ -62,61 +64,62 @@ export default function PublicProfilePage() {
         const data = await fetchMemberById(id as string, { signal: controller.signal });
         setOtherMember(data);
       } catch (error) {
-        console.error("Erro ao buscar perfil:", error);
+        console.error(t("errorFetchingProfile"), error);
       } finally {
         setLoading(false);
       }
     };
     run();
     return () => controller.abort();
-  }, [id]);
+  }, [id, t]);
 
+  // Contadores de seguidores e seguindo
   useEffect(() => {
     const run = async () => {
       try {
-        const token = getToken(); // ✅ padronizado
+        const token = getToken();
         if (!token || !id) return;
-
         const [followerCount, followingCount] = await Promise.all([
           countFollowers(id as string, token),
           countFollowing(id as string, token),
         ]);
-
         setFollowers(followerCount);
         setFollowing(followingCount);
       } catch (err) {
-        console.error("Erro ao buscar contadores:", err);
+        console.error(t("errorFetchingCounts"), err);
       }
     };
     run();
-  }, [id]);
+  }, [id, t]);
 
+  // Redireciona para perfil próprio
   useEffect(() => {
     if (member?.id && String(member.id) === id) {
       router.replace(`/${locale}/profile`);
     }
   }, [member, id, router, locale]);
 
+  // Listas customizadas
   useEffect(() => {
     const controller = new AbortController();
     const run = async () => {
       if (!id) return;
       try {
-        const token = getToken(); // ✅ padronizado
+        const token = getToken();
         if (!token) return;
-        const lists = await fetchMemberLists(token, Number(id), { signal: controller.signal });
+          const lists = await fetchMemberLists(token, Number(id), locale, { signal: controller.signal });
         setCustomLists(lists);
       } catch (err) {
-        console.error("Erro ao buscar listas customizadas:", err);
+        console.error(t("errorFetchingCustomLists"), err);
       }
     };
     run();
     return () => controller.abort();
-  }, [id]);
+  }, [id, t]);
 
   if (member?.id && String(member.id) === id) return null;
-  if (loading) return <p className="text-white">Carregando...</p>;
-  if (!otherMember) return <p className="text-white">Usuário não encontrado.</p>;
+  if (loading) return <p className="text-white">{t("loading")}</p>;
+  if (!otherMember) return <p className="text-white">{t("userNotFound")}</p>;
 
   function handleOpenListModal(list: CustomList) {
     setSelectedList(list);
@@ -142,16 +145,16 @@ export default function PublicProfilePage() {
 
       <Container>
         <section className="mt-6 space-y-4">
-          <h2 className="text-white text-xl font-semibold">Favoritos</h2>
-          {activeTab == "filmes" && <FavouriteMoviesCarouselSection memberId={id as string} />}
-          {activeTab == "musicas" && <FavouriteAlbumCarouselSection memberId={id as string} />}
-          {activeTab == "series" && <FavouriteSeriesCarouselSection memberId={id as string} />}
+          <h2 className="text-white text-xl font-semibold">{t("favorites")}</h2>
+          {activeTab === "filmes" && <FavouriteMoviesCarouselSection memberId={id as string} />}
+          {activeTab === "musicas" && <FavouriteAlbumCarouselSection memberId={id as string} />}
+          {activeTab === "series" && <FavouriteSeriesCarouselSection memberId={id as string} />}
         </section>
       </Container>
 
       <Container>
         <section className="mt-6 space-y-4">
-          <h2 className="text-white text-xl font-semibold">Avaliações recentes</h2>
+          <h2 className="text-white text-xl font-semibold">{t("recentReviews")}</h2>
           <ReviewsCarouselSection memberId={id as string} />
         </section>
       </Container>
@@ -159,21 +162,20 @@ export default function PublicProfilePage() {
       <Container>
         <section className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-white text-xl font-semibold">Listas personalizadas</h2>
+            <h2 className="text-white text-xl font-semibold">{t("customLists")}</h2>
           </div>
-
           <CustomListsSection
             isOpen={isListsOpen}
             onToggle={() => setIsListsOpen(!isListsOpen)}
             lists={customLists}
-            onSelect={(list) => handleOpenListModal(list)}
+            onSelect={handleOpenListModal}
           />
         </section>
       </Container>
 
       <Container>
         <section className="mt-6">
-          <h2 className="text-white text-xl font-semibold mb-3">Mural de conquistas</h2>
+          <h2 className="text-white text-xl font-semibold mb-3">{t("badgesWall")}</h2>
           <BadgesWall memberId={Number(id)} pollMs={0} />
         </section>
       </Container>
@@ -213,7 +215,7 @@ const ProfileHeader = ({ member, t, followers, following, setFollowers }: Profil
               member?.profileImageUrl ||
               "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
             }
-            alt="Foto de perfil"
+            alt={t("profileImageAlt")}
             fill
             className="object-cover"
           />

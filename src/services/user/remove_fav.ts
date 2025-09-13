@@ -1,16 +1,13 @@
 import { apiFetch } from "@/lib/api";
 
 export const removeFavouriteMedia = async (
-  userId: number,
-  mediaId: string | number,
-  mediaType: "movie" | "series" | "album"
-): Promise<boolean> => {
+userId: number, mediaId: string | number, locale: string, mediaType: "movie" | "series" | "album"): Promise<boolean> => {
   if (!userId || !mediaId || !mediaType) return false;
 
   try {
     await apiFetch(`/member/favoritesDelete/${userId}/${mediaId}/${mediaType}`, {
       method: "DELETE",
-      auth: true,
+      auth: true,         
     });
     return true;
   } catch (error) {

@@ -1,10 +1,7 @@
 import { apiFetch } from "@/lib/api";
 
 export const addFavouriteMovie = async (
-  _token: string,
-  userId: number,
-  movieId: number
-): Promise<boolean> => {
+_token: string, userId: number, movieId: number, tmdbLanguage: string): Promise<boolean> => {
   if (!userId || !movieId) return false;
 
   try {

@@ -21,6 +21,14 @@ interface MovieCardProps extends Movie {
   priority?: boolean;
 }
 
+const mapLocaleToTMDBLanguage = (locale: string): string => {
+  const mapping: Record<string, string> = {
+    'pt': 'pt-BR',
+    'en': 'en-US',
+  };
+  return mapping[locale] || 'pt-BR';
+};
+
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnL3N2ZyI+PHJlY3QgZmlsbD0iIzk5OTk5OSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==";
 
@@ -32,7 +40,7 @@ function MovieCardBase({
   vote_average,
   release_date,
   overview,
-  genre = "Drama",
+  genre,
   onRemoveMovie,
   priority = false,
 }: MovieCardProps) {
@@ -50,6 +58,8 @@ function MovieCardBase({
   const locale = useLocale();
   const t = useTranslations("MovieCard");
   const { member } = useMember();
+
+  const tmdbLanguage = useMemo(() => mapLocaleToTMDBLanguage(locale), [locale]);
 
   const handleOpen = useCallback(() => setIsOpen(true), []);
   const handleClose = useCallback(() => setIsOpen(false), []);
@@ -93,52 +103,65 @@ function MovieCardBase({
     (async () => {
       try {
         if (!member) return;
-        const favorited = await isFavoritedMedia(member.id, id);
+        // Passar tmdbLanguage em vez de locale
+        const favorited = await isFavoritedMedia(member.id, id, tmdbLanguage);
         setIsFavorited(favorited);
       } catch (error) {
         console.error(t("errorMovieFav"), error);
       }
     })();
-  }, [id, member, t]);
+  }, [id, member, t, tmdbLanguage]);
 
   // Carregar listas quando abrir o modal
   useEffect(() => {
     if (!isOpen || !member) return;
     (async () => {
       try {
-        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id);
+        // Passar tmdbLanguage em vez de locale
+        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id, tmdbLanguage);
         const unique = Array.from(new Set(lists.map((l) => l.listName)));
         setCustomLists(unique);
         if (unique.length > 0) setSelectedList((prev) => prev || unique[0]);
       } catch {
-        toast.error("Erro carregando listas");
+        toast.error(t("errorLoadingLists"));
       }
     })();
-  }, [isOpen, member]);
+  }, [isOpen, member, tmdbLanguage, t]);
 
-  const handleFavorite = useCallback(async () => {
-    if (!member) {
-      toast.error(t("userNotAuthenticated"));
-      return;
-    }
-    if (isFavorited) {
-      const ok = await removeFavouriteMedia(member.id, id, "movie");
-      if (ok) {
-        toast.success(t("removedFromFavorites"));
-        setIsFavorited(false);
-        onRemoveMovie?.(id);
-      } else toast.error(t("errorRemovingFavorite"));
+const handleFavorite = useCallback(async () => {
+  if (!member) {
+    toast.error(t("userNotAuthenticated"));
+    return;
+  }
+  
+  if (isFavorited) {
+    // Correção: inverter a ordem dos parâmetros
+    const ok = await removeFavouriteMedia(member.id, id, tmdbLanguage, "movie");
+    if (ok) {
+      toast.success(t("removedFromFavorites"));
+      setIsFavorited(false);
+      onRemoveMovie?.(id);
     } else {
-      const ok = await addFavouriteMovie(localStorage.getItem("authToken")!, member.id, id);
-      if (ok) {
-        toast.success(t("addedToFavorites"));
-        setIsFavorited(true);
-      } else toast.error(t("errorAddingFavorite"));
+      toast.error(t("errorRemovingFavorite"));
     }
-  }, [id, isFavorited, member, onRemoveMovie, t]);
+  } else {
+    const ok = await addFavouriteMovie(
+      localStorage.getItem("authToken")!,
+      member.id,
+      id,
+      tmdbLanguage
+    );
+    if (ok) {
+      toast.success(t("addedToFavorites"));
+      setIsFavorited(true);
+    } else {
+      toast.error(t("errorAddingFavorite"));
+    }
+  }
+}, [id, isFavorited, member, onRemoveMovie, t, tmdbLanguage]);
 
   const handleAddToList = useCallback(async () => {
-    if (!selectedList) return toast.error("Selecione uma lista");
+    if (!selectedList) return toast.error(t("selectList"));
     try {
       setIsAdding(true);
       if (!member) return toast.error(t("userNotAuthenticated"));
@@ -147,24 +170,25 @@ function MovieCardBase({
         mediaId: String(id),
         mediaType: "movie",
         listName: selectedList,
+        language: tmdbLanguage,
       });
-      if (result === "duplicate") toast.error("Já está na lista");
-      else if (result === "success") toast.success("Filme adicionado!");
-      else toast.error("Erro ao adicionar");
+      if (result === "duplicate") toast.error(t("alreadyInList"));
+      else if (result === "success") toast.success(t("movieAdded"));
+      else toast.error(t("errorAdding"));
     } finally {
       setIsAdding(false);
     }
-  }, [id, member, selectedList, t]);
+  }, [id, member, selectedList, t, tmdbLanguage]);
 
   const handleViewDetails = useCallback(() => router.push(`/${locale}/movie/${id}`), [id, locale, router]);
 
   return (
     <>
-      {/* CARD (sem botão de favorito) */}
+      {/* CARD */}
       <div
         onClick={handleOpen}
         className="cursor-pointer w-full max-w-[180px] sm:max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-[1.03] transition-transform duration-300 relative"
-        aria-label={`Abrir detalhes de ${title}`}
+        aria-label={t("openDetails", { title })}
       >
         <div className="relative w-full aspect-[2/3] bg-neutral-900">
           {posterUrl && posterUrl !== "null" ? (
@@ -192,14 +216,14 @@ function MovieCardBase({
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2">
             <h3 className="text-white text-sm font-semibold line-clamp-2">{title}</h3>
             <p className="text-gray-300 text-xs">
-              {genre}
+              {genre || "Gênero não disponível"} {/* ADICIONANDO fallback aqui */}
               {year ? ` • ${year}` : ""}
             </p>
           </div>
         </div>
       </div>
 
-      {/* MODAL (mantém botão de favorito) */}
+      {/* MODAL */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -221,7 +245,7 @@ function MovieCardBase({
                 <div className="p-4 sm:p-6">
                   <div className="flex justify-between items-start mb-4">
                     <h2 className="text-xl font-bold">{title}</h2>
-                    <button onClick={handleClose} className="text-red-400 text-2xl" aria-label="Fechar">
+                    <button onClick={handleClose} className="text-red-400 text-2xl" aria-label={t("close")}>
                       ×
                     </button>
                   </div>
@@ -238,7 +262,7 @@ function MovieCardBase({
                       <button
                         onClick={handleFavorite}
                         className="absolute bottom-2 right-2 bg-black/60 p-2 rounded-full"
-                        aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                        aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
                       >
                         {isFavorited ? (
                           <FaHeart className="text-red-500 w-6 h-6" />
@@ -248,11 +272,13 @@ function MovieCardBase({
                       </button>
                     </div>
                   ) : (
-                    <div className="w-full h-[200px] bg-gray-800 flex items-center justify-center text-gray-500">Sem imagem</div>
+                    <div className="w-full h-[200px] bg-gray-800 flex items-center justify-center text-gray-500">
+                      {t("noImageAvailable")}
+                    </div>
                   )}
                   <div className="space-y-3">
                     <p className="text-gray-400 text-sm">
-                      {t("releaseDate")}: {new Date(release_date).toLocaleDateString()}
+                      {t("releaseDate")}: {release_date ? new Date(release_date).toLocaleDateString(locale) : t("unknown")}
                     </p>
                     <p className="text-gray-300 text-sm">{overview?.trim() || t("noDescription")}</p>
                   </div>
@@ -263,7 +289,7 @@ function MovieCardBase({
                       className="bg-neutral-800 text-white p-2 rounded flex-grow text-sm"
                       disabled={customLists.length === 0}
                     >
-                      <option value="">Selecione uma lista</option>
+                      <option value="">{t("selectList")}</option>
                       {customLists.map((l) => (
                         <option key={l}>{l}</option>
                       ))}
@@ -273,7 +299,7 @@ function MovieCardBase({
                       disabled={isAdding || !selectedList}
                       className="bg-darkgreen text-white px-4 py-2 rounded-md hover:brightness-110 transition text-sm"
                     >
-                      {isAdding ? "Adicionando..." : "Adicionar"}
+                      {isAdding ? t("adding") : t("add")}
                     </button>
                   </div>
                   <div className="mt-4 flex justify-end">

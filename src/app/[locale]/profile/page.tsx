@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Container } from "@/components/layout/Others/Container";
 import { ProtectedRoute } from "@/components/layout/Others/ProtectedRoute";
 import toast from "react-hot-toast";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
 import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
@@ -15,7 +15,7 @@ import CreateCustomListModal from "@/components/features/customList/CreateCustom
 import CustomListsSection from "@/components/features/customList/CustomListsSection";
 import ProfileHeader from "@/components/features/user/ProfileHeader";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
-import ProfileEditModal from "@/components/features/user/ProfileEditModal"; // ✅ IMPORTA O MODAL
+import ProfileEditModal from "@/components/features/user/ProfileEditModal";
 
 import { useMember } from "@/context/MemberContext";
 import { useTabContext } from "@/context/TabContext";
@@ -50,6 +50,7 @@ export default function Profile() {
   const { member, setMember } = useMember();
   const { activeTab } = useTabContext();
   const t = useTranslations("profile");
+  const locale = useLocale();
 
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
@@ -59,13 +60,13 @@ export default function Profile() {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
-  const loadCustomLists = async (token: string, memberId: number) => {
+  const loadCustomLists = async (token: string, memberId: number, locale: string) => {
     try {
-      const lists = await fetchMemberLists(token, memberId);
+      const lists = await fetchMemberLists(token, memberId, locale);
       setCustomLists(lists);
     } catch (err) {
       console.error("Erro ao carregar listas:", err);
-      toast.error("Erro ao carregar listas");
+      toast.error(t("error_loading_lists"));
     }
   };
 
@@ -86,7 +87,7 @@ export default function Profile() {
     if (!member) return;
     const token = getToken();
     if (!token) return;
-    Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id)]).catch(console.error);
+    Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id, locale)]).catch(console.error);
   }, [member]);
 
   const handleUpdateMember = async (
@@ -102,11 +103,14 @@ export default function Profile() {
       if (imageFile) {
         const formDataImage = new FormData();
         formDataImage.append("file", imageFile);
-        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL_DEV || "http://localhost:8080"}/api/images/upload/${member.id}`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formDataImage,
-        });
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL_DEV || "http://localhost:8080"}/api/images/upload/${member.id}`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formDataImage,
+          }
+        );
       }
 
       const payload = {
@@ -141,7 +145,7 @@ export default function Profile() {
               t={t}
               followers={followers}
               following={following}
-              onEditClick={() => setActiveModal("edit")} // ✅ abre o modal
+              onEditClick={() => setActiveModal("edit")}
             />
           </div>
         </Container>
@@ -158,7 +162,7 @@ export default function Profile() {
         {/* 2) Avaliações recentes */}
         <Container>
           <section className="mt-6 space-y-4">
-            <h2 className="text-white text-xl font-semibold">Avaliações recentes</h2>
+            <h2 className="text-white text-xl font-semibold">{t("recent_reviews")}</h2>
             <ReviewsCarouselSection />
           </section>
         </Container>
@@ -167,12 +171,12 @@ export default function Profile() {
         <Container>
           <section className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-white text-xl font-semibold">Listas personalizadas</h2>
+              <h2 className="text-white text-xl font-semibold">{t("custom_lists")}</h2>
               <button
                 onClick={() => setActiveModal("createList")}
                 className="bg-darkgreen text-white px-4 py-2 rounded hover:brightness-110"
               >
-                + Criar Lista
+                {t("create_list")}
               </button>
             </div>
 
@@ -191,7 +195,7 @@ export default function Profile() {
         {/* 4) Mural de conquistas */}
         <Container>
           <section className="mt-6">
-            <h2 className="text-white text-xl font-semibold mb-3">Mural de conquistas</h2>
+            <h2 className="text-white text-xl font-semibold mb-3">{t("badges_wall")}</h2>
             {member && <BadgesWall memberId={member.id} />}
           </section>
         </Container>
@@ -212,7 +216,7 @@ export default function Profile() {
             memberId={member.id}
             onCreated={() => {
               const token = getToken();
-              if (token) loadCustomLists(token, member.id);
+              if (token) loadCustomLists(token, member.id, locale);
             }}
           />
         )}
@@ -226,11 +230,11 @@ export default function Profile() {
             listDescription={selectedList.list_description}
             onListDeleted={() => {
               const token = getToken();
-              if (token) loadCustomLists(token, member.id);
+              if (token) loadCustomLists(token, member.id, locale);
             }}
             onListUpdated={() => {
               const token = getToken();
-              if (token) loadCustomLists(token, member.id);
+              if (token) loadCustomLists(token, member.id, locale);
             }}
             member={member}
           />

@@ -1,9 +1,7 @@
 import { apiFetch } from "@/lib/api";
 
 export const isFavoritedMedia = async (
-  userId: number,
-  mediaId: string | number
-): Promise<boolean> => {
+userId: number, mediaId: string | number, locale: string): Promise<boolean> => {
   if (!userId || !mediaId) return false;
 
   try {

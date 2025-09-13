@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import PageTransition from "@/components/layout/Others/PageTransition";
 import { Container } from "@/components/layout/Others/Container";
 import toast from "react-hot-toast";
@@ -40,6 +40,7 @@ export default function AuthPage() {
   const params = useSearchParams();
   const locale = useLocale();
   const { loadMemberData, setIsLoggedIn } = useAuthContext();
+  const t = useTranslations("cadastro");
 
   useEffect(() => {
     const q = (params.get("tab") || "").toLowerCase();
@@ -86,13 +87,13 @@ export default function AuthPage() {
         await verifyToken(token);
         await loadMemberData();
         setIsLoggedIn(true);
-        toast.success("login realizado com sucesso!");
+        toast.success(t("login_sucesso"));
         router.replace(`/${locale}`);
       }
     } catch (err: any) {
-      const errorMessage = err?.message || "erro ao fazer login.";
-      const finalMessage = errorMessage.includes("Credenciais inválidas ou conta não confirmada")
-        ? "credenciais inválidas ou conta não confirmada."
+      const errorMessage = err?.message || t("login_erro");
+      const finalMessage = errorMessage.includes(t("Credenciais"))
+        ? t("Credenciais")
         : errorMessage;
       toast.error(finalMessage);
       setMsgLogin(finalMessage);
@@ -137,28 +138,28 @@ export default function AuthPage() {
     setMsgSign("");
 
     if (!nameRegex.test(name)) {
-      toast.error("nome inválido. use ao menos 3 letras.");
+      toast.error(t("invalid_name"));
       return;
     }
     if (!handleRegex.test(handle)) {
-      toast.error("usuário inválido. use 3–15 caracteres (letras, números ou _).");
+      toast.error(t("usuario_invalido"));
       return;
     }
     if (!emailRegex.test(emailSign)) {
-      toast.error("e-mail inválido.");
+      toast.error(t("invalid_email"));
       return;
     }
     if (!passwordRegex.test(senhaSign)) {
-      toast.error("senha inválida. mínimo de 5 caracteres e 1 número.");
+      toast.error(t("invalid_senha"));
       return;
     }
     if (!isValidDate(date)) {
-      toast.error("data de nascimento inválida (use dd/mm/aaaa, 18+).");
+      toast.error(t("invalid_date"));
       return;
     }
     if (!gender) {
-      toast.error("selecione um gênero.");
-      return;
+      toast.error(t("Select_Gender"));
+      return
     }
 
     const [d, m, y] = date.split("/");
@@ -176,16 +177,14 @@ export default function AuthPage() {
       });
       if (resp.success) {
         const confirmMsg =
-          `pronto! enviamos um e-mail de confirmação para ${emailSign.trim()}. ` +
-          `confirme sua conta para entrar no site. ` +
-          `(se não encontrar, verifique também as pastas spam/lixo eletrônico.)`;
+          t("confirmaEmail", { email: emailSign.trim() });
         toast.success(confirmMsg);
         setSignupConfirmText(confirmMsg);
         setSignupDone(true);
       }
     } catch (err: any) {
-      const errorMessage = err?.message || "falha no cadastro.";
-      toast.error("não foi possível concluir seu cadastro.");
+      const errorMessage = err?.message || t("falhaCadastro");
+      toast.error(t("NaoPossivelCadastro"));
       setMsgSign(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -237,7 +236,7 @@ export default function AuthPage() {
               isLogin ? "text-white" : "text-emerald-300 hover:text-emerald-200",
             ].join(" ")}
           >
-            entrar
+            {t("tituloLogin")}
           </button>
           <button
             type="button"
@@ -251,7 +250,7 @@ export default function AuthPage() {
               !isLogin ? "text-white" : "text-emerald-300 hover:text-emerald-200",
             ].join(" ")}
           >
-            criar conta
+            {t("titulo")}
           </button>
         </div>
       </div>
@@ -290,12 +289,12 @@ export default function AuthPage() {
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className={GROUP_CLS}>
                       <label className={LABEL_CLS} htmlFor="emailLogin">
-                        e-mail
+                        {t("email")} 
                       </label>
                       <input
                         id="emailLogin"
                         type="email"
-                        placeholder="email@exemplo.com"
+                        placeholder={t("emailPlaceholder")}
                         value={emailLogin}
                         onChange={(e) => setEmailLogin(e.target.value)}
                         className={INPUT_CLS}
@@ -307,7 +306,7 @@ export default function AuthPage() {
 
                     <div className={GROUP_CLS}>
                       <label className={LABEL_CLS} htmlFor="senhaLogin">
-                        senha
+                        {t("senha")}
                       </label>
                       <input
                         id="senhaLogin"
@@ -322,7 +321,7 @@ export default function AuthPage() {
                     </div>
 
                     <button type="submit" className={BTN_PRIMARY} disabled={loadingLogin}>
-                      {loadingLogin ? "entrando..." : "entrar"}
+                      {loadingLogin ? t("carregando") : t("botaoLogin")}
                     </button>
 
                     {msgLogin && (
@@ -338,7 +337,7 @@ export default function AuthPage() {
                         role="button"
                         tabIndex={0}
                       >
-                        esqueci minha senha
+                        {t("esqueceu_senha")}
                       </span>
                       <span
                         onClick={() => router.replace(`/${locale}/refaz_email`)}
@@ -346,7 +345,7 @@ export default function AuthPage() {
                         role="button"
                         tabIndex={0}
                       >
-                        reenviar e-mail de confirmação
+                        {t("ReenviaEmail")}
                       </span>
                     </div>
                   </form>
@@ -370,13 +369,13 @@ export default function AuthPage() {
                     <form onSubmit={handleSignup} className="space-y-4">
                       <div className={GROUP_CLS}>
                         <label htmlFor="name" className={LABEL_CLS}>
-                          nome
+                          {t("nome")} 
                         </label>
                         <input
                           id="name"
                           className={INPUT_CLS}
                           type="text"
-                          placeholder="seu nome"
+                          placeholder={t("nomePlaceholder")}
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           autoComplete="name"
@@ -385,13 +384,13 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="handle" className={LABEL_CLS}>
-                          usuário (@)
+                          {t("Usuario")}
                         </label>
                         <input
                           id="handle"
                           className={INPUT_CLS}
                           type="text"
-                          placeholder="usuario"
+                          placeholder={t("UsuarioPlacehoalder")}
                           value={handle}
                           onChange={(e) => setHandle(e.target.value)}
                           autoComplete="username"
@@ -400,13 +399,13 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="emailSign" className={LABEL_CLS}>
-                          e-mail
+                          {t("email")}
                         </label>
                         <input
                           id="emailSign"
                           className={INPUT_CLS}
                           type="email"
-                          placeholder="email@exemplo.com"
+                          placeholder={t("emailPlaceholder")}
                           value={emailSign}
                           onChange={(e) => setEmailSign(e.target.value)}
                           autoComplete="email"
@@ -416,13 +415,13 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="senhaSign" className={LABEL_CLS}>
-                          senha
+                          {t("senha")} 
                         </label>
                         <input
                           id="senhaSign"
                           className={INPUT_CLS}
                           type="password"
-                          placeholder="mínimo de 5 caracteres e 1 número"
+                          placeholder={t("senhaPlaceholder")}
                           value={senhaSign}
                           onChange={(e) => setSenhaSign(e.target.value)}
                           autoComplete="new-password"
@@ -431,7 +430,7 @@ export default function AuthPage() {
 
                       <div className={GROUP_CLS}>
                         <label htmlFor="birth" className={LABEL_CLS}>
-                          data de nascimento
+                          {t("birthday")}
                         </label>
                         <input
                           id="birth"
@@ -447,7 +446,7 @@ export default function AuthPage() {
                       {/* select de gênero */}
                       <div className={GROUP_CLS}>
                         <label htmlFor="gender" className={LABEL_CLS}>
-                          gênero
+                          {t("genero")}
                         </label>
                         <div className="relative">
                           <select
@@ -462,11 +461,11 @@ export default function AuthPage() {
                             ].join(" ")}
                           >
                             <option value="" disabled hidden>
-                              selecione o gênero
+                              {t("Select_Gender")}
                             </option>
-                            <option value="MASC" className="bg-gray-900 text-white">masculino</option>
-                            <option value="FEM" className="bg-gray-900 text-white">feminino</option>
-                            <option value="OTHER" className="bg-gray-900 text-white">outro</option>
+                            <option value="MASC" className="bg-gray-900 text-white">{t("M_Gender")}</option>
+                            <option value="FEM" className="bg-gray-900 text-white">{t("F_Gender")}</option>
+                            <option value="OTHER" className="bg-gray-900 text-white">{t("O_Gender")}</option>
                           </select>
 
                           <svg
@@ -481,7 +480,7 @@ export default function AuthPage() {
                       </div>
 
                       <button type="submit" disabled={isSubmitting} className={BTN_PRIMARY}>
-                        {isSubmitting ? "criando conta..." : "criar conta"}
+                        {isSubmitting ? t("criandoConta") : t("botao")}
                       </button>
 
                       {msgSign && (

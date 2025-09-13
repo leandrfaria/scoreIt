@@ -1,10 +1,7 @@
 import { apiFetch } from "@/lib/api";
 
 export const addFavouriteSeries = async (
-  _token: string,
-  userId: number,
-  seriesId: number
-): Promise<boolean> => {
+_token: string, userId: number, seriesId: number, tmdbLanguage: string): Promise<boolean> => {
   if (!userId || !seriesId) return false;
 
   try {

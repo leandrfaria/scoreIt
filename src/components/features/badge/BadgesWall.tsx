@@ -7,6 +7,7 @@ import { fetchMemberBadges } from "@/services/badge";
 import type { BadgeResponse } from "@/types/Badge";
 import AchievementModal from "./AchievementModal";
 import { BADGE_CATALOG, findCatalogEntry, getBadgeImage } from "./badgeCatalog";
+import { useTranslations } from "next-intl";
 
 const seenKey = (memberId: number) => `scoreit_badges_seen:${memberId}`;
 
@@ -39,6 +40,7 @@ type Props = {
 };
 
 export default function BadgesWall({ memberId, pollMs = 8000, className }: Props) {
+  const t = useTranslations("badges");
   const [unlocked, setUnlocked] = useState<BadgeResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -80,22 +82,24 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
           unlockedRef.current = current;
           setUnlocked(current);
 
-          const gained = diffNewBadges(previous, current);
-          if (gained.length > 0) {
-            const notSeen = gained.find(b => !seenRef.current.has((b.code || b.name || "").toString()));
-            if (notSeen) {
-              setModalBadge(notSeen);
-              setModalOpen(true);
+        const gained = diffNewBadges(previous, current);
+        const notSeen = gained.find(b => !seenRef.current.has((b.code || b.name || "").toString()));
+        if (notSeen) {
+          const key = (notSeen.code || notSeen.name || "").toString();
+          if (key) seenRef.current.add(key); // ⬅️ marca como visto imediatamente
+          saveSeen(memberId, seenRef.current);
 
-              const entry = findCatalogEntry(notSeen);
-              toast.success(
-                entry ? `Parabéns! Você desbloqueou: ${notSeen.name}` : `Parabéns! Nova conquista desbloqueada.`,
-                { icon: "🏅" }
-              );
-            }
-          }
-        } catch (e) {
+          setModalBadge(notSeen);
+          setModalOpen(true);
+
+          const entry = findCatalogEntry(notSeen);
+          toast.success(
+            entry ? t("unlocked_with_name", { name: notSeen.name }) : t("unlocked_generic"),
+            { icon: "🏅" }
+          );
         }
+
+        } catch {}
       }, pollMs);
     }
 
@@ -110,12 +114,12 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
     return s;
   }, [unlocked]);
 
-  if (loading) return <p className="text-white/80">Carregando conquistas…</p>;
+  if (loading) return <p className="text-white/80">{t("loading")}</p>;
 
   return (
     <>
       <section className={className}>
-        <h2 className="text-white text-xl font-semibold mb-3">Mural de Conquistas</h2>
+        <h2 className="text-white text-xl font-semibold mb-3">{t("title")}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {BADGE_CATALOG.map((entry) => {
             const isUnlocked = unlockedKeySet.has(entry.code);
@@ -131,9 +135,9 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
                 <div className="flex-1">
                   <p className="text-white text-sm font-medium">{entry.name}</p>
                   <p className="text-xs text-white/60">
-                    {entry.code.startsWith("MOVIE") ? "Filmes" :
-                     entry.code.startsWith("SERIES") ? "Séries" : "Músicas"}
-                    {isUnlocked ? " • desbloqueada" : " • bloqueada"}
+                    {entry.code.startsWith("MOVIE") ? t("category.movies") :
+                     entry.code.startsWith("SERIES") ? t("category.series") : t("category.music")}
+                    {" • "}{isUnlocked ? t("status.unlocked") : t("status.locked")}
                   </p>
                 </div>
               </div>
@@ -155,7 +159,7 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
           }
           setModalBadge(null);
         }}
-        title={modalBadge?.name ?? "Conquista"}
+        title={modalBadge?.name ?? t("modal.title")}
         description={modalBadge?.description || undefined}
         imageUrl={
           modalBadge

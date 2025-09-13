@@ -17,7 +17,7 @@ export const RandomSeriesCarousel = () => {
     let mounted = true;
     (async () => {
       try {
-        const series = await fetchPopularSeries();
+        const series = await fetchPopularSeries(locale);
         const randomSeries = series.sort(() => 0.5 - Math.random()).slice(0, 3);
 
         const formattedItems: CarouselItem[] = randomSeries.map((serie) => ({
@@ -42,7 +42,7 @@ export const RandomSeriesCarousel = () => {
     };
   }, [locale, t]);
 
-  if (loading) return <p className="text-gray-400 text-center">{t("loading")}</p>;
+  if (loading) return <p className="text-gray-400 text-center">{t("loadingSeries")}</p>;
   if (items.length === 0) return <p className="text-gray-400 text-center">{t("notFound")}</p>;
 
   const clickPrev = () => {

@@ -6,6 +6,7 @@ type Json = Record<string, unknown>;
 function isRecord(v: unknown): v is Json {
   return typeof v === "object" && v !== null;
 }
+
 function asArray(v: unknown): Json[] {
   if (Array.isArray(v)) return v as Json[];
   if (isRecord(v) && Array.isArray((v as any).results)) return (v as any).results as Json[];
@@ -22,15 +23,13 @@ function toSeries(item: Json): Series {
   const backdropPath = String(item.backdropUrl ?? item.backdrop_path ?? "").trim();
   const vote_average = Number(item.vote_average ?? 0);
   const release_date =
-    (item.first_air_date as string) ??
-    (item.release_date as string) ??
-    null;
+    (item.first_air_date as string) ?? (item.release_date as string) ?? null;
   const overview = String(item.overview ?? "").trim();
 
   return {
     id,
     name,
-    posterUrl: posterPath ? `https://image.tmdb.org/t/p/w300${posterPath}` : null,
+    posterUrl: posterPath ? `https://image.tmdb.org/t/p/w300${posterPath}` : "/fallback.jpg",
     backdropUrl: backdropPath
       ? `https://image.tmdb.org/t/p/original${backdropPath}`
       : "/fallback.jpg",
@@ -45,12 +44,13 @@ function toSeries(item: Json): Series {
   };
 }
 
-export const fetchPopularSeries = async (): Promise<Series[]> => {
-  // ano aleatório entre 2022–2025 (mantendo seu comportamento)
+export const fetchPopularSeries = async (locale: string): Promise<Series[]> => {
+  // ano aleatório entre 2022–2025
   const randomYear = Math.floor(Math.random() * (2025 - 2022 + 1)) + 2022;
 
   try {
-    const data = await apiFetch(`/series/year/${randomYear}/page/1`, { auth: true });
+    // adicionando parâmetro de idioma
+    const data = await apiFetch(`/series/year/${randomYear}/page/1?language=${locale}`, { auth: true });
     const results = asArray(data);
     return results.map(toSeries);
   } catch (error) {
