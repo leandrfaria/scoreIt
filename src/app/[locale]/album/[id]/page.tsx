@@ -66,7 +66,7 @@ export default function AlbumPage() {
   return (
     <main className="relative w-full min-h-screen text-white overflow-hidden">
       {album.imageUrl && (
-        <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 -z-10 h-[500px] md:h-[600px] lg:h-[700px]">
           <Image
             src={album.imageUrl}
             alt={album.name}

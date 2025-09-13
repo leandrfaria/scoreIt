@@ -155,7 +155,7 @@ export default function SeriePage() {
   return (
     <main className="relative w-full min-h-screen text-white">
       {serie.backdropUrl && (
-        <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 -z-10 h-[500px] md:h-[600px] lg:h-[700px]">
           <Image
             src={serie.backdropUrl.replace("/w500/", "/original/")}
             alt={serie.name}
