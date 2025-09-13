@@ -70,7 +70,7 @@ export const fetchMediaById = async (
         };
       }
       case "album": {
-        const album: Album | null = await fetchAlbumById(String(id), effectiveLocale);
+        const album: Album | null = await fetchAlbumById(String(id));
         if (!album) return null;
         return {
           id: album.id,
