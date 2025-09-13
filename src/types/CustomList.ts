@@ -13,5 +13,5 @@ export interface AddToCustomListRequest {
   mediaType: 'movie' | 'album' | 'series';
   listName: string;
   list_description?: string;
-  language: string;
+  language?: string;
 }

@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Album } from "@/types/Album";
@@ -15,7 +14,6 @@ import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
 import ReviewSection from "@/components/features/review/ReviewSection";
 import { useLocale, useTranslations } from "next-intl";
-
 export default function AlbumPage() {
   const { id } = useParams<{ id: string }>();
   const [album, setAlbum] = useState<Album | null>(null);
@@ -25,10 +23,9 @@ export default function AlbumPage() {
   const { member } = useMember();
   const locale = useLocale();
   const t = useTranslations("Albums");
-
   useEffect(() => {
     const loadAlbum = async () => {
-      const result = await fetchAlbumById(id, locale);
+      const result = await fetchAlbumById(id);
       setAlbum(result);
     };
     loadAlbum();

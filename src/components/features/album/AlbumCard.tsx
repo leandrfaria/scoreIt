@@ -64,7 +64,7 @@ export function AlbumCard({
     (async () => {
       try {
         if (!member || !isOpen) return;
-        const favorited = await isFavoritedMedia(member.id, id);
+        const favorited = await isFavoritedMedia(member.id, id, locale);
         if (mounted) setIsFavorited(favorited);
       } catch (err) {
         console.error("Erro ao verificar favorito:", err);
@@ -81,7 +81,7 @@ export function AlbumCard({
     (async () => {
       try {
         if (!member || !isOpen) return;
-        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id);
+        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id, locale);
         const unique = Array.from(new Set(lists.map((l) => l.listName)));
         if (mounted) {
           setCustomLists(unique);
@@ -104,7 +104,7 @@ export function AlbumCard({
       return;
     }
     if (isFavorited) {
-      const ok = await removeFavouriteMedia(member.id, id, "album");
+      const ok = await removeFavouriteMedia(member.id, id, locale, "album");
       if (ok) {
         toast.success(t("removedFromFavorites"), { id: "fav-removed" });
         setIsFavorited(false);
