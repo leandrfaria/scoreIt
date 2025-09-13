@@ -7,7 +7,7 @@ function pickString(v: unknown, fallback = ""): string {
   return typeof v === "string" ? v : fallback;
 }
 
-export async function fetchAlbumById(id: string, locale: string | undefined): Promise<Album | null> {
+export async function fetchAlbumById(id: string, locale?: string): Promise<Album | null> {
   try {
     const data = await apiFetch(`/spotify/api/album/${id}`, { auth: true });
     if (typeof data !== "object" || data === null) return null;

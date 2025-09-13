@@ -105,6 +105,7 @@ export async function addContentToList(
       mediaId: data.mediaId,
       mediaType: data.mediaType,
       listName: data.listName,
+      
     };
 
     await apiFetch("/customList/addContent", {
