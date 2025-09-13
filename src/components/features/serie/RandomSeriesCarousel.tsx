@@ -42,7 +42,7 @@ export const RandomSeriesCarousel = () => {
     };
   }, [locale, t]);
 
-  if (loading) return <p className="text-gray-400 text-center">{t("loading")}</p>;
+  if (loading) return <p className="text-gray-400 text-center">{t("loadingSeries")}</p>;
   if (items.length === 0) return <p className="text-gray-400 text-center">{t("notFound")}</p>;
 
   const clickPrev = () => {

@@ -7,6 +7,7 @@ import { ReviewFromApi, getReviewsByMediaId } from "@/services/review/get_media_
 import { fetchMemberById } from "@/services/user/member";
 import EditReviewModal from "./EditReviewModal";
 import { useMember } from "@/context/MemberContext";
+import { useTranslations } from "next-intl";
 
 type SortOption = "rating" | "date" | "comments";
 
@@ -31,62 +32,90 @@ export default function ReviewSection({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
-  const abortRef = useRef<AbortController | null>(null);
+  const t = useTranslations("Reviews"); // <-- Adicionado
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const buildAvatar = (displayName: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=222&color=fff`;
 
-  const fetchReviewsWithAuthors = useCallback(async () => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const fetchReviewsWithAuthors = useCallback(() => {
+    const ac = new AbortController();
 
-    setLoading(true);
-    setError("");
+    const run = async () => {
+      try {
+        if (!mountedRef.current) return;
+        setLoading(true);
+        setError("");
 
-    try {
-      const reviewList = await getReviewsByMediaId(mediaId, { signal: controller.signal });
+        const reviewList = await getReviewsByMediaId(mediaId, { signal: ac.signal });
 
-      const reviewsWithAuthors: FullReview[] = await Promise.all(
-        reviewList.map(async (review) => {
-          try {
-            const fetchedMember = await fetchMemberById(String(review.memberId), {
-              signal: controller.signal,
-            });
+        const reviewsWithAuthors: FullReview[] = await Promise.all(
+          reviewList.map(async (review) => {
+            try {
+              const fetchedMember = await fetchMemberById(String(review.memberId), {
+                signal: ac.signal,
+              });
 
-            const name = fetchedMember?.name || "Usuário desconhecido";
-            const avatar = fetchedMember?.profileImageUrl || buildAvatar(name);
+              const name = fetchedMember?.name || t("unknownUser");
+              const avatar = fetchedMember?.profileImageUrl || buildAvatar(name);
 
-            return {
-              ...review,
-              memberName: name,
-              memberAvatar: avatar,
-            };
-          } catch {
-            const name = "Usuário desconhecido";
-            return {
-              ...review,
-              memberName: name,
-              memberAvatar: buildAvatar(name),
-            };
-          }
-        })
-      );
+              return {
+                ...review,
+                memberName: name,
+                memberAvatar: avatar,
+              };
+            } catch (e: any) {
+              const isAbort =
+                e?.name === "AbortError" ||
+                e?.code === 20 ||
+                (typeof e?.message === "string" && e.message.toLowerCase().includes("abort"));
+              const name = t("unknownUser");
+              return {
+                ...review,
+                memberName: name,
+                memberAvatar: buildAvatar(name),
+                ...(isAbort ? {} : {}),
+              };
+            }
+          })
+        );
 
-      setReviews(reviewsWithAuthors);
-    } catch (e: any) {
-      if (e?.name !== "AbortError") {
-        console.error("Erro ao buscar avaliações:", e);
-        setError("Não foi possível carregar as avaliações no momento.");
+        if (!mountedRef.current || ac.signal.aborted) return;
+        setReviews(reviewsWithAuthors);
+      } catch (e: any) {
+        const isAbort =
+          e?.name === "AbortError" ||
+          e?.code === 20 ||
+          (typeof e?.message === "string" && e.message.toLowerCase().includes("abort"));
+        if (!isAbort) {
+          console.error("❌ Erro ao buscar avaliações:", e);
+          if (mountedRef.current) setError(t("errorLoadingReviews"));
+        }
+      } finally {
+        if (mountedRef.current) setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [mediaId]);
+    };
+
+    void run();
+    return () => {
+      ac.abort();
+    };
+  }, [mediaId, t]);
 
   useEffect(() => {
-    fetchReviewsWithAuthors();
-    return () => abortRef.current?.abort();
+    const cleanup = fetchReviewsWithAuthors();
+    return () => {
+      try {
+        cleanup?.();
+      } catch {}
+    };
   }, [fetchReviewsWithAuthors, refreshTrigger]);
 
   const toggleSort = (option: SortOption) => {
@@ -125,10 +154,16 @@ export default function ReviewSection({
   const renderArrow = (option: SortOption) =>
     sortOption === option ? (ascending ? <FaArrowUp className="inline ml-1" /> : <FaArrowDown className="inline ml-1" />) : null;
 
+  const forceReload = () => {
+    try {
+      const cleanup = fetchReviewsWithAuthors();
+    } catch {}
+  };
+
   return (
     <section className="bg-[#02070A] py-16 px-4 md:px-10 lg:px-20">
       <h2 className="text-white text-3xl font-bold mb-6 border-b border-white/10 pb-4">
-        Avaliações da comunidade
+        {t("communityReviews")}
       </h2>
 
       {/* Barra de ordenação */}
@@ -136,33 +171,33 @@ export default function ReviewSection({
         <button
           onClick={() => toggleSort("rating")}
           className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
-          aria-label="Ordenar por avaliação"
+          aria-label={t("sortByRating")}
         >
-          Avaliação {renderArrow("rating")}
+          {t("rating")} {renderArrow("rating")}
         </button>
         <button
           onClick={() => toggleSort("comments")}
           className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
-          aria-label="Ordenar por comentários"
+          aria-label={t("sortByComments")}
         >
-          Comentários {renderArrow("comments")}
+          {t("comments")} {renderArrow("comments")}
         </button>
         <button
           onClick={() => toggleSort("date")}
           className="border border-white/20 px-4 py-2 rounded hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
-          aria-label="Ordenar por data"
+          aria-label={t("sortByDate")}
         >
-          Data {renderArrow("date")}
+          {t("date")} {renderArrow("date")}
         </button>
       </div>
 
       {/* Estados */}
-      {loading && <p className="text-gray-400">Carregando avaliações...</p>}
+      {loading && <p className="text-gray-400">{t("loadingReviews")}</p>}
 
       {error && !loading && <p className="text-red-400">{error}</p>}
 
       {!loading && !error && reviews.length === 0 && (
-        <p className="text-gray-400 text-center">Nenhuma avaliação foi registrada ainda.</p>
+        <p className="text-gray-400 text-center">{t("noReviewsYet")}</p>
       )}
 
       {!loading && !error && reviews.length > 0 && (
@@ -180,7 +215,7 @@ export default function ReviewSection({
                 onEdit={() => setEditingReview(review)}
                 canEdit={!!member && Number(review.memberId) === Number(member.id)}
                 reviewId={review.id}
-                onDelete={fetchReviewsWithAuthors}
+                onDelete={forceReload}
               />
             ))}
           </div>
@@ -191,7 +226,7 @@ export default function ReviewSection({
                 onClick={handleLoadMore}
                 className="px-6 py-2 bg-[var(--color-darkgreen)] text-white rounded hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)]"
               >
-                Ver mais
+                {t("loadMore")}
               </button>
             </div>
           )}
@@ -201,7 +236,7 @@ export default function ReviewSection({
               isOpen={!!editingReview}
               onClose={() => setEditingReview(null)}
               review={editingReview}
-              onSuccess={fetchReviewsWithAuthors}
+              onSuccess={forceReload}
             />
           )}
         </>

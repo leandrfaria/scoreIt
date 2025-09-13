@@ -1,39 +1,59 @@
 import { apiFetch } from "@/lib/api";
 import { Movie } from "@/types/Movie";
+import { fetchGenres, cachedGenres, getGenreName } from "@/services/movie/movies_list";
 import { mapNextIntlToTMDB, isTMDBLocale } from "@/i18n/localeMapping";
 
 export const fetchFavouriteMovies = async (
-  token: string, 
-  memberId: string, 
+  token: string,
+  memberId: string,
   locale: string
 ): Promise<Movie[]> => {
   try {
     // Mapear o locale do next-intl para o formato TMDB
     const tmdbLocale = isTMDBLocale(locale) ? locale : mapNextIntlToTMDB(locale);
-    
+    const cacheKey = tmdbLocale;
+
+    // Garantir que o cache de gêneros esteja preenchido
+    if (!cachedGenres[cacheKey] || Object.keys(cachedGenres[cacheKey]).length === 0) {
+      await fetchGenres(tmdbLocale);
+    }
+
     const data: any = await apiFetch(`/movie/favorites/${memberId}?language=${encodeURIComponent(tmdbLocale)}`, {
       auth: true,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     const results = Array.isArray(data) ? data : [];
 
-    return results.map((movie: any) => ({
-      id: movie.id,
-      title: movie.title,
-      posterUrl: movie.poster_path
-        ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-        : movie.posterUrl || null,
-      backdropUrl: movie.backdrop_path
-        ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
-        : movie.backdropUrl || null,
-      vote_average: movie.vote_average,
-      release_date: movie.release_date,
-      overview: movie.overview,
-      genre: movie.genre || "Desconhecido",
-    }));
+    return results.map((movie: any) => {
+      let genreNames = "Desconhecido";
+      let genreIds: number[] = [];
+
+      // 1. Se o backend retornar os genres completos
+      if (movie.genres && Array.isArray(movie.genres) && movie.genres.length > 0) {
+        genreNames = movie.genres.map((g: any) => g.name).join(", ");
+        genreIds = movie.genres.map((g: any) => g.id);
+      }
+      // 2. Se o backend retornar apenas ids
+      else if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
+        genreIds = movie.genre_ids;
+        const names = genreIds.map((id) => getGenreName(cacheKey, id) || "Desconhecido");
+        genreNames = names.join(", ");
+      }
+
+      return {
+        id: movie.id,
+        title: movie.title,
+        posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : movie.posterUrl || null,
+        backdropUrl: movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : movie.backdropUrl || null,
+        vote_average: movie.vote_average,
+        release_date: movie.release_date,
+        overview: movie.overview,
+        genre: genreNames,
+        genre_ids: genreIds,
+        genres: genreIds.map((id) => ({ id, name: getGenreName(cacheKey, id) || "Desconhecido" })),
+      };
+    });
   } catch (error) {
     console.error("Erro ao buscar filmes favoritos:", error);
     return [];

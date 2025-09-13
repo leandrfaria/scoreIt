@@ -38,7 +38,7 @@ const FavouriteSeriesCarouselSection = ({ memberId }: Props) => {
     return (
       <div className="text-center py-10 text-gray-400">
         <p className="text-lg font-semibold">{t("noFavSeries")}</p>
-        <p className="text-sm mt-2">Adicione algumas séries aos favoritos e elas aparecerão aqui 📺</p>
+        <p className="text-sm mt-2">{t("noSeriesFound")}</p>
       </div>
     );
 

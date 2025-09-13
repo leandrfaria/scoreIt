@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Container } from "@/components/layout/Others/Container";
 import PageTransition from "@/components/layout/Others/PageTransition";
 
@@ -26,6 +26,8 @@ export default function LoggedOutHome() {
   const [randomImage, setRandomImage] = useState<string>("");
   const [hasMounted, setHasMounted] = useState(false);
   const locale = useLocale();
+  const t = useTranslations("cadastro");
+
 
   useEffect(() => {
     setHasMounted(true);
@@ -72,7 +74,7 @@ export default function LoggedOutHome() {
             </h1>
 
             <p className="mt-4 md:mt-6 text-xl sm:text-2xl md:text-[28px] text-emerald-100/95">
-              Avalie filmes, músicas e séries!
+              {t("telaInicial")}
             </p>
 
             <div className="mt-8 md:mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -80,13 +82,13 @@ export default function LoggedOutHome() {
                 href={`/${locale}/auth?tab=signup`}
                 className="px-6 py-3 rounded-md font-semibold text-white bg-darkgreen hover:brightness-110 transition"
               >
-                criar conta
+                {t("botao")}
               </Link>
               <Link
                 href={`/${locale}/auth?tab=login`}
                 className="px-6 py-3 rounded-md font-semibold text-white/90 bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-sm transition"
               >
-                entrar
+                {t("botaoLogin")}
               </Link>
             </div>
           </div>

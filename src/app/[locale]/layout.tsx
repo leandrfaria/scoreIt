@@ -1,6 +1,9 @@
+// app/[locale]/layout.tsx
 import ClientProviders from "./ClientProviders";
-import { getMessages } from "next-intl/server";
-import { routing } from "@/i18n/routing";
+import { getMessages, setRequestLocale } from "next-intl/server";
+import { routing, type Locale } from "@/i18n/routing";
+import { notFound } from "next/navigation";
+import "@/app/globals.css";
 
 export default async function LocaleLayout({
   children,
@@ -10,16 +13,22 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+
+  if (!routing.locales.includes(locale as any)) {
+    return notFound();
+  }
+
+  const validLocale = locale as Locale;
+  setRequestLocale(validLocale);
   const messages = await getMessages();
-  
-  // Garantir que o locale é válido
-  const validLocale = routing.locales.includes(locale as any) 
-    ? locale as "pt" | "en" 
-    : routing.defaultLocale;
 
   return (
     <ClientProviders locale={validLocale} messages={messages}>
       {children}
     </ClientProviders>
   );
+}
+
+function unstable_setRequestLocale(validLocale: string) {
+  throw new Error("Function not implemented.");
 }

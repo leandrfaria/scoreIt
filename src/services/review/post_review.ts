@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch, clearToken } from "@/lib/api";
 
 export interface ReviewPayload {
   mediaId: string | number;
@@ -17,7 +17,6 @@ export const postReview = async (
   opts: PostOpts = {}
 ): Promise<boolean> => {
   try {
-    // validação leve
     if (!payload?.mediaId || !payload?.mediaType) return false;
 
     await apiFetch("/review/register", {
@@ -29,8 +28,15 @@ export const postReview = async (
     });
 
     return true;
-  } catch (error) {
-    console.error("❌ Erro ao enviar avaliação:", error);
+  } catch (error: any) {
+    // Trata sessão expirada / sem token
+    const status = error?.status ?? error?.code;
+    if (status === 401 || status === 403 || String(error?.message || "").startsWith("NO_TOKEN")) {
+      clearToken();
+      console.warn("🔒 Sessão expirada ou inválida. Limpando token.");
+    } else {
+      console.error("❌ Erro ao enviar avaliação:", error);
+    }
     return false;
   }
 };

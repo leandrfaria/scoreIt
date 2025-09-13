@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Movie } from "@/types/Movie";
-import { useTranslations, useLocale } from "next-intl"; // Adicionar useLocale
+import { useTranslations, useLocale } from "next-intl";
 import { fetchFavouriteMovies } from "@/services/movie/get_fav_movie";
 import { useMember } from "@/context/MemberContext";
 import { MovieCarousel } from "./MovieCarousel";
@@ -44,7 +44,7 @@ const FavouriteMoviesCarouselSection = ({ memberId }: Props) => {
     return (
       <div className="text-center py-10 text-gray-400">
         <p className="text-lg font-semibold">{t("noFavMovie")}</p>
-        <p className="text-sm mt-2">Adicione alguns filmes aos favoritos e eles aparecerão aqui 🎬</p>
+        <p className="text-sm mt-2">{t("noMoviesFound")}</p>
       </div>
     );
 

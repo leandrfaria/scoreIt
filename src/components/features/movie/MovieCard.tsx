@@ -40,7 +40,7 @@ function MovieCardBase({
   vote_average,
   release_date,
   overview,
-  genre = "Drama",
+  genre,
   onRemoveMovie,
   priority = false,
 }: MovieCardProps) {
@@ -216,7 +216,7 @@ const handleFavorite = useCallback(async () => {
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2">
             <h3 className="text-white text-sm font-semibold line-clamp-2">{title}</h3>
             <p className="text-gray-300 text-xs">
-              {genre}
+              {genre || "Gênero não disponível"} {/* ADICIONANDO fallback aqui */}
               {year ? ` • ${year}` : ""}
             </p>
           </div>

@@ -1,17 +1,17 @@
-// services/movie/add_fav_movie.ts
-export const addFavouriteMovie = async (token: string, memberId: number, movieId: number, language: string) => {
+import { apiFetch } from "@/lib/api";
+
+export const addFavouriteMovie = async (
+_token: string, userId: number, movieId: number, tmdbLanguage: string): Promise<boolean> => {
+  if (!userId || !movieId) return false;
+
   try {
-    const response = await fetch(`/members/favorites/${memberId}?language=${language}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ movieId }),
+    await apiFetch(`/member/favorites/${userId}/${movieId}/movie`, {
+      method: "POST",
+      auth: true,
     });
-    return response.ok;
+    return true;
   } catch (error) {
-    console.error('Error adding favorite movie:', error);
+    console.error("❌ Erro ao adicionar filme aos favoritos:", error);
     return false;
   }
 };

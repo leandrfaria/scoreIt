@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, AUTH_TOKEN_KEY } from "@/lib/api";
 
 function assertApiBase() {
   if (!apiBase) {
@@ -14,7 +14,7 @@ async function postJson<T = any>(path: string, body: unknown): Promise<T> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json",
+      Accept: "application/json",
     },
     body: JSON.stringify(body),
     cache: "no-store",
@@ -54,12 +54,10 @@ export async function loginUser(email: string, password: string) {
     password,
   });
 
-  if (!data?.token) {
-    throw new Error("Token JWT não retornado pelo servidor");
-  }
+  if (!data?.token) throw new Error("Token JWT não retornado pelo servidor");
 
   if (typeof window !== "undefined") {
-    localStorage.setItem("authToken", data.token); // cru (sem 'Bearer')
+    localStorage.setItem(AUTH_TOKEN_KEY, data.token); // grava por AMBIENTE
   }
 
   return { success: true as const, token: data.token };
@@ -75,31 +73,27 @@ export async function registerUser(payload: {
   gender: string;    // vindo do select
   handle: string;
 }) {
-  // Normaliza o gênero para o que o backend espera
   const normalized = (payload.gender || "").trim().toUpperCase();
   const map: Record<string, BackendGender> = {
-    "MASC": "MASC",
-    "FEM": "FEM",
-    "OTHER": "OTHER",
-    // aceitaremos também atalhos caso algo escape no front:
-    "M": "MASC",
-    "F": "FEM",
-    "O": "OTHER",
-    "MASCULINO": "MASC",
-    "FEMININO": "FEM",
+    MASC: "MASC",
+    FEM: "FEM",
+    OTHER: "OTHER",
+    M: "MASC",
+    F: "FEM",
+    O: "OTHER",
+    MASCULINO: "MASC",
+    FEMININO: "FEM",
   };
 
   const gender: BackendGender | undefined = map[normalized];
-  if (!gender) {
-    throw new Error("Gênero inválido. Selecione MASC, FEM ou OTHER.");
-  }
+  if (!gender) throw new Error("Gênero inválido. Selecione MASC, FEM ou OTHER.");
 
   await postJson(`/member/post`, {
     name: payload.name.trim(),
     email: payload.email.trim(),
     password: payload.password,
-    birthDate: payload.birthDate, // já no formato yyyy-MM-dd
-    gender,                       // garantidamente MASC | FEM | OTHER
+    birthDate: payload.birthDate,
+    gender,
     handle: payload.handle.trim(),
   });
 

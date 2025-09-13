@@ -45,8 +45,7 @@ export function MovieList() {
   const maxPage = 500;
   const searchRef = useRef<HTMLInputElement | null>(null);
   const mobileSearchRef = useRef<HTMLInputElement | null>(null);
-  const locale = useLocale(); // retorna 'pt' ou 'en'
-
+  const locale = useLocale();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -58,42 +57,61 @@ export function MovieList() {
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
-  // carregar filmes com cancelamento
-  useEffect(() => {
-    const controller = new AbortController();
-    const getMovies = async () => {
-      setLoading(true);
-      try {
-        const moviesData = await fetchMoviesByPage(
-          page,
-          selectedYear ? parseInt(selectedYear) : undefined,
-          selectedGenre ? parseInt(selectedGenre) : undefined,
-          debouncedSearchTerm || undefined,
-          locale // <- adiciona o locale aqui
-        );
-        if (!controller.signal.aborted) setMovies(moviesData);
-      } catch (error) {
-        if (!controller.signal.aborted) console.error("Erro ao carregar filmes:", error);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    };
-    getMovies();
-    return () => controller.abort();
-  }, [page, selectedYear, selectedGenre, debouncedSearchTerm, locale]);
-
-
+  // Carregar gêneros para os filtros
   useEffect(() => {
     const loadGenres = async () => {
       try {
-        const genresData = await fetchGenres();
+        const genresData = await fetchGenres(locale);
         setGenres(genresData);
       } catch (error) {
-        console.error("Erro ao carregar gêneros:", error);
       }
     };
+    
     loadGenres();
-  }, []);
+  }, [locale]);
+
+useEffect(() => {
+  const controller = new AbortController();
+  
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Primeiro carrega os gêneros se necessário
+      if (genres.length === 0) {
+        const genresData = await fetchGenres(locale);
+        setGenres(genresData);
+      }
+      
+      // Depois carrega os filmes
+      const moviesData = await fetchMoviesByPage(
+        page,
+        selectedYear ? parseInt(selectedYear) : undefined,
+        selectedGenre ? parseInt(selectedGenre) : undefined,
+        debouncedSearchTerm || undefined,
+        locale
+      );
+      
+      if (!controller.signal.aborted) {
+        setMovies(moviesData);
+        
+        // Log temporário para debug
+        if (moviesData.length > 0) {
+
+        }
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
+    }
+  };
+  
+  loadData();
+  return () => controller.abort();
+}, [page, selectedYear, selectedGenre, debouncedSearchTerm, locale, genres.length]);
 
   const handlePageChange = () => {
     const newPage = Number(inputPage);
@@ -112,7 +130,6 @@ export function MovieList() {
     }
   };
 
-  // agora limpa apenas Ano/Gênero (não mexe na busca)
   const clearFilters = () => {
     setSelectedYear("");
     setSelectedGenre("");
@@ -302,7 +319,9 @@ export function MovieList() {
         >
           {movies.map((movie, idx) => (
             <div key={movie.id} className="flex justify-center">
+                
               <MovieCard {...movie} priority={idx < 6} />
+              
             </div>
           ))}
         </section>

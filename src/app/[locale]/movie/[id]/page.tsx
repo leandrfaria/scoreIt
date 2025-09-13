@@ -13,7 +13,7 @@ import { addFavouriteMovie } from "@/services/movie/add_fav_movie";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
 import RatingModal from "@/components/features/review/RatingModal";
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import ReviewSection from "@/components/features/review/ReviewSection";
 
 export default function MoviePage() {
@@ -24,14 +24,15 @@ export default function MoviePage() {
   const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
   const locale = useLocale();
+  const t = useTranslations("Movies");
 
-useEffect(() => {
-  const loadMovie = async () => {
-    const result = await fetchMovieById(id, locale); // Passe o locale aqui
-    setMovie(result);
-  };
-  loadMovie();
-}, [id, locale]);
+  useEffect(() => {
+    const loadMovie = async () => {
+      const result = await fetchMovieById(id, locale);
+      setMovie(result);
+    };
+    loadMovie();
+  }, [id, locale]);
 
   useEffect(() => {
     const checkFavorite = async () => {
@@ -43,28 +44,27 @@ useEffect(() => {
     checkFavorite();
   }, [member, id, locale]);
 
-const handleFavoriteToggle = async () => {
-  if (!member || !movie) return;
+  const handleFavoriteToggle = async () => {
+    if (!member || !movie) return;
 
-  if (isFavorited) {
-    // Correção: passe os parâmetros na ordem correta
-    const success = await removeFavouriteMedia(member.id, movie.id, locale, "movie");
-    if (success) {
-      toast.success("Removido dos favoritos");
-      setIsFavorited(false);
-    } else toast.error("Erro ao remover");
-  } else {
-    const success = await addFavouriteMovie("", member.id, movie.id, locale);
-    if (success) {
-      toast.success("Adicionado aos favoritos");
-      setIsFavorited(true);
-    } else toast.error("Erro ao favoritar");
-  }
-};
+    if (isFavorited) {
+      const success = await removeFavouriteMedia(member.id, movie.id, locale, "movie");
+      if (success) {
+        toast.success(t("toastRemoved"));
+        setIsFavorited(false);
+      } else toast.error(t("toastErrorRemove"));
+    } else {
+      const success = await addFavouriteMovie("", member.id, movie.id, locale);
+      if (success) {
+        toast.success(t("toastAdded"));
+        setIsFavorited(true);
+      } else toast.error(t("toastErrorAdd"));
+    }
+  };
 
-  if (!movie) return <p className="text-white p-10">Carregando filme...</p>;
+  if (!movie) return <p className="text-white p-10">{t("loadingMovie")}</p>;
 
-  const year = new Date(movie.release_date).getFullYear();
+  const year = movie.release_date ? new Date(movie.release_date).getFullYear() : t("unknown");
 
   return (
     <>
@@ -90,31 +90,37 @@ const handleFavoriteToggle = async () => {
               <FaStar />
               <span className="text-lg font-medium">{movie.vote_average.toFixed(1)}</span>
             </div>
-            <span className="uppercase">{movie.genres?.[0] || "DESCONHECIDO"}</span>
+            <span className="uppercase">
+              {movie.genres?.[0]
+                ? (typeof movie.genres[0] === "string" ? movie.genres[0] : movie.genres[0].name)
+                : t("unknown")}
+            </span>
             <span>{year}</span>
           </div>
 
-          <p className="max-w-2xl text-gray-200 text-base leading-relaxed">{movie.overview}</p>
+          <p className="max-w-2xl text-gray-200 text-base leading-relaxed">
+            {movie.overview || t("noDescription")}
+          </p>
 
           <div className="flex gap-4 flex-wrap">
             <button
               onClick={() => setShowModal(true)}
               className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-200 transition"
             >
-              Avaliar
+              {t("rate")}
             </button>
             <button
               onClick={handleFavoriteToggle}
               className="bg-darkgreen/80 border border-white/20 text-white px-6 py-3 rounded hover:bg-darkgreen hover:brightness-110 transition flex items-center gap-2"
-              aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+              aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
             >
               {isFavorited ? (
                 <>
-                  <FaHeart className="text-red-500" /> Remover
+                  <FaHeart className="text-red-500" /> {t("remove")}
                 </>
               ) : (
                 <>
-                  <FiHeart /> Favoritar
+                  <FiHeart /> {t("favorite")}
                 </>
               )}
             </button>

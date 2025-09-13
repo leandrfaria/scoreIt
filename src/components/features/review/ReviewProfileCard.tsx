@@ -1,6 +1,7 @@
+// src/components/features/review/ReviewProfileCard.tsx
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FaStar, FaTrash, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { deleteReview } from "@/services/review/delete_review";
@@ -8,7 +9,7 @@ import { deleteReview } from "@/services/review/delete_review";
 type ReviewProfileCardProps = {
   title: string;
   posterUrl: string;
-  date: string;
+  date: string;       // "YYYY-MM-DD" vindo do backend
   rating: number;
   comment?: string;
   canEdit?: boolean;
@@ -17,6 +18,18 @@ type ReviewProfileCardProps = {
 };
 
 const FALLBACK_POSTER = "/fallback.jpg";
+
+/** Converte "YYYY-MM-DD" para "dd/MM/yyyy" sem timezone */
+function formatYMDToPtBR(ymd: string) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd?.trim() ?? "");
+  if (!m) {
+    // fallback seguro (tenta Date local)
+    const d = new Date(ymd);
+    return isNaN(d.getTime()) ? ymd : d.toLocaleDateString("pt-BR");
+  }
+  const [, y, mo, d] = m;
+  return `${d}/${mo}/${y}`;
+}
 
 export default function ReviewProfileCard({
   title,
@@ -32,52 +45,46 @@ export default function ReviewProfileCard({
   const [posterSrc, setPosterSrc] = useState(posterUrl || FALLBACK_POSTER);
   const [deleting, setDeleting] = useState(false);
 
+  const score = useMemo(() => Math.max(0, Math.min(5, Number(rating) || 0)), [rating]);
+
   const handleDelete = async () => {
     if (!reviewId || deleting) return;
     setDeleting(true);
-
     const success = await deleteReview(reviewId);
     setDeleting(false);
-
     if (success) {
       toast.success("Avaliação excluída com sucesso!", {
-        style: {
-          background: "#1f1f1f",
-          color: "#fff",
-          border: "1px solid #4ade80",
-        },
+        style: { background: "#101418", color: "#fff", border: "1px solid #4ade80" },
         icon: "🗑️",
       });
       onDelete?.();
     } else {
       toast.error("Erro ao deletar a avaliação.");
     }
-
     setShowConfirm(false);
   };
 
   const renderStars = () => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-      if (rating >= i) {
-        stars.push(<FaStar key={i} className="text-base text-[var(--color-lightgreen)]" aria-hidden />);
-      } else if (rating >= i - 0.5) {
-        stars.push(<FaStarHalfAlt key={i} className="text-base text-[var(--color-lightgreen)]" aria-hidden />);
-      } else {
-        stars.push(<FaRegStar key={i} className="text-base text-gray-700" aria-hidden />);
-      }
+      if (score >= i) stars.push(<FaStar key={i} className="text-base text-emerald-400" aria-hidden />);
+      else if (score >= i - 0.5) stars.push(<FaStarHalfAlt key={i} className="text-base text-emerald-400" aria-hidden />);
+      else stars.push(<FaRegStar key={i} className="text-base text-zinc-600" aria-hidden />);
     }
     return stars;
   };
 
+  const formattedDate = formatYMDToPtBR(date);
+  const hasComment = !!comment?.trim();
+
   return (
-    <div className="relative">
-      <article className="bg-[#0D1117] rounded-lg p-6 min-w-[360px] max-w-[360px] min-h-[260px] shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
+    <div className="group relative min-w-[300px] max-w-[300px] sm:min-w-[340px] sm:max-w-[340px]">
+      <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0c1220]/90 via-[#0d1117]/90 to-[#0d1117]/90 shadow-sm transition-all duration-200 hover:shadow-[0_0_0_1px_rgba(99,102,241,0.35)]">
         {canEdit && (
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-2 right-2 z-10">
             <button
               onClick={() => setShowConfirm(true)}
-              className="text-white/70 hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 rounded"
+              className="rounded-full p-2 bg-black/30 text-white/80 hover:text-red-400 hover:bg-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               title="Excluir"
               aria-label="Excluir avaliação"
             >
@@ -86,28 +93,42 @@ export default function ReviewProfileCard({
           </div>
         )}
 
-        <div className="flex gap-4 mb-4 pr-8">
-          <img
-            src={posterSrc}
-            alt={title}
-            onError={() => setPosterSrc(FALLBACK_POSTER)}
-            className="w-16 h-24 object-cover rounded-md border border-white/10"
-          />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-white font-semibold text-base line-clamp-2 pr-4">{title}</h3>
-            <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString("pt-BR")}</p>
+        <div className="p-5">
+          <div className="flex gap-5">
+            <img
+              src={posterSrc}
+              alt={title}
+              onError={() => setPosterSrc(FALLBACK_POSTER)}
+              className="w-[84px] h-[126px] sm:w-[96px] sm:h-[144px] object-cover rounded-lg ring-1 ring-white/10"
+            />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white font-semibold text-sm sm:text-base leading-snug line-clamp-2 pr-6">
+                {title}
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">{formattedDate}</p>
+
+              <div className="mt-2">
+                {score > 0 ? (
+                  <div className="flex items-center gap-1" aria-label={`Nota: ${score} de 5`}>
+                    {renderStars()}
+                  </div>
+                ) : (
+                  <span className="inline-block text-[11px] px-2 py-1 rounded-full border border-dashed border-zinc-600 text-zinc-300">
+                    sem nota
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 min-h-[32px] sm:min-h-[32px]">
+            {hasComment && (
+              <p className="text-sm leading-relaxed text-gray-200 break-words whitespace-pre-wrap">
+                {comment}
+              </p>
+            )}
           </div>
         </div>
-
-        <div className="flex items-center gap-1 mb-3" aria-label={`Nota: ${rating} de 5`}>
-          {renderStars()}
-        </div>
-
-        {comment?.trim() && (
-          <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">
-            {comment}
-          </p>
-        )}
       </article>
 
       {showConfirm && (
