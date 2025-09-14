@@ -1,12 +1,11 @@
 // src/lib/events.ts
 export type ReviewChangedPayload = {
-  mediaType: "MOVIE" | "SERIE" | "ALBUM";
+  mediaType: "MOVIE" | "SERIE" | "SERIES" | "ALBUM"; // 👈 inclui SERIES
   mediaId: string | number;
 };
 
 const BUS_EVENT = "review:changed";
 
-// usa EventTarget único no browser (evita múltiplas instâncias em HMR)
 function getBus(): EventTarget {
   if (typeof window === "undefined") return new EventTarget();
   const w = window as any;

@@ -15,6 +15,8 @@ import { addFavouriteSeries } from "@/services/series/add_fav_series";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { fetchMemberLists, addContentToList } from "@/services/customList/list";
+import { fetchAverageRating } from "@/services/review/average";
+import { onReviewChanged } from "@/lib/events";
 
 interface SeriesCardProps extends Series {
   onRemoveSerie?: (id: number) => void;
@@ -45,6 +47,9 @@ function SeriesCardBase({
   const [posterLoaded, setPosterLoaded] = useState(false);
   const [backdropLoaded, setBackdropLoaded] = useState(false);
 
+  // ✅ média do ScoreIt (null => "Sem Nota")
+  const [scoreitAverage, setScoreitAverage] = useState<number | null>(null);
+
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const locale = useLocale();
@@ -58,13 +63,64 @@ function SeriesCardBase({
   }, [release_date]);
 
   const genreLabel = useMemo(() => {
-    // Usa o campo 'genre' do service, ou fallback para array de strings
     return (series as any).genre || genres.join(", ") || t("noGenreAvailable");
   }, [genres, series, t]);
 
   const handleOpen = useCallback(() => setIsOpen(true), []);
   const handleClose = useCallback(() => setIsOpen(false), []);
   useOutsideClick(modalRef, handleClose);
+
+  /** 🔁 Média do ScoreIt (SERIE/SERIES)
+   *  - carrega no mount/id change
+   *  - polling 5min como fallback
+   *  - refresca ao focar a aba
+   *  - atualiza em tempo real quando um review é criado/atualizado (event-bus)
+   *  Obs.: o service tenta `SERIES` primeiro e cai para `SERIE` se precisar.
+   */
+  useEffect(() => {
+    let controller = new AbortController();
+
+    const load = async () => {
+      const signal = controller.signal;
+      const avg = await fetchAverageRating("SERIE", id, { signal });
+      if (!signal.aborted) setScoreitAverage(avg);
+    };
+
+    // 1) inicial
+    load();
+
+    // 2) polling (5min)
+    const intervalMs = 5 * 60 * 1000;
+    const intervalId = setInterval(() => {
+      controller.abort();
+      controller = new AbortController();
+      load();
+    }, intervalMs);
+
+    // 3) foco na aba
+    const onFocus = () => {
+      controller.abort();
+      controller = new AbortController();
+      load();
+    };
+    window.addEventListener("focus", onFocus);
+
+    // 4) tempo real: evento global (ouve SERIE e SERIES)
+    const off = onReviewChanged(({ mediaType, mediaId }) => {
+      if (mediaType !== "SERIE" && mediaType !== "SERIES") return;
+      if (String(mediaId) !== String(id)) return;
+      controller.abort();
+      controller = new AbortController();
+      load();
+    });
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+      off();
+      controller.abort();
+    };
+  }, [id]);
 
   // SCROLL LOCK body
   useEffect(() => {
@@ -112,9 +168,7 @@ function SeriesCardBase({
         console.error("Erro ao verificar favorito:", error);
       }
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [id, member, locale]);
 
   // Carregar listas ao abrir modal
@@ -134,9 +188,7 @@ function SeriesCardBase({
         if (mounted) toast.error(t("errorLoadingLists"));
       }
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [isOpen, member, locale, t]);
 
   const handleFavorite = useCallback(async () => {
@@ -204,6 +256,9 @@ function SeriesCardBase({
     router.push(`/${locale}/series/${id}`);
   }, [id, locale, router]);
 
+  // ✅ Badge/Modal: "Sem Nota" quando não houver média
+  const ratingText = scoreitAverage == null ? "Sem Nota" : scoreitAverage.toFixed(1);
+
   return (
     <>
       {/* CARD */}
@@ -232,9 +287,10 @@ function SeriesCardBase({
           )}
           {!posterLoaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
 
+          {/* ⭐ Nota do ScoreIt */}
           <div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded-full flex items-center gap-1">
             <FaStar size={12} />
-            <span>{(vote_average ?? 0).toFixed(1)}</span>
+            <span>{ratingText}</span>
           </div>
 
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2 sm:p-3">
@@ -297,6 +353,8 @@ function SeriesCardBase({
                     {release_date && <p className="text-gray-400 text-sm">{t("releaseDate")}: {new Date(release_date).toLocaleDateString(locale)}</p>}
                     {genreLabel && <p className="text-gray-400 text-sm">{t("genres")}: {genreLabel}</p>}
                     <p className="text-gray-300 text-sm">{overview?.trim() || t("noDescription")}</p>
+                    {/* ✅ Label hardcoded pra evitar i18n quebrar */}
+                    <p className="text-gray-300 text-sm">Nota: {ratingText}</p>
                   </div>
 
                   <div className="mt-5 flex flex-col sm:flex-row gap-2">

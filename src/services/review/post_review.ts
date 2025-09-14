@@ -32,10 +32,13 @@ export const postReview = async (
       body: JSON.stringify(payload),
     });
 
-    // 🔄 invalida backoff e notifica listeners para atualização imediata
-    const mediaType = toApiMediaType(payload.mediaType);
-    invalidateAverage(mediaType, payload.mediaId);
-    emitReviewChanged({ mediaType, mediaId: payload.mediaId });
+    // 🔄 invalida backoff e notifica listeners p/ atualização imediata
+    const apiType = toApiMediaType(payload.mediaType);
+    invalidateAverage(apiType, payload.mediaId);
+    if (apiType === "SERIE") invalidateAverage("SERIES", payload.mediaId); // 👈 plural também
+
+    emitReviewChanged({ mediaType: apiType, mediaId: payload.mediaId });
+    if (apiType === "SERIE") emitReviewChanged({ mediaType: "SERIES", mediaId: payload.mediaId }); // 👈 plural também
 
     return true;
   } catch (error: any) {
