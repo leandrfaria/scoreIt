@@ -486,7 +486,8 @@
   "submit": "Send",
   "submitting": "Sending...",
   "cancel": "Cancel",
-  "submitError": "Failed to send comment"
+  "submitError": "Failed to send comment",
+  "maxCharacters":"Maximum of {max} characters"
 },
 "CommentsSection":{
   "commentsTitle": "Comments ({count})",

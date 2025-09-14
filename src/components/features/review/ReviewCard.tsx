@@ -1,7 +1,7 @@
+// ReviewCard.tsx
 "use client";
-
-import { useState, useEffect, useRef } from "react";
-import { FaStar, FaPen, FaTrash, FaStarHalfAlt, FaRegStar, FaComments } from "react-icons/fa";
+import React, { useState, useRef, useEffect } from "react";
+import { FaStar, FaStarHalfAlt, FaRegStar, FaPen, FaTrash, FaComments } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { deleteReview } from "@/services/review/delete_review";
 import { useMember } from "@/context/MemberContext";
@@ -36,21 +36,13 @@ export default function ReviewCard({
   reviewId,
 }: ReviewProps) {
   const { member } = useMember();
-  const t = useTranslations("ReviewCard"); // internacionalização
+  const t = useTranslations("ReviewCard");
 
-  const [showSpoiler, setShowSpoiler] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState(avatar || FALLBACK_AVATAR);
   const [deleting, setDeleting] = useState(false);
-  const mountedRef = useRef(true);
-  const [showComments, setShowComments] = useState(false);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [showSpoiler, setShowSpoiler] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = async () => {
     if (!reviewId || deleting) return;
@@ -64,7 +56,7 @@ export default function ReviewCard({
         toast.error(t("deletedError"));
       }
     } catch (err) {
-      console.error("❌ Erro ao executar deleteReview:", err);
+      console.error(err);
       toast.error(t("deletedUnexpected"));
     } finally {
       setDeleting(false);
@@ -75,20 +67,21 @@ export default function ReviewCard({
   const renderStars = () => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-      if (rating >= i) {
-        stars.push(<FaStar key={i} className="text-xl text-[var(--color-lightgreen)]" />);
-      } else if (rating >= i - 0.5) {
+      if (rating >= i) stars.push(<FaStar key={i} className="text-xl text-[var(--color-lightgreen)]" />);
+      else if (rating >= i - 0.5)
         stars.push(<FaStarHalfAlt key={i} className="text-xl text-[var(--color-lightgreen)]" />);
-      } else {
-        stars.push(<FaRegStar key={i} className="text-xl text-gray-700" />);
-      }
+      else stars.push(<FaRegStar key={i} className="text-xl text-gray-700" />);
     }
     return stars;
   };
 
+  useEffect(() => {
+    document.body.classList.toggle("overflow-hidden", showCommentsModal);
+  }, [showCommentsModal]);
+
   return (
     <div className="relative">
-      <article className="bg-[#0D1117] rounded-lg p-6 shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 relative">
+      <article className="bg-[#0D1117] rounded-lg p-6 shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition">
         {/* Edit/Delete */}
         {canEdit && (
           <div className="absolute top-4 right-4 flex gap-3">
@@ -96,7 +89,6 @@ export default function ReviewCard({
               onClick={onEdit}
               className="text-white/70 hover:text-white rounded"
               title={t("edit")}
-              aria-label={t("edit")}
             >
               <FaPen />
             </button>
@@ -104,7 +96,6 @@ export default function ReviewCard({
               onClick={() => setShowConfirm(true)}
               className="text-white/70 hover:text-red-500 rounded"
               title={t("delete")}
-              aria-label={t("delete")}
             >
               <FaTrash />
             </button>
@@ -129,14 +120,14 @@ export default function ReviewCard({
         <div className="flex items-center gap-1 mb-3">{renderStars()}</div>
 
         {/* Comment + spoiler */}
-        {comment?.trim() && (
+        {comment && comment.trim() && (
           <div className="text-sm text-gray-300 leading-relaxed break-words whitespace-pre-wrap">
             {spoiler && !showSpoiler ? (
               <div>
-                <p className="select-none transition duration-300 blur-sm">{comment}</p>
+                <p className="select-none blur-sm transition">{comment}</p>
                 <button
                   onClick={() => setShowSpoiler(true)}
-                  className="mt-3 px-4 py-2 bg-transparent border border-[var(--color-lightgreen)] text-[var(--color-lightgreen)] hover:bg-[var(--color-lightgreen)] hover:text-black transition font-medium text-sm rounded"
+                  className="mt-3 px-4 py-2 bg-transparent border border-[var(--color-lightgreen)] text-[var(--color-lightgreen)] hover:bg-[var(--color-lightgreen)] hover:text-black rounded text-sm font-medium transition"
                 >
                   {t("viewReview")}
                 </button>
@@ -147,31 +138,24 @@ export default function ReviewCard({
           </div>
         )}
 
-        {/* Botão mostrar comentários */}
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <button
-            title={t("comments")}
-            onClick={() => setShowComments((s) => !s)}
-            className="p-2 rounded hover:bg-white/5 transition text-white/80"
-            aria-pressed={showComments}
-          >
-            <FaComments />
-          </button>
-        </div>
+        {/* Open comments */}
+        {reviewId && (
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => setShowCommentsModal(true)}
+              className="p-2 rounded hover:bg-white/5 transition text-white/80"
+            >
+              <FaComments />
+            </button>
+          </div>
+        )}
       </article>
 
-      {/* Confirm delete */}
+      {/* Confirm Delete Modal */}
       {showConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirm-title"
-            className="bg-[#0D1117] p-6 rounded-lg shadow-md border border-white/10 w-[90%] max-w-md"
-          >
-            <h2 id="confirm-title" className="text-white text-lg font-semibold mb-4">
-              {t("confirmDelete")}
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-[#0D1117] p-6 rounded-lg shadow-md border border-white/10 w-[90%] max-w-md">
+            <h2 className="text-white text-lg font-semibold mb-4">{t("confirmDelete")}</h2>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowConfirm(false)}
@@ -191,10 +175,31 @@ export default function ReviewCard({
         </div>
       )}
 
-      {/* Comentários */}
-      {showComments && reviewId && (
-        <div className="mt-4 pt-4 border-t border-white/5">
-          <CommentsSection reviewId={reviewId} />
+      {/* Comments Modal */}
+      {showCommentsModal && reviewId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-[#0D1117] rounded-lg shadow-lg border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal header */}
+            <div className="flex justify-between items-center p-4 border-b border-white/10">
+              <h3 className="text-white font-semibold">{t("comments")}</h3>
+              <button
+                onClick={() => setShowCommentsModal(false)}
+                className="text-white/70 hover:text-white text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="p-4">
+              <CommentsSection
+                reviewId={reviewId}
+                reviewContent={comment || ""}
+                reviewAuthorName={name}
+                reviewAuthorAvatar={avatar}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
