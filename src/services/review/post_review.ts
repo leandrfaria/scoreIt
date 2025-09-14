@@ -1,4 +1,6 @@
 import { apiFetch, clearToken } from "@/lib/api";
+import { emitReviewChanged } from "@/lib/events";
+import { invalidateAverage, MediaType } from "./average";
 
 export interface ReviewPayload {
   mediaId: string | number;
@@ -11,6 +13,9 @@ export interface ReviewPayload {
 }
 
 type PostOpts = { signal?: AbortSignal };
+
+const toApiMediaType = (t: ReviewPayload["mediaType"]): MediaType =>
+  t === "movie" ? "MOVIE" : t === "album" ? "ALBUM" : "SERIE";
 
 export const postReview = async (
   payload: ReviewPayload,
@@ -27,9 +32,13 @@ export const postReview = async (
       body: JSON.stringify(payload),
     });
 
+    // 🔄 invalida backoff e notifica listeners para atualização imediata
+    const mediaType = toApiMediaType(payload.mediaType);
+    invalidateAverage(mediaType, payload.mediaId);
+    emitReviewChanged({ mediaType, mediaId: payload.mediaId });
+
     return true;
   } catch (error: any) {
-    // Trata sessão expirada / sem token
     const status = error?.status ?? error?.code;
     if (status === 401 || status === 403 || String(error?.message || "").startsWith("NO_TOKEN")) {
       clearToken();

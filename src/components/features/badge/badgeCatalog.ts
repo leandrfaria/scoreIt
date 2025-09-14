@@ -25,7 +25,7 @@ export const BADGE_CATALOG: CatalogEntry[] = [
   // MÚSICAS
   { code: "ALBUM_FIRST",  name: "ouvinte novato",        domain: "musicas", folder: "1 - ouvinte novato" },
   { code: "ALBUM_10",     name: "colecionador de discos",domain: "musicas", folder: "2 - colecionador de discos" },
-  { code: "ALBUM_50",     name: "audiófilo",             domain: "musicas", folder: "3 - audiofilo" },
+  { code: "ALBUM_50",     name: "amante de musica",             domain: "musicas", folder: "3 - amante de musica" },
   { code: "ALBUM_100",    name: "lenda do vinil",        domain: "musicas", folder: "4 - lenda do vinil" },
 ];
 
