@@ -486,7 +486,8 @@
   "submit": "Enviar",
   "submitting": "Enviando...",
   "cancel": "Cancelar",
-  "submitError": "Erro ao enviar comentário"
+  "submitError": "Erro ao enviar comentário",
+  "maxCharacters":"Máximo de {max} caracteres"
 },
 "CommentsSection":{
   "commentsTitle": "Comentários ({count})",

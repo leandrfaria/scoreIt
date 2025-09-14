@@ -1,116 +1,111 @@
+// CommentsSection.tsx
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ApiComment } from "@/types/comment";
-import { getCommentsByReview, createComment } from "@/services/Comment/Comment";
-import { useMember } from "@/context/MemberContext";
 import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
-import { useTranslations } from "next-intl";
+import { getCommentsByReview, createComment } from "@/services/Comment/Comment";
+import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
 
-export default function CommentsSection({ reviewId }: { reviewId: number | string }) {
+interface CommentsSectionProps {
+  reviewId: number | string;
+  reviewContent: string;      // texto da review
+  reviewAuthorName: string;   // nome do autor da review
+  reviewAuthorAvatar?: string; // avatar do autor da review
+}
+
+const FALLBACK_AVATAR = "/fallback-avatar.jpg";
+
+export default function CommentsSection({
+  reviewId,
+  reviewContent,
+  reviewAuthorName,
+  reviewAuthorAvatar,
+}: CommentsSectionProps) {
   const { member } = useMember();
-  const mountedRef = useRef(true);
-  const [comments, setComments] = useState<ApiComment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showAll, setShowAll] = useState(false);
-
   const t = useTranslations("CommentsSection");
 
-  const fetchComments = useCallback(
-    async (signal?: AbortSignal) => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getCommentsByReview(reviewId, { signal });
-        if (!mountedRef.current) return;
-        setComments(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        console.error(err);
-        if (mountedRef.current) setError(t("loadError"));
-      } finally {
-        if (mountedRef.current) setLoading(false);
-      }
-    },
-    [reviewId, t]
-  );
+  const [comments, setComments] = useState<ApiComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadComments = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getCommentsByReview(reviewId);
+      setComments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError(t("loadError"));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    mountedRef.current = true;
-    const ac = new AbortController();
-    fetchComments(ac.signal);
-    return () => {
-      mountedRef.current = false;
-      ac.abort();
-    };
-  }, [fetchComments]);
+    loadComments();
+  }, [reviewId]);
 
-  const handleCreateRootComment = async (content: string) => {
+  const handleCreateComment = async (content: string) => {
     if (!member?.id) {
       toast.error(t("loginRequired"));
       return;
     }
     try {
       await createComment(Number(member.id), reviewId, content);
-      await fetchComments();
       toast.success(t("commentCreated"));
+      await loadComments();
     } catch (err) {
       console.error(err);
       toast.error(t("commentCreateError"));
     }
   };
 
-  const handleRefresh = async () => {
-    await fetchComments();
-  };
-
-  const visible = useMemo(
-    () => (showAll ? comments : (comments || []).slice(0, 6)),
-    [comments, showAll]
-  );
-
   return (
-    <section className="mt-6 bg-[#02070A] p-4 rounded">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-white font-semibold">
-          {t("commentsTitle", { count: comments.length })}
-        </h3>
-        {comments.length > 6 && (
-          <button
-            onClick={() => setShowAll((s) => !s)}
-            className="text-sm text-white/80"
-          >
-            {showAll ? t("seeLess") : t("seeMore")}
-          </button>
-        )}
-      </div>
-
-      <div>
-        <h4 className="text-white/90 mb-2">{t("leaveComment")}</h4>
-        <CommentForm onSubmit={handleCreateRootComment} submitLabel={t("comment")} />
-      </div>
-
-      <div className="mt-4">
-        {loading && <p className="text-gray-400">{t("loading")}</p>}
-        {error && <p className="text-red-400">{error}</p>}
-        {!loading && comments.length === 0 && !error && (
-          <p className="text-gray-400">{t("firstComment")}</p>
-        )}
-
-        <div className="mt-3 space-y-3">
-          {visible.map((c) => (
-            <CommentItem
-              key={c.id}
-              comment={c}
-              reviewId={reviewId}
-              onRefresh={handleRefresh}
-            />
-          ))}
+    <div className="flex flex-col gap-4">
+      {/* Preview da review */}
+      <div className="flex gap-3 items-start bg-[#0b1114] p-3 rounded border border-white/10 max-w-full">
+        <img
+          src={reviewAuthorAvatar || FALLBACK_AVATAR}
+          alt={reviewAuthorName}
+          className="w-10 h-10 rounded-full object-cover border border-white/10 flex-shrink-0"
+        />
+        <div className="flex-1 flex flex-col gap-1 min-w-0">
+          <strong className="text-white text-sm">{reviewAuthorName}</strong>
+          <p className="text-gray-200 whitespace-pre-wrap break-words">
+            {reviewContent}
+          </p>
         </div>
       </div>
-    </section>
+
+      {/* Campo para escrever comentário */}
+      <CommentForm onSubmit={handleCreateComment} submitLabel={t("comment")} />
+
+      {loading && <p className="text-gray-400">{t("loading")}</p>}
+      {error && <p className="text-red-400">{error}</p>}
+
+      {!loading && !error && (
+      <div className="flex flex-col gap-3">
+        {comments.length === 0 ? (
+          <p className="text-gray-400">{t("firstComment")}</p>
+        ) : (
+          comments.map((c, i) => (
+            <React.Fragment key={c.id}>
+              {i > 0 && <hr className="border-t border-white/10" />} {/* separador entre comentários */}
+              <CommentItem
+                comment={c}
+                reviewId={reviewId}
+                onRefresh={loadComments}
+              />
+            </React.Fragment>
+          ))
+        )}
+      </div>
+      )}
+    </div>
   );
 }
