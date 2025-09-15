@@ -7,5 +7,5 @@ export type BadgeResponse = {
   id: number;
   name: string;
   description?: string | null;
-  code?: BadgeCode | string; 
+  code?: BadgeCode | string;
 };

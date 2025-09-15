@@ -16,11 +16,11 @@ export default function AchievementModal({ open, onClose, title, description, im
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         >
           <motion.div
-            className="w-[min(520px,90vw)] rounded-xl bg-neutral-900 text-white p-6 ring-1 ring-white/10 shadow-2xl"
+            className="w-[min(520px,90vw)] rounded-xl bg-neutral-900/95 text-white p-6 ring-1 ring-white/10 shadow-2xl"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}

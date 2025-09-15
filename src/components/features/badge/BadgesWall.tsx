@@ -8,7 +8,7 @@ import type { BadgeResponse } from "@/types/Badge";
 import AchievementModal from "./AchievementModal";
 import { BADGE_CATALOG, findCatalogEntry, getBadgeImage } from "./badgeCatalog";
 import { useTranslations } from "next-intl";
-import { onReviewChanged } from "@/lib/events"; // 👈 NEW
+import { onReviewChanged } from "@/lib/events";
 
 const seenKey = (memberId: number) => `scoreit_badges_seen:${memberId}`;
 
@@ -21,7 +21,6 @@ function loadSeen(memberId: number): Set<string> {
     return new Set();
   }
 }
-
 function saveSeen(memberId: number, seen: Set<string>) {
   try {
     localStorage.setItem(seenKey(memberId), JSON.stringify(Array.from(seen)));
@@ -31,16 +30,30 @@ function saveSeen(memberId: number, seen: Set<string>) {
 function diffNewBadges(prev: BadgeResponse[], next: BadgeResponse[]) {
   const key = (b: BadgeResponse) => (b.code || b.name || "").toString();
   const prevSet = new Set(prev.map(key));
-  return next.filter(b => !prevSet.has(key(b)));
+  return next.filter((b) => !prevSet.has(key(b)));
 }
 
 type Props = {
   memberId: number;
   pollMs?: number;
   className?: string;
+  /** deixe true se quiser escrever o título dentro do componente */
+  showTitle?: boolean;
 };
 
-export default function BadgesWall({ memberId, pollMs = 8000, className }: Props) {
+type Group = { label: string; prefix: "MOVIE" | "SERIES" | "ALBUM" };
+const GROUPS: Group[] = [
+  { label: "Filmes", prefix: "MOVIE" },
+  { label: "Séries", prefix: "SERIES" },
+  { label: "Músicas", prefix: "ALBUM" },
+];
+
+export default function BadgesWall({
+  memberId,
+  pollMs = 8000,
+  className,
+  showTitle = false,
+}: Props) {
   const t = useTranslations("badges");
   const [unlocked, setUnlocked] = useState<BadgeResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,13 +64,12 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
   const unlockedRef = useRef<BadgeResponse[]>([]);
   const seenRef = useRef<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // 🔁 pequena proteção contra “tempestade” de eventos (debounce simples)
   const refetchLockRef = useRef(false);
+
   const refetchNow = async () => {
     if (refetchLockRef.current) return;
     refetchLockRef.current = true;
-    setTimeout(() => (refetchLockRef.current = false), 1200); // 1.2s
+    setTimeout(() => (refetchLockRef.current = false), 1200);
 
     try {
       const previous = unlockedRef.current;
@@ -66,25 +78,22 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
       setUnlocked(current);
 
       const gained = diffNewBadges(previous, current);
-      const notSeen = gained.find(b => !seenRef.current.has((b.code || b.name || "").toString()));
+      const notSeen = gained.find(
+        (b) => !seenRef.current.has((b.code || b.name || "").toString())
+      );
       if (notSeen) {
         const key = (notSeen.code || notSeen.name || "").toString();
         if (key) {
           seenRef.current.add(key);
           saveSeen(memberId, seenRef.current);
         }
-
         setModalBadge(notSeen);
         setModalOpen(true);
-
-        const entry = findCatalogEntry(notSeen);
-        toast.success(
-          entry ? t("unlocked_with_name", { name: notSeen.name }) : t("unlocked_generic"),
-          { icon: "🏅" }
-        );
+        toast.success(t("unlocked_with_name", { name: notSeen.name }), { icon: "🏅" });
       }
-    } catch {
-      // silencia erros intermitentes
+    } catch (e) {
+      // silencioso: não deixa quebrar UI
+      console.error("Erro ao atualizar badges:", e);
     }
   };
 
@@ -111,24 +120,22 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
     }
     loadInitial();
 
-    // ⏱️ Polling como fallback
-    if (pollMs > 0) {
-      intervalRef.current = setInterval(refetchNow, pollMs);
-    }
-
+    if (pollMs > 0) intervalRef.current = setInterval(refetchNow, pollMs);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId, pollMs]);
 
-  // ⚡ NEW: atualização imediata assim que reviews forem registradas (inclui ALBUM)
+  // atualiza na hora que uma review é registrada
   useEffect(() => {
-    const off = onReviewChanged(() => {
-      // sempre que houver uma avaliação (MOVIE/SERIE/SERIES/ALBUM), revalida badges
-      refetchNow();
-    });
-    return () => off();
+    const off = onReviewChanged(() => refetchNow());
+    // cleanup sempre do tipo () => void
+    return () => {
+      if (typeof off === "function") {
+        try { off(); } catch {}
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId]);
 
@@ -138,31 +145,65 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
     return s;
   }, [unlocked]);
 
-  if (loading) return <p className="text-white/80">{t("loading")}</p>;
+  if (loading) return <p className="text-white/80">{t("loading") ?? "Carregando conquistas..."}</p>;
 
   return (
     <>
       <section className={className}>
-        <h2 className="text-white text-xl font-semibold mb-3">{t("title")}</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {BADGE_CATALOG.map((entry) => {
-            const isUnlocked = unlockedKeySet.has(entry.code);
-            const img = getBadgeImage(entry, isUnlocked);
+        {showTitle && <h2 className="text-white text-xl font-semibold mb-4">Mural de Conquistas</h2>}
+
+        <div className="space-y-10">
+          {GROUPS.map((g) => {
+            const items = BADGE_CATALOG.filter((b) => b.code.startsWith(g.prefix));
             return (
-              <div
-                key={entry.code}
-                className="relative rounded-lg bg-neutral-900 ring-1 ring-white/10 p-3 flex items-center gap-3 hover:bg-neutral-800 transition"
-              >
-                <div className="relative w-14 h-14 shrink-0">
-                  <Image src={img} alt={entry.name} fill className="object-cover rounded-full" />
+              <div key={g.prefix}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white/90 font-medium">{g.label}</h3>
                 </div>
-                <div className="flex-1">
-                  <p className="text-white text-sm font-medium">{entry.name}</p>
-                  <p className="text-xs text-white/60">
-                    {entry.code.startsWith("MOVIE") ? t("category.movies") :
-                     entry.code.startsWith("SERIES") ? t("category.series") : t("category.music")}
-                    {" • "}{isUnlocked ? t("status.unlocked") : t("status.locked")}
-                  </p>
+
+                {/* ocupa bem o espaço em telas grandes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                  {items.map((entry) => {
+                    const isUnlocked = unlockedKeySet.has(entry.code);
+                    const img = getBadgeImage(entry, isUnlocked);
+                    return (
+                      <div
+                        key={entry.code}
+                        className="relative group rounded-2xl p-5 bg-gradient-to-br from-[#0e1718] to-[#0b1212] ring-1 ring-white/10 shadow-sm hover:shadow-md hover:ring-white/20 transition min-h-[130px]"
+                      >
+                        {/* selo de status */}
+                        <span
+                          className={`absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full tracking-wide ${
+                            isUnlocked
+                              ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/20"
+                              : "bg-white/5 text-white/60 ring-1 ring-white/10"
+                          }`}
+                        >
+                          {isUnlocked ? "desbloqueada" : "bloqueada"}
+                        </span>
+
+                        <div className="flex items-center gap-4">
+                          {/* imagem maior e sem cadeado */}
+                          <div className="relative w-16 h-16 shrink-0">
+                            <Image src={img} alt={entry.name} fill className="object-cover rounded-full" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-white text-base font-medium truncate">{entry.name}</p>
+                            <p className="text-[12px] text-white/60">
+                              {g.label}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* tooltip simples (sem progresso pois não há endpoint) */}
+                        <div className="pointer-events-none absolute left-0 right-0 -bottom-2 translate-y-full opacity-0 group-hover:opacity-100 group-hover:translate-y-[10px] transition mx-3 rounded-lg bg-neutral-900/95 ring-1 ring-white/10 p-3 shadow-xl">
+                          <p className="text-xs text-white/80">
+                            {isUnlocked ? "Conquista desbloqueada!" : "Avalie conteúdos para desbloquear."}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

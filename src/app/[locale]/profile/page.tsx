@@ -192,7 +192,6 @@ export default function Profile() {
           </section>
         </Container>
 
-        {/* 4) Mural de conquistas */}
         <Container>
           <section className="mt-6">
             <h2 className="text-white text-xl font-semibold mb-3">{t("badges_wall")}</h2>
@@ -200,7 +199,6 @@ export default function Profile() {
           </section>
         </Container>
 
-        {/* ===== Modals ===== */}
         {activeModal === "edit" && (
           <ProfileEditModal
             member={member}
