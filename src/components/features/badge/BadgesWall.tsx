@@ -8,6 +8,7 @@ import type { BadgeResponse } from "@/types/Badge";
 import AchievementModal from "./AchievementModal";
 import { BADGE_CATALOG, findCatalogEntry, getBadgeImage } from "./badgeCatalog";
 import { useTranslations } from "next-intl";
+import { onReviewChanged } from "@/lib/events"; // 👈 NEW
 
 const seenKey = (memberId: number) => `scoreit_badges_seen:${memberId}`;
 
@@ -51,6 +52,42 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
   const seenRef = useRef<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // 🔁 pequena proteção contra “tempestade” de eventos (debounce simples)
+  const refetchLockRef = useRef(false);
+  const refetchNow = async () => {
+    if (refetchLockRef.current) return;
+    refetchLockRef.current = true;
+    setTimeout(() => (refetchLockRef.current = false), 1200); // 1.2s
+
+    try {
+      const previous = unlockedRef.current;
+      const current = await fetchMemberBadges(memberId);
+      unlockedRef.current = current;
+      setUnlocked(current);
+
+      const gained = diffNewBadges(previous, current);
+      const notSeen = gained.find(b => !seenRef.current.has((b.code || b.name || "").toString()));
+      if (notSeen) {
+        const key = (notSeen.code || notSeen.name || "").toString();
+        if (key) {
+          seenRef.current.add(key);
+          saveSeen(memberId, seenRef.current);
+        }
+
+        setModalBadge(notSeen);
+        setModalOpen(true);
+
+        const entry = findCatalogEntry(notSeen);
+        toast.success(
+          entry ? t("unlocked_with_name", { name: notSeen.name }) : t("unlocked_generic"),
+          { icon: "🏅" }
+        );
+      }
+    } catch {
+      // silencia erros intermitentes
+    }
+  };
+
   async function loadInitial() {
     try {
       const list = await fetchMemberBadges(memberId);
@@ -74,39 +111,26 @@ export default function BadgesWall({ memberId, pollMs = 8000, className }: Props
     }
     loadInitial();
 
+    // ⏱️ Polling como fallback
     if (pollMs > 0) {
-      intervalRef.current = setInterval(async () => {
-        try {
-          const previous = unlockedRef.current;
-          const current = await fetchMemberBadges(memberId);
-          unlockedRef.current = current;
-          setUnlocked(current);
-
-        const gained = diffNewBadges(previous, current);
-        const notSeen = gained.find(b => !seenRef.current.has((b.code || b.name || "").toString()));
-        if (notSeen) {
-          const key = (notSeen.code || notSeen.name || "").toString();
-          if (key) seenRef.current.add(key); // ⬅️ marca como visto imediatamente
-          saveSeen(memberId, seenRef.current);
-
-          setModalBadge(notSeen);
-          setModalOpen(true);
-
-          const entry = findCatalogEntry(notSeen);
-          toast.success(
-            entry ? t("unlocked_with_name", { name: notSeen.name }) : t("unlocked_generic"),
-            { icon: "🏅" }
-          );
-        }
-
-        } catch {}
-      }, pollMs);
+      intervalRef.current = setInterval(refetchNow, pollMs);
     }
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId, pollMs]);
+
+  // ⚡ NEW: atualização imediata assim que reviews forem registradas (inclui ALBUM)
+  useEffect(() => {
+    const off = onReviewChanged(() => {
+      // sempre que houver uma avaliação (MOVIE/SERIE/SERIES/ALBUM), revalida badges
+      refetchNow();
+    });
+    return () => off();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberId]);
 
   const unlockedKeySet = useMemo(() => {
     const s = new Set<string>();
