@@ -1,3 +1,4 @@
+// src/components/features/album/AlbumCard.tsx
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
@@ -7,7 +8,7 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { Album } from "@/types/Album";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
-import { FaHeart } from "react-icons/fa";
+import { FaHeart, FaStar } from "react-icons/fa"; // ⭐
 import { FiHeart } from "react-icons/fi";
 import { isFavoritedMedia } from "@/services/user/is_favorited";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
@@ -15,6 +16,9 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { addFavouriteAlbum } from "@/services/album/add_fav_album";
 import { fetchMemberLists, addContentToList } from "@/services/customList/list";
+import { getToken } from "@/lib/api";
+import { fetchAverageRating } from "@/services/review/average"; // ⭐
+import { onReviewChanged } from "@/lib/events"; // ⭐
 
 interface AlbumCardProps extends Album {
   onRemoveAlbum?: (id: string) => void;
@@ -37,6 +41,7 @@ export function AlbumCard({
   const [selectedList, setSelectedList] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [imgSrc, setImgSrc] = useState(imageUrl || "/fallback.jpg");
+  const [scoreitAverage, setScoreitAverage] = useState<number | null>(null); // ⭐
   const t = useTranslations("AlbumCard");
   const router = useRouter();
   const locale = useLocale();
@@ -46,19 +51,61 @@ export function AlbumCard({
   const handleClose = useCallback(() => setIsOpen(false), []);
   useOutsideClick(modalRef, handleClose);
 
-  // ESC fecha
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [handleClose]);
 
-  // Foco no título
   useEffect(() => {
     if (isOpen && titleRef.current) titleRef.current.focus();
   }, [isOpen]);
 
-  // Checar favorito
+  // ✅ média ScoreIt (igual ao MovieCard)
+  useEffect(() => {
+    let controller = new AbortController();
+
+    const load = async () => {
+      const signal = controller.signal;
+      const avg = await fetchAverageRating("ALBUM", id, { signal });
+      if (!signal.aborted) setScoreitAverage(avg);
+    };
+
+    // 1) inicial
+    load();
+
+    // 2) polling a cada 5min (fallback)
+    const interval = setInterval(() => {
+      controller.abort();
+      controller = new AbortController();
+      load();
+    }, 5 * 60 * 1000);
+
+    // 3) ao focar a aba
+    const onFocus = () => {
+      controller.abort();
+      controller = new AbortController();
+      load();
+    };
+    window.addEventListener("focus", onFocus);
+
+    // 4) “tempo real” via evento global (quando alguém avaliar)
+    const off = onReviewChanged(({ mediaType, mediaId }) => {
+      if (mediaType !== "ALBUM") return;
+      if (String(mediaId) !== String(id)) return;
+      controller.abort();
+      controller = new AbortController();
+      load();
+    });
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      off();
+      controller.abort();
+    };
+  }, [id]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -73,15 +120,17 @@ export function AlbumCard({
     return () => {
       mounted = false;
     };
-  }, [id, member, isOpen]);
+  }, [id, member, isOpen, locale]);
 
-  // Carregar listas
+  // ✅ pegar listas com o mesmo token do app
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         if (!member || !isOpen) return;
-        const lists = await fetchMemberLists(localStorage.getItem("authToken")!, member.id, locale);
+        const token = getToken();
+        if (!token) return;
+        const lists = await fetchMemberLists(token, member.id, locale);
         const unique = Array.from(new Set(lists.map((l) => l.listName)));
         if (mounted) {
           setCustomLists(unique);
@@ -94,7 +143,7 @@ export function AlbumCard({
     return () => {
       mounted = false;
     };
-  }, [isOpen, member]);
+  }, [isOpen, member, locale]);
 
   const openDetailsPath = useMemo(() => `/${locale}/album/${id}`, [locale, id]);
 
@@ -117,14 +166,16 @@ export function AlbumCard({
         setIsFavorited(true);
       } else toast.error(t("errorAddingFavorite"));
     }
-  }, [id, isFavorited, member, onRemoveAlbum, t]);
+  }, [id, isFavorited, member, onRemoveAlbum, t, locale]);
 
   const handleAddToList = useCallback(async () => {
     if (!selectedList) return toast.error("Selecione uma lista");
     try {
       setIsAdding(true);
       if (!member) return toast.error("Usuário não autenticado");
-      const result = await addContentToList(localStorage.getItem("authToken")!, {
+      const token = getToken();
+      if (!token) return toast.error("Sessão expirada");
+      const result = await addContentToList(token, {
         memberId: member.id,
         mediaId: id,
         mediaType: "album",
@@ -140,7 +191,6 @@ export function AlbumCard({
 
   const handleViewDetails = useCallback(() => router.push(openDetailsPath), [router, openDetailsPath]);
 
-  // animações
   const overlayAnim = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: reduceMotion ? 0 : 0.2 } },
@@ -152,12 +202,14 @@ export function AlbumCard({
     exit: { opacity: 0, y: reduceMotion ? 0 : 24, transition: { duration: reduceMotion ? 0 : 0.2 } },
   };
 
+  const ratingText = scoreitAverage == null ? "Sem Nota" : scoreitAverage.toFixed(1); // ⭐
+
   return (
     <>
       {/* Card */}
       <div
         onClick={handleOpen}
-        className="cursor-pointer w-[46vw] max-w-[190px] sm:w-[190px] shrink-0 rounded-xl overflow-hidden hover:scale-[1.03] hover:shadow-lg transition-all duration-300 bg-neutral-900/40 ring-1 ring-white/5"
+        className="cursor-pointer w-[46vw] max-w-[190px] sm:w-[190px] shrink-0 rounded-xl overflow-hidden hover:scale-[1.03] hover:shadow-lg transition-all duration-300 bg-neutral-900/40 ring-1 ring-white/5 relative"
       >
         <div className="relative w-full aspect-[3/3] sm:h-[190px]">
           <Image
@@ -167,6 +219,11 @@ export function AlbumCard({
             className="object-cover rounded-xl"
             onError={() => setImgSrc("/fallback.jpg")}
           />
+          {/* ⭐ badge de nota igual ao MovieCard */}
+          <div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded-full flex items-center gap-1">
+            <FaStar size={12} />
+            <span>{ratingText}</span>
+          </div>
         </div>
         <div className="p-2">
           <h3 className="text-white text-sm font-semibold line-clamp-1">{name}</h3>
@@ -197,11 +254,19 @@ export function AlbumCard({
                 >
                   {isFavorited ? <FaHeart className="text-red-500 w-6 h-6"/> : <FiHeart className="text-white w-6 h-6"/>}
                 </button>
+                {/* badge também na imagem do modal (opcional) */}
+                <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                  <FaStar size={12} />
+                  <span>{ratingText}</span>
+                </div>
               </div>
               <div className="p-4 space-y-2">
                 <h2 ref={titleRef} className="text-lg font-bold">{name}</h2>
                 <p className="text-gray-400 text-sm">{artist}</p>
-                <p className="text-gray-400 text-sm">{release_date ? new Date(release_date).toLocaleDateString() : "N/A"}</p>
+                <p className="text-gray-400 text-sm">
+                  {release_date ? new Date(release_date).toLocaleDateString() : "N/A"}
+                </p>
+                <p className="text-gray-300 text-sm">Nota: {ratingText}</p>
               </div>
               <div className="p-4 mt-auto flex flex-col gap-3">
                 <div className="flex gap-2">

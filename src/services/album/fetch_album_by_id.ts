@@ -7,9 +7,10 @@ function pickString(v: unknown, fallback = ""): string {
   return typeof v === "string" ? v : fallback;
 }
 
-export async function fetchAlbumById(id: string): Promise<Album | null> {
+export async function fetchAlbumById(id: string, signal?: AbortSignal): Promise<Album | null> {
   try {
-    const data = await apiFetch(`/spotify/api/album/${id}`, { auth: true });
+    // Se o endpoint for público no seu back, você pode trocar para { auth: false }.
+    const data = await apiFetch(`/spotify/api/album/${encodeURIComponent(id)}`, { auth: true, signal });
     if (typeof data !== "object" || data === null) return null;
     const obj = data as Json;
 
@@ -40,11 +41,10 @@ export async function fetchAlbumById(id: string): Promise<Album | null> {
       imageUrl,
     };
 
-    // Garante campos obrigatórios
     if (!album.id || !album.name) return null;
-
     return album;
   } catch (error) {
+    if ((error as any)?.name === "AbortError") return null;
     console.error("Erro ao buscar álbum:", error);
     return null;
   }

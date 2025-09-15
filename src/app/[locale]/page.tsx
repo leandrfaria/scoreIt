@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Container } from "@/components/layout/Others/Container";
 import { RandomMoviesCarousel } from "@/components/features/movie/RandomMoviesCarousel";
 import { RandomSeriesCarousel } from "@/components/features/serie/RandomSeriesCarousel";
-import { AlbumListByGenre } from "@/components/features/album/AlbumListByGenre";
-import { useLocale, useTranslations } from "next-intl";
+import AlbumList from "@/components/features/album/AlbumList";
+import { useTranslations } from "next-intl";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTabContext } from "@/context/TabContext";
 import PageTransition from "@/components/layout/Others/PageTransition";
@@ -14,20 +14,15 @@ import NowPlayingCarouselSection from "@/components/features/movie/NowPlayingCar
 import { SeriesList } from "@/components/features/serie/SeriesList";
 import { MovieList } from "@/components/features/movie/MovieList";
 import LoggedOutHome from "@/components/layout/oggedOutHome";
-
-
+import TopAlbums from "@/components/features/album/TopAlbums";
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
   const { activeTab } = useTabContext();
-  const [hasMounted, setHasMounted] = useState(false);
-
-  const locale = useLocale();
   const t = useTranslations("home");
 
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
+  // (mantido caso tenha side-effects globais de montagem; remova se não precisar)
+  useEffect(() => {}, []);
 
   if (isLoggedIn === null) {
     return (
@@ -43,7 +38,10 @@ export default function Home() {
         <Container>
           <PageTransition>
             {activeTab === "musicas" ? (
-              <AlbumListByGenre />
+              <>
+              <TopAlbums />
+              <AlbumList />
+              </>
             ) : activeTab === "series" ? (
               <>
                 <RandomSeriesCarousel />
