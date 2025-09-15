@@ -1,3 +1,4 @@
+// src/app/(your-path)/series/[id]/page.tsx  (ou onde estiver o seu SeriePage)
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -15,6 +16,7 @@ import RatingModal from "@/components/features/review/RatingModal";
 import ReviewSection from "@/components/features/review/ReviewSection";
 import { apiFetch, AUTH_TOKEN_KEY } from "@/lib/api";
 import { useLocale, useTranslations } from "next-intl";
+import { mapNextIntlToTMDB, isTMDBLocale } from "@/i18n/localeMapping";
 
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();
@@ -23,8 +25,8 @@ export default function SeriePage() {
   const [showModal, setShowModal] = useState(false);
   const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
-  const locale = useLocale();
-  const t = useTranslations("Series"); // <-- Adicionado
+  const locale = useLocale(); // pode ser 'en' ou 'pt' dependendo da config do next-intl
+  const t = useTranslations("Series");
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -34,11 +36,35 @@ export default function SeriePage() {
     };
   }, []);
 
+  // Converte locais do next-intl / curtos para o formato TMDB (ex: 'en' -> 'en-US', 'pt' -> 'pt-BR')
+  const toTMDBLocale = (loc?: string | null): string => {
+    const DEFAULT = "en-US";
+    if (!loc || typeof loc !== "string") return DEFAULT;
+    const trimmed = loc.trim();
+    if (trimmed === "") return DEFAULT;
+    if (isTMDBLocale(trimmed)) return trimmed;
+    try {
+      const mapped = mapNextIntlToTMDB(trimmed);
+      if (mapped && isTMDBLocale(mapped)) return mapped;
+      if (mapped && typeof mapped === "string") return mapped;
+    } catch (e) {
+      // ignore
+    }
+    const two = trimmed.slice(0, 2).toLowerCase();
+    if (two === "pt") return "pt-BR";
+    if (two === "en") return "en-US";
+    if (two === "es") return "es-ES";
+    return DEFAULT;
+  };
+
   useEffect(() => {
     if (!id) return;
     const ac = new AbortController();
 
     const loadSerie = async () => {
+      const tmdbLocale = toTMDBLocale(locale);
+      const qs = `?language=${encodeURIComponent(tmdbLocale)}`;
+
       try {
         const hasToken =
           typeof window !== "undefined" &&
@@ -46,7 +72,8 @@ export default function SeriePage() {
 
         if (hasToken) {
           try {
-            const data = await apiFetch(`/series/${id}/details`, {
+            // tenta com auth
+            const data = await apiFetch(`/series/${id}/details${qs}`, {
               method: "GET",
               auth: true,
               signal: ac.signal,
@@ -63,14 +90,17 @@ export default function SeriePage() {
               typeof e?.message === "string" &&
               e.message.toUpperCase().includes("NO_TOKEN");
             if (isAbort) return;
+            // se 401/403/NO_TOKEN, tenta sem auth (tratado abaixo)
             if (!(status === 401 || status === 403 || noToken)) {
               console.error("Erro ao buscar série (com auth):", e);
             }
+            // continua para a tentativa sem auth
           }
         }
 
         try {
-          const data = await apiFetch(`/series/${id}/details`, {
+          // tenta sem auth
+          const data = await apiFetch(`/series/${id}/details${qs}`, {
             method: "GET",
             auth: false,
             signal: ac.signal,
@@ -100,7 +130,7 @@ export default function SeriePage() {
         ac.abort();
       } catch {}
     };
-  }, [id]);
+  }, [id, locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,6 +138,7 @@ export default function SeriePage() {
     const checkFavorite = async () => {
       try {
         if (member && id) {
+          // aqui mantemos o locale original do next-intl — seu backend deve normalizar
           const fav = await isFavoritedMedia(member.id, Number(id), locale);
           if (!cancelled) setIsFavorited(fav);
         }
@@ -120,7 +151,7 @@ export default function SeriePage() {
     return () => {
       cancelled = true;
     };
-  }, [member, id]);
+  }, [member, id, locale]);
 
   const handleFavoriteToggle = async () => {
     if (!member || !serie) return;
