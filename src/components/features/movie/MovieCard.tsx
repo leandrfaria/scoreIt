@@ -1,3 +1,4 @@
+// src/components/features/movie/MovieCard.tsx
 "use client";
 
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -6,6 +7,7 @@ import { useOutsideClick } from "@/hooks/useOutsideClick";
 import Image from "next/image";
 import { FaStar, FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
+import { MdPlaylistAdd } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import { Movie } from "@/types/Movie";
 import { useTranslations, useLocale } from "next-intl";
@@ -17,6 +19,7 @@ import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import { fetchMemberLists, addContentToList } from "@/services/customList/list";
 import { fetchAverageRating } from "@/services/review/average";
 import { onReviewChanged } from "@/lib/events";
+import RatingModal from "@/components/features/review/RatingModal";
 
 interface MovieCardProps extends Movie {
   onRemoveMovie?: (id: number) => void;
@@ -30,6 +33,32 @@ const mapLocaleToTMDBLanguage = (locale: string): string => {
 
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnL3N2ZyI+PHJlY3QgZmlsbD0iIzk5OTk5OSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==";
+
+// strings PT-BR p/ evitar erro do intl
+const L = {
+  addToList: "Adicionar à lista",
+  selectList: "Selecione uma lista",
+  add: "Adicionar",
+  adding: "Adicionando...",
+  rate: "Avaliar",
+  ratingLabel: "nota",
+};
+
+// melhora a qualidade do poster/backdrop se for URL do TMDB
+function upgradePosterQuality(src?: string | null): string | null {
+  if (!src) return null;
+  try {
+    const u = new URL(src, typeof window !== "undefined" ? window.location.origin : "https://x");
+    if (u.hostname.includes("image.tmdb.org") && /\/t\/p\//.test(u.pathname)) {
+      const newPath = u.pathname.replace(/\/t\/p\/(w\d+|original)/, "/t/p/original");
+      u.pathname = newPath;
+      return u.toString().replace(/^https?:\/\/x/, "");
+    }
+  } catch {
+    return src.replace(/\/t\/p\/(w\d+|original)/, "/t/p/original");
+  }
+  return src;
+}
 
 function MovieCardBase({
   id,
@@ -49,10 +78,10 @@ function MovieCardBase({
   const [selectedList, setSelectedList] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [posterLoaded, setPosterLoaded] = useState(false);
-  const [backdropLoaded, setBackdropLoaded] = useState(false);
 
-  // média do ScoreIt (null => "Sem Nota")
+  const [showAddPanel, setShowAddPanel] = useState(false);
   const [scoreitAverage, setScoreitAverage] = useState<number | null>(null);
+  const [isRatingOpen, setIsRatingOpen] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const year = useMemo(() => (release_date ? new Date(release_date).getFullYear() : ""), [release_date]);
@@ -62,33 +91,38 @@ function MovieCardBase({
   const { member } = useMember();
 
   const tmdbLanguage = useMemo(() => mapLocaleToTMDBLanguage(locale), [locale]);
+  const posterBest = useMemo(() => upgradePosterQuality(posterUrl) ?? posterUrl ?? null, [posterUrl]);
+  const backdropBest = useMemo(() => upgradePosterQuality(backdropUrl) ?? backdropUrl ?? null, [backdropUrl]);
 
   const handleOpen = useCallback(() => setIsOpen(true), []);
-  const handleClose = useCallback(() => setIsOpen(false), []);
-  useOutsideClick(modalRef, handleClose);
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setShowAddPanel(false);
+  }, []);
 
-  // --------- MÉDIA: polling + focus + "tempo real" por evento ----------
+  // fecha ao clicar fora — mas NÃO quando o modal de avaliação estiver aberto
+  const handleCloseGuarded = useCallback(() => {
+    if (isRatingOpen) return;
+    handleClose();
+  }, [isRatingOpen, handleClose]);
+
+  useOutsideClick(modalRef, handleCloseGuarded);
+
+  // média scoreIt
   useEffect(() => {
     let controller = new AbortController();
-
     const load = async () => {
       const signal = controller.signal;
       const avg = await fetchAverageRating("MOVIE", id, { signal });
       if (!signal.aborted) setScoreitAverage(avg);
     };
-
-    // 1) inicial
     load();
-
-    // 2) polling (fallback) — 5min
-    const intervalMs = 5 * 60 * 1000;
     const intervalId = setInterval(() => {
       controller.abort();
       controller = new AbortController();
       load();
-    }, intervalMs);
+    }, 5 * 60 * 1000);
 
-    // 3) ao focar a aba
     const onFocus = () => {
       controller.abort();
       controller = new AbortController();
@@ -96,7 +130,6 @@ function MovieCardBase({
     };
     window.addEventListener("focus", onFocus);
 
-    // 4) "tempo real": após criar/editar review (evento global)
     const off = onReviewChanged(({ mediaType, mediaId }) => {
       if (mediaType !== "MOVIE") return;
       if (String(mediaId) !== String(id)) return;
@@ -113,7 +146,7 @@ function MovieCardBase({
     };
   }, [id]);
 
-  // ---------------- resto do componente (inalterado) ----------------
+  // scroll lock
   useEffect(() => {
     if (!isOpen) return;
     const { body, documentElement } = document;
@@ -138,13 +171,17 @@ function MovieCardBase({
     };
   }, [isOpen]);
 
+  // ESC fecha — não fecha se o modal de avaliação estiver aberto
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isRatingOpen) handleClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, handleClose]);
+  }, [isOpen, isRatingOpen, handleClose]);
 
+  // favorito inicial
   useEffect(() => {
     (async () => {
       try {
@@ -157,6 +194,7 @@ function MovieCardBase({
     })();
   }, [id, member, t, tmdbLanguage]);
 
+  // listas
   useEffect(() => {
     if (!isOpen || !member) return;
     (async () => {
@@ -172,37 +210,25 @@ function MovieCardBase({
   }, [isOpen, member, tmdbLanguage, t]);
 
   const handleFavorite = useCallback(async () => {
-    if (!member) {
-      toast.error(t("userNotAuthenticated"));
-      return;
-    }
+    if (!member) return toast.error(t("userNotAuthenticated"));
     if (isFavorited) {
       const ok = await removeFavouriteMedia(member.id, id, tmdbLanguage, "movie");
       if (ok) {
         toast.success(t("removedFromFavorites"));
         setIsFavorited(false);
         onRemoveMovie?.(id);
-      } else {
-        toast.error(t("errorRemovingFavorite"));
-      }
+      } else toast.error(t("errorRemovingFavorite"));
     } else {
-      const ok = await addFavouriteMovie(
-        localStorage.getItem("authToken")!,
-        member.id,
-        id,
-        tmdbLanguage
-      );
+      const ok = await addFavouriteMovie(localStorage.getItem("authToken")!, member.id, id, tmdbLanguage);
       if (ok) {
         toast.success(t("addedToFavorites"));
         setIsFavorited(true);
-      } else {
-        toast.error(t("errorAddingFavorite"));
-      }
+      } else toast.error(t("errorAddingFavorite"));
     }
   }, [id, isFavorited, member, onRemoveMovie, t, tmdbLanguage]);
 
   const handleAddToList = useCallback(async () => {
-    if (!selectedList) return toast.error(t("selectList"));
+    if (!selectedList) return toast.error(L.selectList);
     try {
       setIsAdding(true);
       if (!member) return toast.error(t("userNotAuthenticated"));
@@ -216,6 +242,7 @@ function MovieCardBase({
       if (result === "duplicate") toast.error(t("alreadyInList"));
       else if (result === "success") toast.success(t("movieAdded"));
       else toast.error(t("errorAdding"));
+      setShowAddPanel(false);
     } finally {
       setIsAdding(false);
     }
@@ -227,7 +254,7 @@ function MovieCardBase({
 
   return (
     <>
-      {/* CARD */}
+      {/* ===== CARD ===== */}
       <div
         onClick={handleOpen}
         className="cursor-pointer w-full max-w-[180px] sm:max-w-[190px] rounded-xl overflow-hidden shadow-lg hover:scale-[1.03] transition-transform duration-300 relative"
@@ -268,54 +295,184 @@ function MovieCardBase({
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* ===== MODAL ===== */}
       <AnimatePresence>
         {isOpen && (
           <>
-            <motion.div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
-            <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 sm:p-6">
+            {/* overlay */}
+            <motion.div
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            />
+            <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-2 sm:p-3 lg:p-6">
               <motion.div
                 ref={modalRef}
-                className="bg-neutral-900 text-white w-[92vw] max-w-3xl rounded-xl shadow-lg"
-                style={{ maxHeight: "92vh", overflowY: "auto" }}
+                className="relative w-[98vw] sm:w-[96vw] max-w-5xl rounded-2xl border border-white/10 bg-[rgba(7,12,16,0.9)] backdrop-blur-xl shadow-2xl"
+                style={{ maxHeight: "94vh", overflowY: "auto" }}
                 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }}
               >
-                <div className="p-4 sm:p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-bold">{title}</h2>
-                    <button onClick={handleClose} className="text-red-400 text-2xl" aria-label={t("close")}>×</button>
-                  </div>
-                  {backdropUrl && backdropUrl !== "null" ? (
-                    <div className="relative w-full h-[200px] sm:h-[250px] rounded-md overflow-hidden mb-6">
-                      <Image src={backdropUrl} alt={title} fill className={`object-cover ${backdropLoaded ? "opacity-100" : "opacity-0"}`} onLoad={() => setBackdropLoaded(true)} />
-                      {!backdropLoaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
-                      <button onClick={handleFavorite} className="absolute bottom-2 right-2 bg-black/60 p-2 rounded-full" aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}>
-                        {isFavorited ? <FaHeart className="text-red-500 w-6 h-6" /> : <FiHeart className="text-white w-6 h-6" />}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-full h-[200px] bg-gray-800 flex items-center justify-center text-gray-500">{t("noImageAvailable")}</div>
-                  )}
-                  <div className="space-y-3">
-                    <p className="text-gray-400 text-sm">{t("releaseDate")}: {release_date ? new Date(release_date).toLocaleDateString(locale) : t("unknown")}</p>
-                    <p className="text-gray-300 text-sm">{overview?.trim() || t("noDescription")}</p>
-                    <p className="text-gray-300 text-sm">Nota: {ratingText}</p>
-                  </div>
-                  <div className="mt-5 flex flex-col sm:flex-row gap-2">
-                    <select value={selectedList} onChange={(e) => setSelectedList(e.target.value)} className="bg-neutral-800 text-white p-2 rounded flex-grow text-sm" disabled={customLists.length === 0}>
-                      <option value="">{t("selectList")}</option>
-                      {customLists.map((l) => (<option key={l}>{l}</option>))}
-                    </select>
-                    <button onClick={handleAddToList} disabled={isAdding || !selectedList} className="bg-darkgreen text-white px-4 py-2 rounded-md hover:brightness-110 transition text-sm">
-                      {isAdding ? t("adding") : t("add")}
+                <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/10" />
+                <div className="p-3 sm:p-4 lg:p-6">
+                  {/* Fechar */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleClose}
+                      className="p-2 -mr-2 text-white/70 hover:text-white transition text-2xl leading-none"
+                      aria-label={t("close")}
+                    >
+                      ×
                     </button>
                   </div>
-                  <div className="mt-4 flex justify-end">
-                    <button onClick={handleViewDetails} className="bg-darkgreen text-white px-5 py-2 rounded-md hover:brightness-110 transition text-sm">{t("viewDetails")}</button>
+
+                  {/* layout 1 coluna no mobile / 2 colunas no desktop */}
+                  <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:gap-6 lg:[grid-template-columns:360px_1fr]">
+                    {/* MOBILE: backdrop como banner (mostrando imagem inteira) */}
+                    <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-black/30 ring-1 ring-white/10 shadow-xl lg:hidden">
+                      {(backdropBest || posterBest) ? (
+                        <Image
+                          src={(backdropBest || posterBest)!}
+                          alt={`${title} backdrop`}
+                          fill
+                          className="object-contain"   // mostra a imagem completa
+                          sizes="100vw"
+                          placeholder="blur"
+                          blurDataURL={BLUR_DATA_URL}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-500">
+                          {t("noImageAvailable")}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* DESKTOP: poster vertical em alta */}
+                    <div className="hidden lg:block relative w-full h-[540px] rounded-xl overflow-hidden bg-black/30 ring-1 ring-white/10 shadow-xl">
+                      {posterBest ? (
+                        <Image
+                          src={posterBest}
+                          alt={`${title} poster`}
+                          fill
+                          className="object-cover"
+                          sizes="360px"
+                          placeholder="blur"
+                          blurDataURL={BLUR_DATA_URL}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-500">
+                          {t("noImageAvailable")}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* DIREITA */}
+                    <div className="relative flex flex-col pb-28 lg:pb-24 min-h-[unset] lg:min-h-[540px]">
+                      {/* Título + gênero + nota */}
+                      <div className="flex items-stretch gap-3 sm:gap-4">
+                        <div className="flex-1 flex flex-col gap-1.5 sm:gap-2">
+                          <h3 className="text-[22px] sm:text-[24px] lg:text-[28px] font-extrabold leading-tight tracking-tight text-white">
+                            {title}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-white/70">
+                            {genre || "Gênero não disponível"}{year ? ` • ${year}` : ""}
+                          </p>
+                        </div>
+
+                        {/* Nota */}
+                        <div className="shrink-0 self-stretch flex flex-col justify-center rounded-xl px-4 sm:px-5 py-2 text-center ring-1 ring-white/10 bg-transparent">
+                          <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-white/70">{L.ratingLabel}</span>
+                          <div className="mt-1 flex items-center justify-center gap-1">
+                            <FaStar className="text-[var(--color-mediumgreen)] drop-shadow-[0_0_6px_rgba(92,131,116,0.5)]" />
+                            <span className="text-lg sm:text-xl font-bold text-white">{ratingText}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Descrição */}
+                      <div className="mt-3 sm:mt-4 flex-1 overflow-auto min-h-[200px] sm:min-h-[240px] max-h-[55vh] lg:max-h-[420px]">
+                        <p className="text-[14px] sm:text-[15px] leading-relaxed text-white/90">
+                          {overview?.trim() || t("noDescription")}
+                        </p>
+                      </div>
+
+                      {/* Botões fixos */}
+                      <div className="absolute bottom-0 right-0 flex items-center gap-2 sm:gap-3 p-2">
+                        {/* b1: adicionar lista */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowAddPanel((s) => !s)}
+                            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
+                            aria-label={L.addToList}
+                            title={L.addToList}
+                          >
+                            <MdPlaylistAdd className="w-6 h-6 text-white/90" />
+                          </button>
+
+                          {showAddPanel && (
+                            <div className="absolute right-0 bottom-12 w-64 sm:w-72 rounded-xl bg-[rgba(8,12,16,0.95)] ring-1 ring-white/10 shadow-2xl p-3 z-10 backdrop-blur">
+                              <div className="flex gap-2">
+                                <select
+                                  value={selectedList}
+                                  onChange={(e) => setSelectedList(e.target.value)}
+                                  className="bg-white/5 text-white px-3 py-2 rounded-lg text-sm flex-1 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                                  disabled={customLists.length === 0}
+                                >
+                                  <option value="">{L.selectList}</option>
+                                  {customLists.map((l) => (
+                                    <option key={l}>{l}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={handleAddToList}
+                                  disabled={isAdding || !selectedList}
+                                  className="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 transition text-sm font-semibold disabled:opacity-50"
+                                >
+                                  {isAdding ? L.adding : L.add}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* b2: favorito */}
+                        <button
+                          onClick={handleFavorite}
+                          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
+                          aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
+                          title={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
+                        >
+                          {isFavorited ? (
+                            <FaHeart className="text-red-500 w-5 h-5" />
+                          ) : (
+                            <FiHeart className="text-white/90 w-5 h-5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setIsRatingOpen(true)}
+                          className="px-4 sm:px-5 py-2 rounded-lg bg-[var(--color-darkgreen)] hover:brightness-110 transition text-sm font-semibold shadow-md"
+                        >
+                          {L.rate}
+                        </button>
+
+                        <button
+                          onClick={handleViewDetails}
+                          className="px-4 sm:px-5 py-2 rounded-lg bg-transparent ring-1 ring-white/15 hover:ring-white/30 hover:bg-white/5 transition text-sm"
+                        >
+                          {t("viewDetails")}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
             </div>
+
+            <RatingModal
+              isOpen={isRatingOpen}
+              onClose={() => setIsRatingOpen(false)}
+              mediaId={id}
+              mediaType="movie"
+              onSuccess={() => {}}
+            />
           </>
         )}
       </AnimatePresence>
