@@ -15,10 +15,15 @@ export type MediaType = (Movie | Series | Album) & {
 
 type Fetcher = (id: string, locale: string) => Promise<Movie | Series | Album | null>;
 
+// 🔧 adapter: mantém a tipagem do Fetcher e reaproveita seu fetchAlbumById atual
+const fetchAlbumForList: Fetcher = async (id, _locale) => {
+  return fetchAlbumById(id);
+};
+
 const fetchMap: Record<"movie" | "series" | "album", Fetcher> = {
   movie: fetchMovieById,
   series: fetchSerieById,
-  album: fetchAlbumById,
+  album: fetchAlbumForList, // 👈 usa o adapter
 };
 
 // ---------- Utils ----------
@@ -65,7 +70,7 @@ export async function createCustomList(
 export async function fetchListContent(
   memberId: number,
   listName: string,
-  locale: string, // Adicionar locale como parâmetro
+  locale: string, // mantém locale, usado por movie/series
   opts?: { signal?: AbortSignal }
 ): Promise<MediaType[]> {
   const items = (await apiFetch(`/customList/getContent/${memberId}/${encodeURIComponent(listName)}`, {
@@ -81,7 +86,7 @@ export async function fetchListContent(
       try {
         const type = coerceType(item.mediaType);
         if (!type) return null;
-          const media = await fetchMap[type](String(item.mediaId), locale);
+        const media = await fetchMap[type](String(item.mediaId), locale);
         return media ? ({ ...media, internalId: item.id } as MediaType) : null;
       } catch {
         return null;
@@ -99,13 +104,11 @@ export async function addContentToList(
   opts?: { signal?: AbortSignal }
 ): Promise<"success" | "duplicate" | "error"> {
   try {
-    // backend ignora campos extras, mas mandamos só os necessários:
     const payload = {
       memberId: data.memberId,
       mediaId: data.mediaId,
       mediaType: data.mediaType,
       listName: data.listName,
-      
     };
 
     await apiFetch("/customList/addContent", {
@@ -154,7 +157,7 @@ export async function removeContentFromList(a: any, b?: any, c?: any): Promise<v
 export async function fetchMemberLists(
   _token: string | undefined,
   memberId: number,
-  language: string, // Novo parâmetro para idioma
+  language: string,
   opts?: { signal?: AbortSignal }
 ): Promise<CustomList[]> {
   const url = `/customList/getList/${memberId}?language=${encodeURIComponent(language)}`;
@@ -195,7 +198,7 @@ export async function updateCustomList(a: any, b?: any, c?: any): Promise<void> 
   const payload = {
     id: data.id,
     listName: data.listName,
-    list_description: data.list_description, // <- campo exato do backend
+    list_description: data.list_description,
   };
 
   await apiFetch("/customList/update", {
