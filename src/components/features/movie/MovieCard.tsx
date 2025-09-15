@@ -1,4 +1,3 @@
-// src/components/features/movie/MovieCard.tsx
 "use client";
 
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -34,7 +33,6 @@ const mapLocaleToTMDBLanguage = (locale: string): string => {
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnL3N2ZyI+PHJlY3QgZmlsbD0iIzk5OTk5OSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==";
 
-// strings PT-BR p/ evitar erro do intl
 const L = {
   addToList: "Adicionar à lista",
   selectList: "Selecione uma lista",
@@ -44,7 +42,6 @@ const L = {
   ratingLabel: "nota",
 };
 
-// melhora a qualidade do poster/backdrop se for URL do TMDB
 function upgradePosterQuality(src?: string | null): string | null {
   if (!src) return null;
   try {
@@ -100,7 +97,6 @@ function MovieCardBase({
     setShowAddPanel(false);
   }, []);
 
-  // fecha ao clicar fora — mas NÃO quando o modal de avaliação estiver aberto
   const handleCloseGuarded = useCallback(() => {
     if (isRatingOpen) return;
     handleClose();
@@ -108,7 +104,6 @@ function MovieCardBase({
 
   useOutsideClick(modalRef, handleCloseGuarded);
 
-  // média scoreIt
   useEffect(() => {
     let controller = new AbortController();
     const load = async () => {
@@ -146,7 +141,6 @@ function MovieCardBase({
     };
   }, [id]);
 
-  // scroll lock
   useEffect(() => {
     if (!isOpen) return;
     const { body, documentElement } = document;
@@ -171,7 +165,6 @@ function MovieCardBase({
     };
   }, [isOpen]);
 
-  // ESC fecha — não fecha se o modal de avaliação estiver aberto
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -181,7 +174,6 @@ function MovieCardBase({
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, isRatingOpen, handleClose]);
 
-  // favorito inicial
   useEffect(() => {
     (async () => {
       try {
@@ -194,7 +186,6 @@ function MovieCardBase({
     })();
   }, [id, member, t, tmdbLanguage]);
 
-  // listas
   useEffect(() => {
     if (!isOpen || !member) return;
     (async () => {
@@ -333,7 +324,7 @@ function MovieCardBase({
                           src={(backdropBest || posterBest)!}
                           alt={`${title} backdrop`}
                           fill
-                          className="object-contain"   // mostra a imagem completa
+                          className="object-contain"   
                           sizes="100vw"
                           placeholder="blur"
                           blurDataURL={BLUR_DATA_URL}
@@ -345,7 +336,6 @@ function MovieCardBase({
                       )}
                     </div>
 
-                    {/* DESKTOP: poster vertical em alta */}
                     <div className="hidden lg:block relative w-full h-[540px] rounded-xl overflow-hidden bg-black/30 ring-1 ring-white/10 shadow-xl">
                       {posterBest ? (
                         <Image
