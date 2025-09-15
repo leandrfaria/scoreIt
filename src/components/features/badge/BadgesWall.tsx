@@ -66,6 +66,13 @@ export default function BadgesWall({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const refetchLockRef = useRef(false);
 
+  const notifyOnce = (badge: BadgeResponse) => {
+    const key = (badge.code || badge.name || "").toString();
+    if (!key || seenRef.current.has(key)) return;
+    toast.success(t("unlocked_with_name", { name: badge.name }), { icon: "🏅" });
+    seenRef.current.add(key);
+  };
+
   const refetchNow = async () => {
     if (refetchLockRef.current) return;
     refetchLockRef.current = true;
@@ -77,19 +84,16 @@ export default function BadgesWall({
       unlockedRef.current = current;
       setUnlocked(current);
 
+      // novas conquistas ganhas desde a última leitura
       const gained = diffNewBadges(previous, current);
-      const notSeen = gained.find(
+      const firstNotSeen = gained.find(
         (b) => !seenRef.current.has((b.code || b.name || "").toString())
       );
-      if (notSeen) {
-        const key = (notSeen.code || notSeen.name || "").toString();
-        if (key) {
-          seenRef.current.add(key);
-          saveSeen(memberId, seenRef.current);
-        }
-        setModalBadge(notSeen);
+      if (firstNotSeen) {
+        notifyOnce(firstNotSeen);
+        saveSeen(memberId, seenRef.current);
+        setModalBadge(firstNotSeen);
         setModalOpen(true);
-        toast.success(t("unlocked_with_name", { name: notSeen.name }), { icon: "🏅" });
       }
     } catch (e) {
       // silencioso: não deixa quebrar UI
@@ -102,7 +106,22 @@ export default function BadgesWall({
       const list = await fetchMemberBadges(memberId);
       unlockedRef.current = list;
       setUnlocked(list);
+
+      // carrega badges já vistas
       seenRef.current = loadSeen(memberId);
+
+      // ⚠️ AVISO AO ABRIR PERFIL:
+      // qualquer badge desbloqueada que ainda não foi avisada gera um toast (uma única vez).
+      let changed = false;
+      for (const b of list) {
+        const key = (b.code || b.name || "").toString();
+        if (key && !seenRef.current.has(key)) {
+          notifyOnce(b);
+          changed = true;
+        }
+      }
+      if (changed) saveSeen(memberId, seenRef.current);
+
       setLoading(false);
     } catch (e) {
       console.error("Erro ao carregar badges:", e);
@@ -166,6 +185,9 @@ export default function BadgesWall({
                   {items.map((entry) => {
                     const isUnlocked = unlockedKeySet.has(entry.code);
                     const img = getBadgeImage(entry, isUnlocked);
+                    const { plural, singular } = getCategoryLabels(entry.code);
+                    const req = `Requisito: avalie ${entry.goal} ${entry.goal === 1 ? singular : plural} para desbloquear.`;
+
                     return (
                       <div
                         key={entry.code}
@@ -189,16 +211,14 @@ export default function BadgesWall({
                           </div>
                           <div className="min-w-0">
                             <p className="text-white text-base font-medium truncate">{entry.name}</p>
-                            <p className="text-[12px] text-white/60">
-                              {g.label}
-                            </p>
+                            <p className="text-[12px] text-white/60">{g.label}</p>
                           </div>
                         </div>
 
-                        {/* tooltip simples (sem progresso pois não há endpoint) */}
+                        {/* tooltip com requisito claro */}
                         <div className="pointer-events-none absolute left-0 right-0 -bottom-2 translate-y-full opacity-0 group-hover:opacity-100 group-hover:translate-y-[10px] transition mx-3 rounded-lg bg-neutral-900/95 ring-1 ring-white/10 p-3 shadow-xl">
                           <p className="text-xs text-white/80">
-                            {isUnlocked ? "Conquista desbloqueada!" : "Avalie conteúdos para desbloquear."}
+                            {isUnlocked ? `Você já desbloqueou. ${req}` : req}
                           </p>
                         </div>
                       </div>
@@ -237,4 +257,12 @@ export default function BadgesWall({
       />
     </>
   );
+}
+
+/* ===== helpers ===== */
+function getCategoryLabels(code: string) {
+  const prefix = (code || "").split("_")[0]; // MOVIE | SERIES | ALBUM
+  if (prefix === "MOVIE") return { plural: "filmes", singular: "filme" };
+  if (prefix === "SERIES") return { plural: "séries", singular: "série" };
+  return { plural: "álbuns", singular: "álbum" };
 }
