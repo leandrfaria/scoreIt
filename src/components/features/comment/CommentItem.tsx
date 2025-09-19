@@ -32,18 +32,20 @@ export default function CommentItem({
   const [deleteToastOpen, setDeleteToastOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // --- Função para formatar data no formato DD/MM/YYYY HH:MM ---
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // meses começam em 0
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
+// --- Função para formatar data no formato DD/MM/YYYY HH:MM sem aplicar fuso horário ---
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
 
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
+  // espera formato "YYYY-MM-DDTHH:MM:SS" ou "YYYY-MM-DDTHH:MM:SS.sss"
+  const [datePart, timePart] = dateStr.split("T");
+  if (!timePart) return datePart;
+
+  const [year, month, day] = datePart.split("-");
+  const [hour, minute] = timePart.split(":");
+
+  return `${day}/${month}/${year} ${hour}:${minute}`;
+};
+
 
 
   
