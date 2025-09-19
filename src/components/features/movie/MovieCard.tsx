@@ -33,15 +33,6 @@ const mapLocaleToTMDBLanguage = (locale: string): string => {
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnL3N2ZyI+PHJlY3QgZmlsbD0iIzk5OTk5OSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==";
 
-const L = {
-  addToList: "Adicionar à lista",
-  selectList: "Selecione uma lista",
-  add: "Adicionar",
-  adding: "Adicionando...",
-  rate: "Avaliar",
-  ratingLabel: "nota",
-};
-
 function upgradePosterQuality(src?: string | null): string | null {
   if (!src) return null;
   try {
@@ -86,6 +77,16 @@ function MovieCardBase({
   const locale = useLocale();
   const t = useTranslations("MovieCard");
   const { member } = useMember();
+
+  // ✅ Objeto de traduções agora dentro do componente
+  const L = {
+    addToList: t("addToList"),
+    selectList: t("selectList"),
+    add: t("add"),
+    adding: t("adding"),
+    rate: t("rate"),
+    ratingLabel: t("ratingLabel"),
+  };
 
   const tmdbLanguage = useMemo(() => mapLocaleToTMDBLanguage(locale), [locale]);
   const posterBest = useMemo(() => upgradePosterQuality(posterUrl) ?? posterUrl ?? null, [posterUrl]);
@@ -241,7 +242,7 @@ function MovieCardBase({
 
   const handleViewDetails = useCallback(() => router.push(`/${locale}/movie/${id}`), [id, locale, router]);
 
-  const ratingText = scoreitAverage == null ? "Sem Nota" : scoreitAverage.toFixed(1);
+  const ratingText = scoreitAverage == null ? t("noScore") : scoreitAverage.toFixed(1);
 
   return (
     <>

@@ -202,7 +202,7 @@ export function AlbumCard({
     exit: { opacity: 0, y: reduceMotion ? 0 : 24, transition: { duration: reduceMotion ? 0 : 0.2 } },
   };
 
-  const ratingText = scoreitAverage == null ? "Sem Nota" : scoreitAverage.toFixed(1); // ⭐
+  const ratingText = scoreitAverage == null ? t("noScore") : scoreitAverage.toFixed(1); // ⭐
 
   return (
     <>
