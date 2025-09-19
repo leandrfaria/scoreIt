@@ -32,6 +32,22 @@ export default function CommentItem({
   const [deleteToastOpen, setDeleteToastOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // --- Função para formatar data no formato DD/MM/YYYY HH:MM ---
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // meses começam em 0
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+
+  
+
   // carrega avatar (mantém avatar/nome mesmo se comentário for deletado)
   useEffect(() => {
     const authorId = comment.authorId;
@@ -139,13 +155,10 @@ export default function CommentItem({
       inputRef.current.focus();
       try {
         inputRef.current.setSelectionRange(len, len);
-      } catch {
-        // alguns browsers/SSRed não permitem, mas tentamos
-      }
+      } catch {}
     }
   }, [showReply, initialValue]);
 
-  // conteúdo a mostrar (se comentário removido, mantemos nome/avatar e mostramos texto de removido)
   const displayContent = comment.content?.trim() || t("commentDeleted");
 
   return (
@@ -161,10 +174,9 @@ export default function CommentItem({
         <div className="flex-1 flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2">
             <strong className="text-white text-sm">{comment.authorName ?? t("unknownUser")}</strong>
-            <span className="text-xs text-gray-400">• {new Date(comment.createdAt).toLocaleString()}</span>
+            <span className="text-xs text-gray-400">• {formatDate(comment.createdAt)}</span>
           </div>
 
-          {/* quebra de linha e destaque de @ com verde claro */}
           <p className="text-gray-200 break-words whitespace-pre-wrap">
             {displayContent.split(" ").map((word, i) =>
               word.startsWith("@") ? (
