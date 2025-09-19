@@ -28,7 +28,6 @@ export default function LoggedOutHome() {
   const locale = useLocale();
   const t = useTranslations("cadastro");
 
-
   useEffect(() => {
     setHasMounted(true);
     const posters = [
@@ -43,14 +42,14 @@ export default function LoggedOutHome() {
   }, []);
 
   const devs = [
-    { name: "Bruno Feliciano", role: "Back end", ig: "brufell" },
-    { name: "Leandro Faria", role: "Front end", ig: "leandrfaria" },
-    { name: "Thiago Luz", role: "Front end", ig: "thiago.luzr" },
+    { name: "Bruno Feliciano", role: t("roleBackend"), ig: "brufell" },
+    { name: "Leandro Faria", role: t("roleFrontend"), ig: "leandrfaria" },
+    { name: "Thiago Luz", role: t("roleFrontend"), ig: "thiago.luzr" },
   ];
 
   return (
     <PageTransition>
-      {/* HERO — agora centralizado e com sobreposição preta bem forte */}
+      {/* HERO */}
       <section
         className="relative w-full min-h-[calc(100vh-5rem)] flex items-center justify-center text-center"
         style={{
@@ -60,7 +59,7 @@ export default function LoggedOutHome() {
           backgroundRepeat: "no-repeat",
         }}
       >
-        {/* Camadas de escurecimento (bem agressivas) */}
+        {/* Camadas de escurecimento */}
         <div className="pointer-events-none absolute inset-0 -z-10 bg-black/92" />
         <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-black/80 via-black/85 to-black/95" />
         <div className="pointer-events-none absolute inset-0 -z-10 mix-blend-multiply bg-black/90" />
@@ -94,36 +93,32 @@ export default function LoggedOutHome() {
           </div>
         </div>
 
-        {/* Fade no rodapé do hero */}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-black/95" />
       </section>
 
-      {/* SOBRE  */}
+      {/* SOBRE */}
       <section id="sobre" className="relative w-full bg-black py-14 md:py-20">
-  <Container>
-    <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-14">
-      <div className="flex justify-center md:justify-end">
-        <div className="w-full max-w-[px]"> 
-          <img
-            src="/logo/logo.png"
-            alt="Logo ScoreIt"
-            className="w-full h-auto object-contain mx-auto"
-          />
-        </div>
-      </div>
+        <Container>
+          <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-14">
+            <div className="flex justify-center md:justify-end">
+              <div className="w-full">
+                <img
+                  src="/logo/logo.png"
+                  alt="Logo ScoreIt"
+                  className="w-full h-auto object-contain mx-auto"
+                />
+              </div>
+            </div>
 
             <div className="rounded-2xl p-6 md:p-8 bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">Sobre o ScoreIt</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">{t("sobreTitulo")}</h2>
               <p className="mt-4 text-emerald-100/90 leading-relaxed">
-                O ScoreIt é um projeto para quem ama cultura pop. Aqui você pode descobrir novidades, criar listas e{" "}
-                <span className="font-semibold text-emerald-300">avaliar</span> o que assiste e ouve — filmes, séries e
-                álbuns. Nosso objetivo é reunir a sua experiência em um só lugar, com uma interface rápida e elegante.
-                Construa seu perfil, compartilhe gostos com amigos e acompanhe o que está bombando agora.
+                {t("sobreTexto")}
               </p>
               <ul className="mt-5 space-y-2 text-emerald-100/80">
-                <li>• Acompanhe lançamentos e tendências</li>
-                <li>• Monte listas e diário de assistidos/ouvintes</li>
-                <li>• Dê notas, escreva reviews e compare gostos</li>
+                <li>• {t("sobreItem1")}</li>
+                <li>• {t("sobreItem2")}</li>
+                <li>• {t("sobreItem3")}</li>
               </ul>
 
               <div className="mt-6 flex gap-3">
@@ -131,13 +126,13 @@ export default function LoggedOutHome() {
                   href={`/${locale}/auth?tab=signup`}
                   className="px-5 py-2.5 rounded-md font-semibold text-white bg-darkgreen hover:brightness-110 transition"
                 >
-                  começar agora
+                  {t("comecarAgora")}
                 </Link>
                 <a
                   href="#topo"
                   className="px-5 py-2.5 rounded-md font-semibold text-white/90 bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-sm transition"
                 >
-                  ver topo
+                  {t("verTopo")}
                 </a>
               </div>
             </div>
@@ -145,16 +140,14 @@ export default function LoggedOutHome() {
         </Container>
       </section>
 
-      {/* DESENVOLVEDORES — nova seção */}
+      {/* DESENVOLVEDORES */}
       <section
         id="devs"
         className="relative w-full py-16 md:py-20 bg-[radial-gradient(1200px_600px_at_50%_-10%,_rgba(16,185,129,0.06),_transparent_60%)]"
       >
         <Container>
-          <h2 className="text-center text-3xl md:text-4xl font-bold text-white">Desenvolvedores</h2>
-          <p className="mt-3 text-center text-emerald-100/80">
-            Quem está por trás do projeto.
-          </p>
+          <h2 className="text-center text-3xl md:text-4xl font-bold text-white">{t("devsTitulo")}</h2>
+          <p className="mt-3 text-center text-emerald-100/80">{t("devsTexto")}</p>
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {devs.map((d) => (
@@ -172,7 +165,7 @@ export default function LoggedOutHome() {
                     href={`https://instagram.com/${d.ig}`}
                     target="_blank"
                     className="inline-flex items-center gap-2 rounded-md border border-emerald-400/30 px-3 py-2 text-sm font-medium text-white/95 bg-emerald-600/20 hover:bg-emerald-600/30 hover:border-emerald-400/60 transition"
-                    aria-label={`Instagram de ${d.name}`}
+                    aria-label={`${t("igDe")} ${d.name}`}
                   >
                     <InstagramIcon className="h-4 w-4 text-white" />
                     <span>@{d.ig}</span>
@@ -184,7 +177,7 @@ export default function LoggedOutHome() {
         </Container>
       </section>
 
-      {/* Estilos/Animações (headline mais lenta e suave) */}
+      {/* Estilos globais */}
       <style jsx global>{`
         .headline-reveal {
           opacity: 0;

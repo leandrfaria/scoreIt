@@ -26,7 +26,7 @@ import { fetchMemberLists } from "@/services/customList/list";
 import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
 import BadgesWall from "@/components/features/badge/BadgesWall";
-import { getToken } from "@/lib/api";
+import { apiBase, getToken } from "@/lib/api";
 
 function normalizeHandle(v: string) {
   return v.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
@@ -88,7 +88,7 @@ export default function Profile() {
     const token = getToken();
     if (!token) return;
     Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id, locale)]).catch(console.error);
-  }, [member]);
+  }, [member, locale]); // adicionei locale porque loadCustomLists depende dele
 
   const handleUpdateMember = async (
     formData: { name: string; bio: string; birthDate: string; gender: string; handle: string },
@@ -103,14 +103,21 @@ export default function Profile() {
       if (imageFile) {
         const formDataImage = new FormData();
         formDataImage.append("file", imageFile);
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL_DEV || "http://localhost:8080"}/api/images/upload/${member.id}`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: formDataImage,
-          }
-        );
+
+        const uploadUrl = `${apiBase}/api/images/upload/${member.id}`;
+
+        const res = await fetch(uploadUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`, // NÃO setar Content-Type aqui
+          },
+          body: formDataImage,
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`Upload failed: ${res.status} ${text || res.statusText}`);
+        }
       }
 
       const payload = {
@@ -133,6 +140,7 @@ export default function Profile() {
       toast.error(t("error_updating_profile"));
     }
   };
+
 
   return (
     <ProtectedRoute>
