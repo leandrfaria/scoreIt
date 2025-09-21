@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import { useLocale, useTranslations } from "next-intl";
 
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
-import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
 import ReviewsCarouselSection from "@/components/features/review/ReviewsCarouselSection";
 import CustomListModal from "@/components/features/customList/CustomListModal";
@@ -27,6 +26,7 @@ import { CustomList } from "@/types/CustomList";
 import { Member } from "@/types/Member";
 import BadgesWall from "@/components/features/badge/BadgesWall";
 import { apiBase, getToken } from "@/lib/api";
+import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
 
 function normalizeHandle(v: string) {
   return v.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
