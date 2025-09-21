@@ -15,6 +15,8 @@ import { SeriesList } from "@/components/features/serie/SeriesList";
 import { MovieList } from "@/components/features/movie/MovieList";
 import LoggedOutHome from "@/components/layout/oggedOutHome";
 import TopAlbums from "@/components/features/album/TopAlbums";
+import RecommendedMoviesCarouselSection from "@/components/features/movie/RecommendedMoviesCarouselSection";
+import RecommendedSeriesCarouselSection from "@/components/features/serie/RecommendedSeriesCarouselSection";
 
 export default function Home() {
   const { isLoggedIn } = useAuthContext();
@@ -44,7 +46,7 @@ export default function Home() {
               </>
             ) : activeTab === "series" ? (
               <>
-                <RandomSeriesCarousel />
+                <RecommendedSeriesCarouselSection />
                 <OnAirSeriesCarouselSection />
                 <h2 className="text-white text-xl font-bold mt-10 mb-4">
                   {t("todas_series")}
@@ -53,7 +55,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <RandomMoviesCarousel />
+                <RecommendedMoviesCarouselSection />
                 <NowPlayingCarouselSection />
                 <h2 className="text-white text-xl font-bold mt-10 mb-4">
                   {t("todos_filmes")}
