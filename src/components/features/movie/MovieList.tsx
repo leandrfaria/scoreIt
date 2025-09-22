@@ -159,9 +159,9 @@ useEffect(() => {
             ref={searchRef}
             value={searchTerm}
             onChange={handleSearchChange}
-            placeholder="Buscar filmes..."
+            placeholder={t("SearchFilms")}
             className="px-3 py-2 rounded-md border border-darkgreen focus:outline-none w-full text-lightgreen bg-black placeholder:text-neutral-400"
-            aria-label="Buscar filmes"
+            aria-label={t("SearchFilms")}
           />
         </div>
 

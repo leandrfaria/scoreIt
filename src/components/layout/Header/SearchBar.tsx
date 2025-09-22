@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { FaSearch } from "react-icons/fa";
 import { useAuthContext } from "@/context/AuthContext";
 import { Member } from "@/types/Member";
+import { apiFetch } from "@/lib/api";
 
 const MIN_CHARS = 3;
 const DEBOUNCE_MS = 300;
@@ -13,6 +14,7 @@ const DEBOUNCE_MS = 300;
 export default function SearchBar() {
   const { isLoggedIn } = useAuthContext();
   const locale = useLocale();
+  const t = useTranslations("Mobileheader");
 
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,9 +22,9 @@ export default function SearchBar() {
   const [isLoading, setIsLoading] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
   const debounced = useDebouncedValue(searchTerm.trim(), DEBOUNCE_MS);
 
-  // Fechar quando clicar fora (hook sempre é chamado; o corpo respeita o estado de login)
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -36,51 +38,39 @@ export default function SearchBar() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [isLoggedIn]);
 
-  // Buscar membros (hook sempre é chamado; o corpo respeita o estado de login)
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn || debounced.length < MIN_CHARS) {
       setResults([]);
       setIsLoading(false);
       return;
     }
 
-    if (debounced.length < MIN_CHARS) {
-      setResults([]);
-      setIsLoading(false);
-      return;
-    }
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
 
-    let aborted = false;
     const fetchMembers = async () => {
       try {
         setIsLoading(true);
-        const token = localStorage.getItem("authToken");
-        const res = await fetch(
-          `http://localhost:8080/member/search?name=${encodeURIComponent(
-            debounced
-          )}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          }
+        const data = await apiFetch(
+          `/member/search?handle=${encodeURIComponent(debounced)}`,
+          { method: "GET", auth: true, signal: controller.signal }
         );
-        if (!res.ok) {
-          if (!aborted) setResults([]);
-          return;
-        }
-        const data: Member[] = await res.json();
-        if (!aborted) setResults(Array.isArray(data) ? data : []);
-      } catch {
-        if (!aborted) setResults([]);
+
+        if (data === undefined) return; // abortado
+        setResults(Array.isArray(data) ? (data as Member[]) : []);
+      } catch (err) {
+        console.error(t("deleteError"), err);
+        setResults([]);
       } finally {
-        if (!aborted) setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
 
     fetchMembers();
-    return () => {
-      aborted = true;
-    };
-  }, [debounced, isLoggedIn]);
+
+    return () => controller.abort();
+  }, [debounced, isLoggedIn, t]);
 
   const toggle = () => setIsSearchVisible((v) => !v);
 
@@ -89,13 +79,13 @@ export default function SearchBar() {
     setSearchTerm("");
     setResults([]);
     setIsLoading(false);
+    controllerRef.current?.abort();
   };
 
-  // Aqui sim podemos ocultar toda a UI quando não estiver logado (depois de todos os hooks terem sido chamados)
   if (!isLoggedIn) return null;
 
   const hasList = results.length > 0;
-  const showList = isSearchVisible && (hasList || isLoading);
+  const showList = isSearchVisible && (hasList || isLoading || debounced.length >= MIN_CHARS);
 
   return (
     <div
@@ -106,22 +96,20 @@ export default function SearchBar() {
       <button
         onClick={toggle}
         className="focus:outline-none mr-2"
-        aria-label="Abrir busca de usuários"
+        aria-label={t("openMenu")}
         aria-expanded={isSearchVisible}
       >
         <FaSearch className="text-white w-5 h-5" />
       </button>
 
       <div
-        className={`transition-all duration-300 overflow-hidden ${
-          isSearchVisible ? "w-48" : "w-0"
-        }`}
+        className={`transition-all duration-300 overflow-hidden ${isSearchVisible ? "w-48" : "w-0"}`}
       >
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar usuários..."
+          placeholder={t("searchUsersPlaceholder")}
           className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none w-full text-sm"
           autoCorrect="off"
           autoCapitalize="none"
@@ -133,10 +121,10 @@ export default function SearchBar() {
         <div
           className="absolute top-full left-0 mt-2 z-50 bg-gray-800 rounded-md w-56 shadow-lg border border-gray-700"
           role="listbox"
-          aria-label="Resultados da busca"
+          aria-label={t("searchUsers")}
         >
           {isLoading && (
-            <div className="px-4 py-2 text-sm text-gray-300">Carregando…</div>
+            <div className="px-4 py-2 text-sm text-gray-300">{t("loading")}</div>
           )}
 
           {!isLoading && hasList && (
@@ -144,7 +132,7 @@ export default function SearchBar() {
               {results.map((m) => (
                 <li key={m.id}>
                   <Link
-                    href={`/${locale}/profile/${m.id}`}
+                    href={`/${locale}/profile/${normalizeHandle(m.handle) || suggestHandle(m)}`}
                     className="block px-3 py-2 hover:bg-gray-700 rounded transition-colors"
                     onClick={closeSearch}
                   >
@@ -157,9 +145,10 @@ export default function SearchBar() {
                         alt={m.name}
                         className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                       />
-                      <span className="text-white text-sm truncate">
-                        {m.name}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-white text-sm font-medium truncate">{m.name}</span>
+                        <span className="text-gray-400 text-xs truncate">@{m.handle}</span>
+                      </div>
                     </div>
                   </Link>
                 </li>
@@ -168,9 +157,7 @@ export default function SearchBar() {
           )}
 
           {!isLoading && !hasList && debounced.length >= MIN_CHARS && (
-            <div className="px-4 py-2 text-sm text-gray-300">
-              Nenhum usuário encontrado
-            </div>
+            <div className="px-4 py-2 text-sm text-gray-300">{t("noUsersFound")}</div>
           )}
         </div>
       )}
@@ -178,7 +165,7 @@ export default function SearchBar() {
   );
 }
 
-/** hook de debounce simples para evitar excesso de requisições */
+/** hook de debounce simples */
 function useDebouncedValue<T>(value: T, delay: number) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -186,4 +173,20 @@ function useDebouncedValue<T>(value: T, delay: number) {
     return () => clearTimeout(t);
   }, [value, delay]);
   return debounced;
+}
+
+function normalizeHandle(v: string) {
+  return (v || "").replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
+}
+
+function suggestHandle(m?: Member | null) {
+  if (!m) return "user";
+  const fromHandle = normalizeHandle(m?.handle || "");
+  if (fromHandle) return fromHandle;
+  const emailLeft = (m?.email || "").split("@")[0] || "";
+  const fromEmail = normalizeHandle(emailLeft);
+  if (fromEmail) return fromEmail;
+  const fromName = normalizeHandle((m?.name || "").replace(/\s+/g, "."));
+  if (fromName) return fromName;
+  return `user${m?.id || ""}`;
 }

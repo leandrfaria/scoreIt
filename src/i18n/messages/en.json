@@ -183,6 +183,7 @@
   },
   "MovieList": {
     "loading": "Loading content...",
+    "SearchFilms": "Search Movies...",
     "noMoviesFound": "No movies found.",
     "noFavSeries": "No serie found",
     "noFavAlbum": "No albums found",
@@ -530,6 +531,82 @@
   "loginRequired": "Please log in to comment",
   "commentCreated": "Comment created!",
   "commentCreateError": "Failed to create comment"
-}
-
+},
+  "Mobileheader": {
+    "changeLanguage": "Change language",
+    "searchUsers": "Search users",
+    "searchUsersPlaceholder": "Search users...",
+    "loading": "Loading…",
+    "noUsersFound": "No users found",
+    "openMenu": "Open menu",
+    "perfil": "Profile",
+    "feed": "Feed",
+    "login": "Login",
+    "logout": "Logout",
+    "deleteUser": "Delete account",
+    "user": "User",
+    "deleteError": "Error deleting user",
+    "deleteModal": {
+      "title": "Delete Account",
+      "description": "Are you sure you want to delete your account? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
+  },
+  "recomendados": {
+    "changeLanguage": "Change language",
+    "searchUsers": "Search users",
+    "searchUsersPlaceholder": "Search users...",
+    "loading": "Loading…",
+    "noUsersFound": "No users found",
+    "openMenu": "Open menu",
+    "perfil": "Profile",
+    "feed": "Feed",
+    "login": "Login",
+    "logout": "Logout",
+    "deleteUser": "Delete account",
+    "user": "User",
+    "deleteError": "Error deleting user",
+    "deleteModal": {
+      "title": "Delete Account",
+      "description": "Are you sure you want to delete your account? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "recommendedForYou": "Recommended for you",
+    "loginToSeeMovies": "Log in to see movie recommendations.",
+    "loadingMovies": "Loading recommendations…",
+    "noRecommendedMovies": "There are no movie recommendations for you yet.",
+    "moviesLoadError": "Failed to load movie recommendations"
+  },
+  "recomendadoSeries": {
+    "changeLanguage": "Change language",
+    "searchUsers": "Search users",
+    "searchUsersPlaceholder": "Search users...",
+    "loading": "Loading…",
+    "noUsersFound": "No users found",
+    "openMenu": "Open menu",
+    "perfil": "Profile",
+    "feed": "Feed",
+    "login": "Login",
+    "logout": "Logout",
+    "deleteUser": "Delete account",
+    "user": "User",
+    "deleteError": "Error deleting user",
+    "deleteModal": {
+      "title": "Delete Account",
+      "description": "Are you sure you want to delete your account? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "recommendedForYou": "Recommended for you",
+    "loginToSeeMovies": "Log in to see movie recommendations.",
+    "loadingMovies": "Loading recommendations…",
+    "noRecommendedMovies": "There are no movie recommendations for you yet.",
+    "moviesLoadError": "Failed to load movie recommendations",
+    "loginToSeeSeries": "Log in to see series recommendations.",
+    "loadingSeries": "Loading recommendations…",
+    "noRecommendedSeries": "There are no series recommendations for you yet.",
+    "seriesLoadError": "Failed to load series recommendations"
+  }
 }

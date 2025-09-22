@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
@@ -10,72 +10,74 @@ import { FaBars, FaTimes, FaSearch } from "react-icons/fa";
 import { useAuthContext } from "@/context/AuthContext";
 import { useMember } from "@/context/MemberContext";
 import type { Member } from "@/types/Member";
+import { apiFetch } from "@/lib/api";
 
+const MIN_CHARS = 3;
 const DEBOUNCE_MS = 300;
 
 export default function MobileMenu() {
   const { isLoggedIn, setIsLoggedIn } = useAuthContext();
   const { member } = useMember();
   const locale = useLocale();
-  const t = useTranslations("header");
+  const t = useTranslations("Mobileheader");
   const pathname = usePathname();
 
   const [open, setOpen] = useState(false);
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
 
-  // --- busca mobile ---
   const [q, setQ] = useState("");
-  const debouncedQ = useDebounced(q.trim(), DEBOUNCE_MS);
   const [results, setResults] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
+  const controllerRef = useRef<AbortController | null>(null);
+  const debouncedQ = useDebouncedValue(q.trim(), DEBOUNCE_MS);
 
-  // fecha automaticamente se redimensionar para desktop
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Fechar dropdown ao clicar fora
   useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth >= 1024) setOpen(false);
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  // busca (debounced)
-  useEffect(() => {
-    let aborted = false;
-
-    const run = async () => {
-      if (debouncedQ.length < 3 || !isLoggedIn) {
-        if (!aborted) setResults([]);
-        return;
+    if (!isLoggedIn) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(e.target as Node)) {
+        setResults([]);
       }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [isLoggedIn]);
+
+  // Buscar membros
+  useEffect(() => {
+    if (!isLoggedIn || debouncedQ.length < MIN_CHARS) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    const fetchMembers = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("authToken");
-        const res = await fetch(
-          `http://localhost:8080/member/search?name=${encodeURIComponent(
-            debouncedQ
-          )}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          }
+        const data = await apiFetch(
+          `/member/search?handle=${encodeURIComponent(debouncedQ)}`,
+          { method: "GET", auth: true, signal: controller.signal }
         );
-        if (!res.ok) {
-          if (!aborted) setResults([]);
-          return;
-        }
-        const data: Member[] = await res.json();
-        if (!aborted) setResults(Array.isArray(data) ? data : []);
-      } catch {
-        if (!aborted) setResults([]);
+        if (data === undefined) return; // abortado
+        setResults(Array.isArray(data) ? (data as Member[]) : []);
+      } catch (err) {
+        console.error(t("deleteError"), err);
+        setResults([]);
       } finally {
-        if (!aborted) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [debouncedQ, isLoggedIn]);
+    fetchMembers();
+    return () => controller.abort();
+  }, [debouncedQ, isLoggedIn, t]);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -95,21 +97,11 @@ export default function MobileMenu() {
       if (token) newPath += `?token=${encodeURIComponent(token)}`;
 
       window.location.href = newPath;
-    } catch {
-      try {
-        const token = new URL(window.location.href).searchParams.get("token");
-        window.location.href = token
-          ? `/${newLocale}?token=${encodeURIComponent(token)}`
-          : `/${newLocale}`;
-      } catch {
-        window.location.href = `/${newLocale}`;
-      }
     } finally {
       setIsChangingLanguage(false);
     }
   };
 
-  // modal de excluir conta
   const [confirmOpen, setConfirmOpen] = useState(false);
   const deleteUser = async () => {
     try {
@@ -127,20 +119,19 @@ export default function MobileMenu() {
         setIsLoggedIn(false);
         window.location.href = `/${locale}/auth?tab=login`;
       } else {
-        console.error("Erro ao deletar usuário:", res.statusText);
+        console.error(t("deleteError"), res.statusText);
       }
     } catch (e) {
-      console.error("Erro ao deletar usuário:", e);
+      console.error(t("deleteError"), e);
     }
   };
 
-  // botão hambúrguer + painel
   return (
     <>
       <button
         onClick={() => setOpen((v) => !v)}
         className="focus:outline-none p-2 hover:bg-gray-800 rounded-md transition-colors"
-        aria-label="Abrir menu"
+        aria-label={t("openMenu")}
         aria-expanded={open}
       >
         {open ? <FaTimes className="text-white w-5 h-5" /> : <FaBars className="text-white w-5 h-5" />}
@@ -149,11 +140,10 @@ export default function MobileMenu() {
       {open && (
         <div className="lg:hidden absolute top-full left-0 right-0 bg-black border-t border-gray-700 shadow-lg z-30">
           <div className="p-4 space-y-4">
-            {/* Busca mobile (somente logado) */}
             {isLoggedIn && (
-              <div>
+              <div ref={containerRef}>
                 <label className="sr-only" htmlFor="mobile-user-search">
-                  Buscar usuários
+                  {t("searchUsers")}
                 </label>
                 <div className="relative">
                   <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -162,7 +152,7 @@ export default function MobileMenu() {
                     type="text"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Buscar usuários..."
+                    placeholder={t("searchUsersPlaceholder")}
                     className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-black text-white"
                     autoCorrect="off"
                     autoCapitalize="none"
@@ -173,50 +163,46 @@ export default function MobileMenu() {
                 {(loading || results.length > 0) && (
                   <div className="mt-2 bg-gray-800 rounded-md max-h-60 overflow-y-auto shadow-lg border border-gray-700">
                     {loading && (
-                      <div className="px-3 py-2 text-sm text-gray-300">
-                        Carregando…
-                      </div>
+                      <div className="px-3 py-2 text-sm text-gray-300">{t("loading")}</div>
                     )}
-                    {!loading &&
-                      results.map((m) => (
-                        <Link
-                          key={m.id}
-                          href={`/${locale}/profile/${m.id}`}
-                          className="block px-3 py-2 hover:bg-gray-700 transition-colors"
-                          onClick={() => setOpen(false)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={
-                                m.profileImageUrl ||
-                                "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
-                              }
-                              alt={m.name}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                            <span className="text-white text-sm truncate">
-                              {m.name}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    {!loading && results.length === 0 && debouncedQ.length >= 3 && (
-                      <div className="px-3 py-2 text-sm text-gray-300">
-                        Nenhum usuário encontrado
-                      </div>
+
+                    {!loading && results.length > 0 && (
+                      <ul className="max-h-60 overflow-y-auto py-1">
+                        {results.map((m) => (
+                          <li key={m.id}>
+                            <Link
+                              href={`/${locale}/profile/${normalizeHandle(m.handle) || suggestHandle(m)}`}
+                              className="block px-3 py-2 hover:bg-gray-700 rounded transition-colors"
+                              onClick={() => setOpen(false)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={m.profileImageUrl || "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"}
+                                  alt={m.name}
+                                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                />
+                                <div className="flex flex-col">
+                                  <span className="text-white text-sm font-medium truncate">{m.name}</span>
+                                  <span className="text-gray-400 text-xs truncate">@{m.handle}</span>
+                                </div>
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {!loading && results.length === 0 && debouncedQ.length >= MIN_CHARS && (
+                      <div className="px-3 py-2 text-sm text-gray-300">{t("noUsersFound")}</div>
                     )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* (REMOVIDO) Menu de abas mobile dentro do sanduíche
-                Já temos os ícones no header mobile; não precisamos repetir aqui. */}
-
-            {/* Seletor de idioma */}
             <div className="flex items-center justify-between">
               <span className="text-white text-sm font-medium">
-                {t("changeLanguage") ?? "Trocar idioma"}
+                {t("changeLanguage")}
               </span>
               <div className="flex gap-2">
                 <button
@@ -244,7 +230,6 @@ export default function MobileMenu() {
               </div>
             </div>
 
-            {/* Menu do usuário */}
             {isLoggedIn ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-3 pb-3 border-b border-gray-700">
@@ -254,14 +239,14 @@ export default function MobileMenu() {
                         member?.profileImageUrl ||
                         "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
                       }
-                      alt={member?.name ?? "Avatar"}
+                      alt={member?.name ?? t("user")}
                       fill
                       className="object-cover"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-medium text-sm truncate">
-                      {member?.name || "Usuário"}
+                      {member?.name || t("user")}
                     </p>
                   </div>
                 </div>
@@ -279,7 +264,7 @@ export default function MobileMenu() {
                   className="block px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
                   onClick={() => setOpen(false)}
                 >
-                  Feed
+                  {t("feed")}
                 </Link>
 
                 <div className="border-t border-gray-700 pt-2">
@@ -310,13 +295,10 @@ export default function MobileMenu() {
         </div>
       )}
 
-      {/* Modal confirmar exclusão */}
       {confirmOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 p-6 rounded-lg w-full max-w-md shadow-lg">
-            <h2 className="font-bold text-white mb-2">
-              {t("deleteModal.title")}
-            </h2>
+            <h2 className="font-bold text-white mb-2">{t("deleteModal.title")}</h2>
             <p className="text-gray-300 mb-6">{t("deleteModal.description")}</p>
             <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
               <button
@@ -342,11 +324,21 @@ export default function MobileMenu() {
   );
 }
 
-function useDebounced<T>(value: T, delay: number) {
-  const [v, setV] = useState(value);
+// Debounce hook
+function useDebouncedValue<T>(value: T, delay: number) {
+  const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
+    const t = setTimeout(() => setDebounced(value), delay);
     return () => clearTimeout(t);
   }, [value, delay]);
-  return v;
+  return debounced;
+}
+
+// Normalização de handle (igual ao SearchBar)
+function normalizeHandle(handle?: string) {
+  return handle?.toLowerCase().replace(/\s+/g, "-");
+}
+
+function suggestHandle(member: Member) {
+  return normalizeHandle(member.handle) || `user-${member.id}`;
 }

@@ -9,7 +9,7 @@ import { useLocale, useTranslations } from "next-intl";
 import FavouriteAlbumCarouselSection from "@/components/features/album/FavouriteAlbumCarouselSection";
 import FavouriteMoviesCarouselSection from "@/components/features/movie/FavouriteMoviesCarouselSection";
 import FavouriteSeriesCarouselSection from "@/components/features/serie/FavouriteSeriesCarouselSection";
-import { fetchMemberById } from "@/services/user/member";
+import { fetchMemberByHandle } from "@/services/user/member";
 import { useTabContext } from "@/context/TabContext";
 import { useMember } from "@/context/MemberContext";
 import { CustomList } from "@/types/CustomList";
@@ -43,8 +43,8 @@ export default function PublicProfilePage() {
   const [otherMember, setOtherMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { member } = useMember();
-  const { id } = useParams();
+  const { member: loggedMember } = useMember();
+  const { id: handle } = useParams(); // handle do perfil público
   const t = useTranslations("profile");
   const { activeTab } = useTabContext();
   const router = useRouter();
@@ -56,12 +56,12 @@ export default function PublicProfilePage() {
   const [isListsOpen, setIsListsOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
 
-  // Buscar dados do usuário
+  // Buscar dados do usuário pelo handle
   useEffect(() => {
     const controller = new AbortController();
     const run = async () => {
       try {
-        const data = await fetchMemberById(id as string, { signal: controller.signal });
+        const data = await fetchMemberByHandle(handle as string, { signal: controller.signal });
         setOtherMember(data);
       } catch (error) {
         console.error(t("errorFetchingProfile"), error);
@@ -71,17 +71,18 @@ export default function PublicProfilePage() {
     };
     run();
     return () => controller.abort();
-  }, [id, t]);
+  }, [handle, t]);
 
   // Contadores de seguidores e seguindo
   useEffect(() => {
     const run = async () => {
+      if (!otherMember) return;
       try {
         const token = getToken();
-        if (!token || !id) return;
+        if (!token) return;
         const [followerCount, followingCount] = await Promise.all([
-          countFollowers(id as string, token),
-          countFollowing(id as string, token),
+          countFollowers(otherMember.id.toString(), token),
+          countFollowing(otherMember.id.toString(), token),
         ]);
         setFollowers(followerCount);
         setFollowing(followingCount);
@@ -90,24 +91,24 @@ export default function PublicProfilePage() {
       }
     };
     run();
-  }, [id, t]);
+  }, [otherMember, t]);
 
-  // Redireciona para perfil próprio
+  // Redireciona para perfil próprio se handle for do usuário logado
   useEffect(() => {
-    if (member?.id && String(member.id) === id) {
+    if (loggedMember?.id && otherMember?.id && loggedMember.id === otherMember.id) {
       router.replace(`/${locale}/profile`);
     }
-  }, [member, id, router, locale]);
+  }, [loggedMember, otherMember, router, locale]);
 
   // Listas customizadas
   useEffect(() => {
     const controller = new AbortController();
     const run = async () => {
-      if (!id) return;
+      if (!otherMember) return;
       try {
         const token = getToken();
         if (!token) return;
-          const lists = await fetchMemberLists(token, Number(id), locale, { signal: controller.signal });
+        const lists = await fetchMemberLists(token, otherMember.id, locale, { signal: controller.signal });
         setCustomLists(lists);
       } catch (err) {
         console.error(t("errorFetchingCustomLists"), err);
@@ -115,18 +116,13 @@ export default function PublicProfilePage() {
     };
     run();
     return () => controller.abort();
-  }, [id, t]);
+  }, [otherMember, locale, t]);
 
-  if (member?.id && String(member.id) === id) return null;
   if (loading) return <p className="text-white">{t("loading")}</p>;
   if (!otherMember) return <p className="text-white">{t("userNotFound")}</p>;
 
-  function handleOpenListModal(list: CustomList) {
-    setSelectedList(list);
-  }
-  function handleCloseListModal() {
-    setSelectedList(null);
-  }
+  const handleOpenListModal = (list: CustomList) => setSelectedList(list);
+  const handleCloseListModal = () => setSelectedList(null);
 
   return (
     <main className="w-full">
@@ -135,10 +131,10 @@ export default function PublicProfilePage() {
           <ProfileHeader
             member={otherMember}
             t={t}
-            isEditable={false}
             followers={followers}
             following={following}
             setFollowers={setFollowers}
+            loggedMember={loggedMember}
           />
         </div>
       </Container>
@@ -146,16 +142,16 @@ export default function PublicProfilePage() {
       <Container>
         <section className="mt-6 space-y-4">
           <h2 className="text-white text-xl font-semibold">{t("favorites")}</h2>
-          {activeTab === "filmes" && <FavouriteMoviesCarouselSection memberId={id as string} />}
-          {activeTab === "musicas" && <FavouriteAlbumCarouselSection memberId={id as string} />}
-          {activeTab === "series" && <FavouriteSeriesCarouselSection memberId={id as string} />}
+          {activeTab === "filmes" && <FavouriteMoviesCarouselSection memberId={otherMember.id.toString()} />}
+          {activeTab === "musicas" && <FavouriteAlbumCarouselSection memberId={otherMember.id.toString()} />}
+          {activeTab === "series" && <FavouriteSeriesCarouselSection memberId={otherMember.id.toString()} />}
         </section>
       </Container>
 
       <Container>
         <section className="mt-6 space-y-4">
           <h2 className="text-white text-xl font-semibold">{t("recentReviews")}</h2>
-          <ReviewsCarouselSection memberId={id as string} />
+          <ReviewsCarouselSection memberId={otherMember.id.toString()} />
         </section>
       </Container>
 
@@ -176,11 +172,11 @@ export default function PublicProfilePage() {
       <Container>
         <section className="mt-6">
           <h2 className="text-white text-xl font-semibold mb-3">{t("badgesWall")}</h2>
-          <BadgesWall memberId={Number(id)} pollMs={0} />
+          <BadgesWall memberId={otherMember.id} pollMs={0} />
         </section>
       </Container>
 
-      {selectedList && otherMember && (
+      {selectedList && (
         <CustomListModal
           isOpen={true}
           onClose={handleCloseListModal}
@@ -197,24 +193,30 @@ export default function PublicProfilePage() {
 interface ProfileHeaderProps {
   member: Member;
   t: any;
-  isEditable: boolean;
   followers: number;
   following: number;
   setFollowers: React.Dispatch<React.SetStateAction<number>>;
+  loggedMember?: Member | null;
 }
 
-const ProfileHeader = ({ member, t, followers, following, setFollowers }: ProfileHeaderProps) => {
-  const displayHandle = `@${normalizeHandle(member?.handle || "") || suggestHandle(member)}`;
+const ProfileHeader = ({
+  member,
+  t,
+  followers,
+  following,
+  setFollowers,
+  loggedMember,
+}: ProfileHeaderProps) => {
+  const displayHandle = `@${normalizeHandle(member.handle || "") || suggestHandle(member)}`;
+
+  const showFollowButton = loggedMember?.id && loggedMember.id !== member.id;
 
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
         <div className="w-16 h-16 rounded-full overflow-hidden relative ring-2 ring-white/10">
           <Image
-            src={
-              member?.profileImageUrl ||
-              "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"
-            }
+            src={member.profileImageUrl || "https://marketup.com/wp-content/themes/marketup/assets/icons/perfil-vazio.jpg"}
             alt={t("profileImageAlt")}
             fill
             className="object-cover"
@@ -223,25 +225,32 @@ const ProfileHeader = ({ member, t, followers, following, setFollowers }: Profil
 
         <div className="flex-1 flex flex-col text-white space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg font-medium">{member?.name}</span>
+            <span className="text-lg font-medium">{member.name}</span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
               {displayHandle}
             </span>
           </div>
-          <p className="text-gray-400 text-sm max-w-md">{member?.bio || t("no_bio")}</p>
+          <p className="text-gray-400 text-sm max-w-md">{member.bio || t("no_bio")}</p>
         </div>
 
-        <div className="sm:ml-auto">
-          <FollowButton
-            targetId={member.id.toString()}
-            onFollow={() => setFollowers((prev) => prev + 1)}
-            onUnfollow={() => setFollowers((prev) => Math.max(prev - 1, 0))}
-          />
-        </div>
+        {showFollowButton && (
+          <div className="sm:ml-auto">
+            <FollowButton
+              targetId={member.id.toString()}
+              onFollow={() => setFollowers((prev) => prev + 1)}
+              onUnfollow={() => setFollowers((prev) => Math.max(prev - 1, 0))}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="w-full md:w-auto">
-        <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()} />
+      <div className="w-full md:w-auto mt-4 md:mt-0">
+        <ProfileStats
+          t={t}
+          followers={followers}
+          following={following}
+          memberId={member.id.toString()}
+        />
       </div>
     </div>
   );

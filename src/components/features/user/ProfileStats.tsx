@@ -18,6 +18,10 @@ function RowSkeleton() {
   );
 }
 
+function normalizeHandle(v: string) {
+  return (v || "").replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
+}
+
 interface ProfileStatsProps {
   t: any;
   followers: number;
@@ -85,7 +89,7 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
     }
   }, [memberId]);
 
-  // abre modais on demand
+  // Abre modais on demand
   useEffect(() => {
     if (showFollowers) loadFollowers();
     return () => followersAbort.current?.abort();
@@ -96,7 +100,7 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
     return () => followingAbort.current?.abort();
   }, [showFollowing, loadFollowing]);
 
-  // ESC fecha
+  // Fecha modais com ESC
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -109,16 +113,20 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
   }, []);
 
   const renderMemberList = (list: Member[], loading: boolean, error: string | null) => {
-    if (error) {
-      return <p className="text-red-400">{error}</p>;
-    }
+    if (error) return <p className="text-red-400">{error}</p>;
     if (loading) {
       return (
         <ul className="space-y-4 max-h-80 overflow-y-auto pr-1">
-          {Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <RowSkeleton key={i} />
+          ))}
         </ul>
       );
     }
+    if (list.length === 0) {
+      return <p className="text-gray-400">Nenhum usuário para listar.</p>;
+    }
+
     return (
       <ul className="space-y-4 max-h-80 overflow-y-auto pr-1">
         {list.map((user) => (
@@ -137,18 +145,17 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
             <div className="flex flex-col">
               <span className="text-sm font-medium text-white">{user.name}</span>
               {user.handle && <span className="text-xs text-gray-400">@{user.handle}</span>}
-              <Link
-                href={`/${locale}/profile/${user.id}`}
-                className="text-xs text-blue-400 hover:underline"
-              >
-                Ver perfil
-              </Link>
+              {user.handle && (
+                <Link
+                  href={`/${locale}/profile/${normalizeHandle(user.handle)}`}
+                  className="text-xs text-blue-400 hover:underline"
+                >
+                  Ver perfil
+                </Link>
+              )}
             </div>
           </li>
         ))}
-        {list.length === 0 && (
-          <p className="text-gray-400">Nenhum usuário para listar.</p>
-        )}
       </ul>
     );
   };
@@ -165,7 +172,6 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
     <div
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={(e) => {
-        // fecha ao clicar no overlay
         if (e.currentTarget === e.target) onClose();
       }}
       aria-label={title}
@@ -186,7 +192,6 @@ export const ProfileStats = ({ t, followers, following, memberId }: ProfileStats
     </div>
   );
 
-  // contadores formatados
   const followersCount = useMemo(() => followers ?? 0, [followers]);
   const followingCount = useMemo(() => following ?? 0, [following]);
 

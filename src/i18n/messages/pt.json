@@ -182,6 +182,7 @@
   },
   "MovieList": {
     "loading": "Carregando conteudo...",
+    "SearchFilms": "Buscar Filmes...",
     "noMoviesFound": "Nenhum filme encontrado.",
     "noFavSeries": "Nenhuma série encontrada",
     "noFavAlbum": "Nenhum álbum encontrado.",
@@ -527,7 +528,84 @@
   "loginRequired": "Faça login para comentar",
   "commentCreated": "Comentário criado!",
   "commentCreateError": "Erro ao criar comentário"
-}
-
+},
+  "Mobileheader": {
+    "changeLanguage": "Trocar idioma",
+    "searchUsers": "Buscar usuários",
+    "searchUsersPlaceholder": "Buscar usuários...",
+    "loading": "Carregando…",
+    "noUsersFound": "Nenhum usuário encontrado",
+    "openMenu": "Abrir menu",
+    "perfil": "Perfil",
+    "feed": "Feed",
+    "login": "Entrar",
+    "logout": "Sair",
+    "deleteUser": "Deletar conta",
+    "user": "Usuário",
+    "deleteError": "Erro ao deletar usuário",
+    "deleteModal": {
+      "title": "Deletar Conta",
+      "description": "Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "confirm": "Deletar"
+    }
+  },
+  
+    "recomendados": {
+    "changeLanguage": "Trocar idioma",
+    "searchUsers": "Buscar usuários",
+    "searchUsersPlaceholder": "Buscar usuários...",
+    "loading": "Carregando…",
+    "noUsersFound": "Nenhum usuário encontrado",
+    "openMenu": "Abrir menu",
+    "perfil": "Perfil",
+    "feed": "Feed",
+    "login": "Entrar",
+    "logout": "Sair",
+    "deleteUser": "Deletar conta",
+    "user": "Usuário",
+    "deleteError": "Erro ao deletar usuário",
+    "deleteModal": {
+      "title": "Deletar Conta",
+      "description": "Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "confirm": "Deletar"
+    },
+    "recommendedForYou": "Recomendados para você",
+    "loginToSeeMovies": "Faça login para ver recomendações de filmes.",
+    "loadingMovies": "Carregando recomendações…",
+    "noRecommendedMovies": "Ainda não há recomendações de filmes para você.",
+    "moviesLoadError": "Falha ao carregar recomendações de filmes"
+  },
+  "recomendadoSeries": {
+    "changeLanguage": "Trocar idioma",
+    "searchUsers": "Buscar usuários",
+    "searchUsersPlaceholder": "Buscar usuários...",
+    "loading": "Carregando…",
+    "noUsersFound": "Nenhum usuário encontrado",
+    "openMenu": "Abrir menu",
+    "perfil": "Perfil",
+    "feed": "Feed",
+    "login": "Entrar",
+    "logout": "Sair",
+    "deleteUser": "Deletar conta",
+    "user": "Usuário",
+    "deleteError": "Erro ao deletar usuário",
+    "deleteModal": {
+      "title": "Deletar Conta",
+      "description": "Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "confirm": "Deletar"
+    },
+    "recommendedForYou": "Recomendados para você",
+    "loginToSeeMovies": "Faça login para ver recomendações de filmes.",
+    "loadingMovies": "Carregando recomendações…",
+    "noRecommendedMovies": "Ainda não há recomendações de filmes para você.",
+    "moviesLoadError": "Falha ao carregar recomendações de filmes",
+    "loginToSeeSeries": "Faça login para ver recomendações de séries.",
+    "loadingSeries": "Carregando recomendações de séries…",
+    "noRecommendedSeries": "Ainda não há recomendações de séries para você.",
+    "seriesLoadError": "Falha ao carregar recomendações de séries"
+  }
 
 }

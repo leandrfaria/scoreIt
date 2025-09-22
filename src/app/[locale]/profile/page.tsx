@@ -149,11 +149,12 @@ export default function Profile() {
         <Container>
           <div className="mt-5">
             <ProfileHeader
-              member={member}
+              member={member!}
               t={t}
               followers={followers}
               following={following}
               onEditClick={() => setActiveModal("edit")}
+              setFollowers={setFollowers}
             />
           </div>
         </Container>

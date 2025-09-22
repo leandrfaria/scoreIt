@@ -66,6 +66,25 @@ export async function fetchMemberById(
   return toMember(data);
 }
 
+
+export async function fetchMemberByHandle(
+  handle: string,
+  opts?: { signal?: AbortSignal }
+): Promise<Member | null> {
+  if (!handle) return null;
+
+  const data: any = await apiFetch(`/member/search?handle=${encodeURIComponent(handle)}`, {
+    auth: true,
+    signal: opts?.signal,
+  });
+
+  if (!Array.isArray(data) || data.length === 0) return null;
+
+  // Retorna o primeiro usuário encontrado
+  return toMember(data[0]);
+}
+
+
 /**
  * ✅ Novo: retorna **apenas o membro logado** (ou null), sem pegar `data[0]`.
  * 1) tenta pelo id do JWT

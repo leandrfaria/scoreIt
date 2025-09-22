@@ -1,4 +1,3 @@
-// src/components/features/serie/RecommendedSeriesCarouselSection.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,6 +5,7 @@ import { Series } from "@/types/Series";
 import { SeriesCarousel } from "@/components/features/serie/SeriesCarousel";
 import { useMember } from "@/context/MemberContext";
 import { fetchSeriesRecommendations } from "@/services/recommendations/recommendations";
+import { useTranslations } from "next-intl";
 
 type Props = {
   /** Título exibido acima do carrossel (opcional) */
@@ -15,9 +15,10 @@ type Props = {
 };
 
 export default function RecommendedSeriesCarouselSection({
-  title = "Recomendados para você",
+  title,
   autoScrollInterval = 6000,
 }: Props) {
+  const t = useTranslations("recomendadoSeries");
   const { member } = useMember();
   const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +36,7 @@ export default function RecommendedSeriesCarouselSection({
         if (!controller.signal.aborted) setSeries(list);
       } catch (e) {
         if (!controller.signal.aborted) {
-          console.error("Falha ao carregar recomendações (séries):", e);
+          console.error(t("seriesLoadError"), e);
           setSeries([]);
         }
       } finally {
@@ -45,20 +46,34 @@ export default function RecommendedSeriesCarouselSection({
 
     load();
     return () => controller.abort();
-  }, [member?.id]);
+  }, [member?.id, t]);
 
   if (!member?.id) {
-    return <div className="text-center py-8 sm:py-10 text-white/80">Faça login para ver recomendações de séries.</div>;
+    return (
+      <div className="text-center py-8 sm:py-10 text-white/80">
+        {t("loginToSeeSeries")}
+      </div>
+    );
   }
 
-  if (loading) return <div className="text-center py-8 sm:py-10 text-white">Carregando recomendações…</div>;
+  if (loading)
+    return (
+      <div className="text-center py-8 sm:py-10 text-white">
+        {t("loadingSeries")}
+      </div>
+    );
+
   if (series.length === 0) {
-    return <div className="text-center py-8 sm:py-10 text-white/80">Ainda não há recomendações de séries para você.</div>;
+    return (
+      <div className="text-center py-8 sm:py-10 text-white/80">
+        {t("noRecommendedSeries")}
+      </div>
+    );
   }
 
   return (
     <SeriesCarousel
-      title={title}
+      title={title || t("recommendedForYou")}
       series={series}
       autoScroll
       autoScrollInterval={autoScrollInterval}
