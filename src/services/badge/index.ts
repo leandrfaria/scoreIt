@@ -1,7 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import type { BadgeResponse } from "@/types/Badge";
 
-/** 👇 único endpoint usado — o que existe no seu back */
 export async function fetchMemberBadges(
   memberId: number | string,
   opts?: { signal?: AbortSignal }

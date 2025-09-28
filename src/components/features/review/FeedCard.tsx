@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { FaStar } from "react-icons/fa";
@@ -14,6 +14,7 @@ type FeedCardProps = {
   rating: number;
   comment: string;
   memberId: string;
+  memberHandle?: string;
   mediaType: MediaType;
   media: {
     id: string;
@@ -22,7 +23,7 @@ type FeedCardProps = {
     posterUrl: string;
     releaseDate?: string;
     seasons?: number; // séries
-    artist?: string;  // álbuns
+    artist?: string; // álbuns
   };
 };
 
@@ -36,10 +37,12 @@ export default function FeedCard({
   rating,
   comment,
   memberId,
+  memberHandle,
   mediaType,
   media,
 }: FeedCardProps) {
   const locale = useLocale();
+  const t = useTranslations();
   const router = useRouter();
 
   const [avatarSrc, setAvatarSrc] = useState(avatar || FALLBACK_AVATAR);
@@ -47,16 +50,23 @@ export default function FeedCard({
 
   const subInfo = useMemo(() => {
     switch (mediaType) {
-      case "movie":
-        return `Lançamento: ${media.releaseDate ? new Date(media.releaseDate).getFullYear() : "?"}`;
-      case "series":
-        return `${media.seasons ?? "?"} temporada(s)`;
-      case "album":
-        return `Artista: ${media.artist ?? "Desconhecido"}`;
+      case "movie": {
+        const year = media.releaseDate ? new Date(media.releaseDate).getFullYear() : "?";
+        return t("feedCard.releaseYear", { year });
+      }
+      case "series": {
+        const count = media.seasons ?? "?";
+        if (count === "?") return t("feedCard.seasons", { count: 0 });
+        return t("feedCard.seasons", { count });
+      }
+      case "album": {
+        const artist = media.artist ?? t("feedCard.unknownArtist");
+        return t("feedCard.artist", { artist });
+      }
       default:
         return "";
     }
-  }, [mediaType, media.releaseDate, media.seasons, media.artist]);
+  }, [mediaType, media.releaseDate, media.seasons, media.artist, t]);
 
   const handleMediaClick = () => {
     switch (mediaType) {
@@ -74,10 +84,26 @@ export default function FeedCard({
     }
   };
 
-  const reviewDateLabel = useMemo(
-    () => new Date(reviewDate).toLocaleDateString("pt-BR"),
-    [reviewDate]
-  );
+  const reviewDateLabel = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat(locale || "pt-BR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(new Date(reviewDate));
+    } catch {
+      return reviewDate;
+    }
+  }, [reviewDate, locale]);
+
+  const noDescriptionText = (locale || "")
+    .toString()
+    .toLowerCase()
+    .startsWith("pt")
+    ? "Sinopse não disponível."
+    : "No description available.";
+
+  const profilePath = `/${locale}/profile/${memberHandle && memberHandle.trim() ? memberHandle : memberId}`;
 
   return (
     <article className="bg-[#0D1117] rounded-lg p-6 shadow-md border border-white/10 hover:border-[var(--color-lightgreen)] transition duration-200 focus-within:border-[var(--color-lightgreen)]">
@@ -85,16 +111,16 @@ export default function FeedCard({
       <header className="flex items-center gap-4 mb-4">
         <img
           src={avatarSrc}
-          alt={`Avatar de ${name}`}
+          alt={t("feedCard.avatarAlt", { name })}
           onError={() => setAvatarSrc(FALLBACK_AVATAR)}
           className="w-12 h-12 rounded-full object-cover border border-white/10 cursor-pointer"
-          onClick={() => router.push(`/${locale}/profile/${memberId}`)}
+          onClick={() => router.push(profilePath)}
         />
         <div>
           <button
             className="text-white font-semibold hover:text-[var(--color-lightgreen)] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)] rounded"
-            onClick={() => router.push(`/${locale}/profile/${memberId}`)}
-            aria-label={`Ver perfil de ${name}`}
+            onClick={() => router.push(profilePath)}
+            aria-label={t("feedCard.viewProfile", { name })}
           >
             {name}
           </button>
@@ -102,34 +128,41 @@ export default function FeedCard({
         </div>
       </header>
 
-      {/* Informações da mídia */}
-      <div className="flex gap-4 mb-4">
+      {/* Poster + coluna direita (titulo + subinfo no topo; sinopse logo abaixo do título/subinfo) */}
+      <div className="flex gap-4 mb-4 items-start">
         <img
           src={posterSrc}
           alt={media.title}
           onError={() => setPosterSrc(FALLBACK_POSTER)}
-          className="w-24 h-36 object-cover rounded border border-white/10 cursor-pointer"
+          className="w-24 h-36 object-cover rounded border border-white/10 cursor-pointer flex-shrink-0"
           onClick={handleMediaClick}
         />
-        <div className="flex flex-col justify-between min-w-0">
+
+        {/* Coluna direita: título + subinfo no topo, sinopse em seguida */}
+        <div className="flex flex-col justify-start min-w-0">
+          {/* Título e subinfo */}
           <div>
             <button
               className="text-white font-bold text-lg hover:text-[var(--color-lightgreen)] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-lightgreen)] rounded"
               onClick={handleMediaClick}
-              aria-label={`Abrir detalhes de ${media.title}`}
+              aria-label={t("feedCard.openDetails", { title: media.title })}
             >
               {media.title}
             </button>
-            <p className="text-gray-400 text-sm">{subInfo}</p>
+            <p className="text-gray-400 text-sm mt-1">{subInfo}</p>
           </div>
-          {media.overview && (
-            <p className="text-gray-300 text-sm mt-2 line-clamp-3">{media.overview}</p>
-          )}
+
+          {/* Sinopse logo abaixo do título/subinfo; cresce para baixo se longa */}
+          <div className="mt-3">
+            <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">
+              {media.overview && media.overview.trim() ? media.overview : noDescriptionText}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Avaliação */}
-      <div className="flex items-center gap-1 mb-2" aria-label={`Nota: ${rating} de 5`}>
+      <div className="flex items-center gap-1 mb-2" aria-label={t("feedCard.ratingAria", { rating })}>
         {[...Array(5)].map((_, i) => (
           <FaStar
             key={i}

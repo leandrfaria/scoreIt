@@ -70,7 +70,7 @@ export async function registerUser(payload: {
   email: string;
   password: string;
   birthDate: string; // yyyy-MM-dd
-  gender: string;    // vindo do select
+  gender: string;
   handle: string;
 }) {
   const normalized = (payload.gender || "").trim().toUpperCase();
@@ -88,6 +88,7 @@ export async function registerUser(payload: {
   const gender: BackendGender | undefined = map[normalized];
   if (!gender) throw new Error("Gênero inválido. Selecione MASC, FEM ou OTHER.");
 
+  // usa postJson que já monta a URL correta com apiBase e trata JSON/erros
   await postJson(`/member/post`, {
     name: payload.name.trim(),
     email: payload.email.trim(),

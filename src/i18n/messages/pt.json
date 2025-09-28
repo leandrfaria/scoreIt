@@ -35,11 +35,10 @@
   "esqueceu_senha": "Esqueceu sua senha?",
   "mudar_email": "Deseja trocar de Email?",
   "ReenviaEmail": "Reenviar e-mail de confirmação",
-  "confirmaEmail": "Pronto! Enviamos um e-mail de confirmação para: . Confirme sua conta para entrar no site. (Se não encontrar, verifique também as pastas spam/lixo eletrônico.)",
+  "confirmaEmail": "Pronto! Enviamos um e-mail de confirmação para: {email} Confirme sua conta para entrar no site. (Se não encontrar, verifique também as pastas spam/lixo eletrônico.)",
   "falhaCadastro": "Falha no cadastro",
   "NaoPossivelCadastro": "Não foi possível concluir seu cadastro",
   "telaInicial": "Avalie filmes, músicas e séries!",
-
   "sobreTitulo": "Sobre o ScoreIt",
   "sobreTexto": "O ScoreIt é um projeto para quem ama cultura pop. Aqui você pode descobrir novidades, criar listas e avaliar o que assiste e ouve — filmes, séries e álbuns. Nosso objetivo é reunir a sua experiência em um só lugar, com uma interface rápida e elegante. Construa seu perfil, compartilhe gostos com amigos e acompanhe o que está bombando agora.",
   "sobreItem1": "Acompanhe lançamentos e tendências",
@@ -51,7 +50,8 @@
   "devsTexto": "Quem está por trás do projeto.",
   "igDe": "Instagram de",
   "roleBackend": "Back end",
-  "roleFrontend": "Front end"
+  "roleFrontend": "Front end",
+  "usuarioJaEmUso": "Esse nome de usuario já está em uso!"
   },
   "envia_email": {
     "titulo": "Adicione o Email da Sua Conta",
@@ -103,7 +103,9 @@
     "custom_lists": "Listas personalizadas",
     "create_list": "+ Criar Lista",
     "badges_wall": "Mural de conquistas",
-    "error_loading_lists": "Erro ao carregar listas"
+    "error_loading_lists": "Erro ao carregar listas",
+    "usuarioJaEmUso": "Esse nome de usuario já está em uso!"
+
   },
   "home": {
     "verificando_login": "Verificando login...",
@@ -153,7 +155,8 @@
       "cancelButton": "Cancelar",
       "saveButton": "Salvar",
       "invalidBirthDate": "Data de nascimento inválida",
-      "profileImageAlt": "Foto de perfil"
+      "profileImageAlt": "Foto de perfil",
+      "usuarioJaEmUso": "Esse nome de usuario já está em uso!"
   },
   "NowPlayingCarousel": {
     "loading": "Carregando conteudos em cartaz...",
@@ -606,6 +609,40 @@
     "loadingSeries": "Carregando recomendações de séries…",
     "noRecommendedSeries": "Ainda não há recomendações de séries para você.",
     "seriesLoadError": "Falha ao carregar recomendações de séries"
+  },
+    "feed": {
+    "title": "Feed",
+    "loading": "Carregando...",
+    "unauthenticated": "Usuário não autenticado",
+    "errorDefault": "Erro ao carregar feed",
+    "noActivity": "Nenhuma atividade recente encontrada."
+  },
+  "movie": {
+    "overview": "Sinopse: {overview}"
+  },
+  "series": {
+    "seasons": "{count, plural, one {# temporada} other {# temporadas}} • {episodes} episódios"
+  },
+  "album": {
+    "artist": "Artista: {artist}"
+  },
+    "feedCard": {
+    "avatarAlt": "Avatar de {name}",
+    "viewProfile": "Ver perfil de {name}",
+    "openDetails": "Abrir detalhes de {title}",
+    "releaseYear": "Lançamento: {year}",
+    "seasons": "{count, plural, one {# temporada} other {# temporadas}}",
+    "artist": "Artista: {artist}",
+    "ratingAria": "Nota: {rating} de 5",
+    "unknownArtist": "Desconhecido"
+  },
+    "followButton": {
+    "follow": "Seguir",
+    "unfollow": "Deixar de seguir",
+    "loading": "Carregando...",
+    "loginRequired": "Faça login para seguir usuários.",
+    "errorCheckingFollow": "Erro ao verificar se já segue:",
+    "errorFollowUnfollow": "Erro ao seguir/deixar de seguir:"
   }
 
 }

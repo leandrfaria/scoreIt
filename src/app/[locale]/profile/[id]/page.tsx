@@ -44,7 +44,7 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const { member: loggedMember } = useMember();
-  const { id: handle } = useParams(); // handle do perfil público
+  const { id: handle } = useParams();
   const t = useTranslations("profile");
   const { activeTab } = useTabContext();
   const router = useRouter();

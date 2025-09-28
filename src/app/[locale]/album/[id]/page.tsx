@@ -79,13 +79,11 @@ export default function AlbumPage() {
         const result = await fetchAlbumById(id, controller.signal);
         if (!mountedRef.current) return;
         if (!result) {
-          toast.error(T("toastLoadError"));
         }
         setAlbum(result);
       } catch (err: any) {
         if (err?.name !== "AbortError") {
           console.error("Erro ao carregar álbum:", err);
-          toast.error(T("toastLoadError"));
         }
       }
     })();

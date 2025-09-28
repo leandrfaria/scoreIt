@@ -1,4 +1,4 @@
-import { apiFetch, getToken } from "@/lib/api";
+import { apiBase, apiFetch, getToken } from "@/lib/api";
 import { jwtDecode, JwtPayload } from "jwt-decode";
 import { Member } from "@/types/Member";
 
@@ -126,18 +126,24 @@ export async function updateMember(
   payload: UpdatePayload,
   opts?: { signal?: AbortSignal }
 ): Promise<Member> {
-  const jsonBody = {
-    ...payload,
-    handle: cleanHandle(payload.handle),
-  };
+  const jsonBody = { ...payload, handle: cleanHandle(payload.handle) };
 
-  const data: any = await apiFetch("/member/update", {
+  const res = await fetch(`${apiBase}/member/update`, {
     method: "PUT",
-    auth: true,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
     body: JSON.stringify(jsonBody),
     signal: opts?.signal,
   });
 
+  if (!res.ok) {
+    // lê o JSON do backend e lança só a mensagem
+    const errData = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(errData.message || "Erro desconhecido");
+  }
+
+  const data = await res.json();
   return toMember(data);
 }

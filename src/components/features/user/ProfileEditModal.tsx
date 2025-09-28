@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
+import { apiBase, getToken } from "@/lib/api";
 
 /** Normaliza o handle removendo '@', deixando minúsculo e permitindo apenas a-z 0-9 . _ */
 function normalizeHandleInput(v: string) {
@@ -27,6 +28,26 @@ function suggestHandle(member?: Member | null): string {
   return `user${member.id || ""}`;
 }
 
+/** Checa se o handle já existe e pertence a outro usuário */
+async function isHandleTaken(handle: string, currentMemberId?: number): Promise<boolean> {
+  const normalized = encodeURIComponent(normalizeHandleInput(handle));
+  try {
+    const res = await fetch(`${apiBase}/member/exists?handle=${normalized}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => null);
+    if (!data || typeof data.exists !== "boolean") return false;
+    if (!data.exists) return false;
+    if (data.ownerId && currentMemberId && data.ownerId === currentMemberId) return false;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 type Props = {
   member: Member | null;
   onUpdateMember: (
@@ -45,11 +66,9 @@ type Props = {
 const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
   const t = useTranslations("ProfileEditModal");
 
-  // controla montagem para evitar portal antes do DOM existir
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // handle inicial sempre preenchido (normalizado ou sugerido)
   const initialSuggested = useMemo(() => suggestHandle(member), [member]);
   const [formData, setFormData] = useState({
     name: member?.name || "",
@@ -66,7 +85,6 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
   const MAX_HANDLE_LENGTH = 20;
   const MIN_HANDLE_LENGTH = 3;
 
-  // Sincroniza quando o modal abre ou quando o member atualiza
   useEffect(() => {
     const newSuggested = suggestHandle(member);
     setFormData({
@@ -84,20 +102,13 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
 
   const isHandleValid = useMemo(() => {
     const h = formData.handle || initialSuggested;
-    return (
-      h.length >= MIN_HANDLE_LENGTH &&
-      h.length <= MAX_HANDLE_LENGTH &&
-      /^[a-z0-9._]+$/.test(h)
-    );
+    return h.length >= MIN_HANDLE_LENGTH && h.length <= MAX_HANDLE_LENGTH && /^[a-z0-9._]+$/.test(h);
   }, [formData.handle, initialSuggested]);
 
   const isSaveDisabled = isNameTooLong || isBioTooLong || !isHandleValid;
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
     if (name === "birthDate") {
       const birthDate = new Date(value);
       const today = new Date();
@@ -126,35 +137,16 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const birthDate = new Date(formData.birthDate);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const isValidDate = birthDate instanceof Date && !isNaN(birthDate.getTime());
-    const isAdult =
-      age > 18 ||
-      (age === 18 && today.getMonth() > birthDate.getMonth()) ||
-      (age === 18 &&
-        today.getMonth() === birthDate.getMonth() &&
-        today.getDate() >= birthDate.getDate());
-    const isUnder120 = age < 120;
-
-    if (!isValidDate || !isAdult || !isUnder120) {
-      toast.error(t("invalidBirthDate"));
-      return;
-    }
-
-    // garante um handle válido mesmo se o campo ficar vazio
     const finalHandle = normalizeHandleInput(formData.handle) || initialSuggested;
 
-    if (
-      finalHandle.length < MIN_HANDLE_LENGTH ||
-      finalHandle.length > MAX_HANDLE_LENGTH ||
-      !/^[a-z0-9._]+$/.test(finalHandle)
-    ) {
-      toast.error("Handle inválido. Use 3–20 caracteres: letras, números, ponto ou underline.");
+    // Verifica se handle está em uso
+    if (await isHandleTaken(finalHandle, member?.id)) {
+      toast.error(t("usuarioJaEmUso"));
+      const el = document.getElementById("handle-input");
+      if (el) el.focus();
       return;
     }
 
@@ -172,7 +164,7 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
 
   const previewHandle = formData.handle || initialSuggested;
 
-  if (!mounted) return null; // evita portal antes do DOM
+  if (!mounted) return null;
 
   return createPortal(
     <div
@@ -208,7 +200,9 @@ const ProfileEditModal = ({ member, onUpdateMember, onClose }: Props) => {
 
           {/* Handle (@) */}
           <div>
-            <label className="sr-only" htmlFor="handle-input">Handle</label>
+            <label className="sr-only" htmlFor="handle-input">
+              Handle
+            </label>
             <div className="flex items-center rounded-lg bg-zinc-800 ring-1 ring-transparent focus-within:ring-darkgreen/60">
               <span className="pl-3 pr-1 text-gray-400 select-none">@</span>
               <input

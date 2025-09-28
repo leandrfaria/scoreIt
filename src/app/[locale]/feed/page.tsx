@@ -3,12 +3,13 @@
 import FeedCard from "@/components/features/review/FeedCard";
 import { useMember } from "@/context/MemberContext";
 import { useEffect, useState } from "react";
-import { fetchFeedServer } from "@/services/feed/route";
+import { fetchFeedClient } from "@/services/feed/route";
+import { useTranslations, useLocale } from "next-intl";
 
 interface FeedItem {
   member: { id: number; name: string; profileImageUrl?: string; handle?: string };
   review: {
-    id: number;
+    id: string | number;
     mediaId: string;
     mediaType: "movie" | "series" | "album";
     memberId: number;
@@ -45,44 +46,52 @@ interface FeedItem {
 
 export default function FeedPage() {
   const { member } = useMember();
+  const t = useTranslations();
+  const locale = useLocale();
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!member?.id) {
-      setError("Usuário não autenticado");
+    // Se o contexto ainda está inicializando (undefined), não faz nada — mantém loading=true
+    if (member === undefined) return;
+
+    // Se contexto já resolveu e não há membro -> não autenticado
+    if (!member || !member.id) {
+      setError(t("feed.unauthenticated"));
       setLoading(false);
       return;
     }
+
+    setError(null);
+    setLoading(true);
 
     const controller = new AbortController();
 
     const loadFeed = async () => {
       try {
-        // Aqui usamos o fetch do route.ts, que já pega o token corretamente
-        const data = await fetchFeedServer(member.id.toString());
-        setFeed(data);
+        // PASSA o locale diretamente - fetchFeedClient normaliza internamente
+        const data = await fetchFeedClient(member.id.toString(), locale || "pt-BR", controller.signal);
+        if (!controller.signal.aborted) setFeed(data);
       } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Erro ao carregar feed");
+        console.error("[FeedPage] loadFeed error:", err);
+        if (!controller.signal.aborted) setError(err?.message || t("feed.errorDefault"));
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     loadFeed();
-
     return () => controller.abort();
-  }, [member]);
+  }, [member, locale, t]);
 
-  if (loading) return <p className="text-white">Carregando...</p>;
+  if (loading) return <p className="text-white">{t("feed.loading")}</p>;
   if (error) return <p className="text-red-400">{error}</p>;
-  if (feed.length === 0) return <p className="text-white">Nenhuma atividade recente encontrada.</p>;
+  if (feed.length === 0) return <p className="text-white">{t("feed.noActivity")}</p>;
 
   return (
     <div className="min-h-screen bg-[#0D1117] px-4 py-8 md:px-16">
-      <h1 className="text-white text-2xl font-bold mb-6">Feed</h1>
+      <h1 className="text-white text-2xl font-bold mb-6">{t("feed.title")}</h1>
       <div className="space-y-6">
         {feed.map((item) => {
           const { review, member: reviewer } = item;
@@ -94,7 +103,7 @@ export default function FeedPage() {
             mediaData = {
               id: review.mediaId,
               title: item.movie.title,
-              overview: `Sinopse: ${item.movie.overview}`,
+              overview: item.movie.overview,
               posterUrl: item.movie.posterUrl,
               releaseDate: item.movie.release_date,
             };
@@ -107,18 +116,18 @@ export default function FeedPage() {
               title: item.serie.name,
               seasons: totalSeasons,
               posterUrl: item.serie.posterUrl,
-              overview: `${totalSeasons} temporada${totalSeasons !== 1 ? "s" : ""} • ${totalEpisodes} episódios`,
+              overview: item.serie.overview,
+              totalEpisodes,
             };
           } else if (mediaType === "album" && item.album) {
             mediaData = {
               id: review.mediaId,
               title: item.album.name,
-              artist: `Artista: ${item.album.artists[0]?.name ?? "Desconhecido"}`,
+              artist: item.album.artists[0]?.name ?? "Desconhecido",
               posterUrl: item.album.images[0]?.url,
               releaseDate: item.album.release_date,
             };
           } else return null;
-
           return (
             <FeedCard
               key={review.id}
@@ -131,6 +140,7 @@ export default function FeedPage() {
               rating={review.score}
               comment={review.memberReview}
               memberId={reviewer.id.toString()}
+              memberHandle={reviewer.handle ?? undefined} // <-- aqui
               mediaType={mediaType}
               media={mediaData}
             />

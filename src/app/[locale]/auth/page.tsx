@@ -132,64 +132,83 @@ export default function AuthPage() {
     setDate(masked.value);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-    setMsgSign("");
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (isSubmitting) return;
+  setMsgSign("");
 
-    if (!nameRegex.test(name)) {
-      toast.error(t("invalid_name"));
-      return;
+  // ===== Validações =====
+  if (!nameRegex.test(name)) {
+    toast.error(t("invalid_name"));
+    return;
+  }
+  if (!handleRegex.test(handle)) {
+    toast.error(t("usuario_invalido"));
+    return;
+  }
+  if (!emailRegex.test(emailSign)) {
+    toast.error(t("invalid_email"));
+    return;
+  }
+  if (!passwordRegex.test(senhaSign)) {
+    toast.error(t("invalid_senha"));
+    return;
+  }
+  if (!isValidDate(date)) {
+    toast.error(t("invalid_date"));
+    return;
+  }
+  if (!gender) {
+    toast.error(t("Select_Gender"));
+    return;
+  }
+
+  const [d, m, y] = date.split("/");
+  const birthDate = `${y}-${m}-${d}`;
+
+  setIsSubmitting(true);
+  try {
+    const resp = await registerUser({
+      name: name.trim(),
+      email: emailSign.trim(),
+      password: senhaSign,
+      birthDate,
+      gender,
+      handle: handle.trim(),
+    });
+
+    if (resp.success) {
+      const confirmMsg = t("confirmaEmail", { email: emailSign.trim() });
+      toast.success(confirmMsg);
+      setSignupConfirmText(confirmMsg);
+      setSignupDone(true);
     }
-    if (!handleRegex.test(handle)) {
-      toast.error(t("usuario_invalido"));
-      return;
-    }
-    if (!emailRegex.test(emailSign)) {
-      toast.error(t("invalid_email"));
-      return;
-    }
-    if (!passwordRegex.test(senhaSign)) {
-      toast.error(t("invalid_senha"));
-      return;
-    }
-    if (!isValidDate(date)) {
-      toast.error(t("invalid_date"));
-      return;
-    }
-    if (!gender) {
-      toast.error(t("Select_Gender"));
-      return
+  } catch (err: any) {
+    const errorMessage = (err?.message || t("falhaCadastro")) as string;
+
+    // detector robusto para saber se é problema com handle/username
+    const isHandleError = /(@|nome de usu[aá]rio|username|usu[aá]rio|já está sendo utilizado|já está sendo usado|esse @|já em uso)/i.test(
+      errorMessage
+    );
+
+    if (isHandleError) {
+      // exibe toast de "usuário já em uso" (use sua chave de tradução)
+      toast.error(t("usuarioJaEmUso"));
+      // coloca o foco no campo handle pra consertarem rápido
+      const el = document.getElementById("handle") as HTMLElement | null;
+      if (el) el.focus();
+    } else {
+      toast.error(t("usuarioJaEmUso"));
     }
 
-    const [d, m, y] = date.split("/");
-    const birthDate = `${y}-${m}-${d}`;
+    setMsgSign(errorMessage);
+  } finally {
+    setIsSubmitting(false);
+  }
 
-    setIsSubmitting(true);
-    try {
-      const resp = await registerUser({
-        name: name.trim(),
-        email: emailSign.trim(),
-        password: senhaSign,
-        birthDate,
-        gender,
-        handle: handle.trim(),
-      });
-      if (resp.success) {
-        const confirmMsg =
-          t("confirmaEmail", { email: emailSign.trim() });
-        toast.success(confirmMsg);
-        setSignupConfirmText(confirmMsg);
-        setSignupDone(true);
-      }
-    } catch (err: any) {
-      const errorMessage = err?.message || t("falhaCadastro");
-      toast.error(t("NaoPossivelCadastro"));
-      setMsgSign(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+};
+
+
 
   // ====== segmented (corrigido com 'left' ao invés de translate) ======
   const Segmented = () => {

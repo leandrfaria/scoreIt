@@ -13,7 +13,6 @@ import CustomListModal from "@/components/features/customList/CustomListModal";
 import CreateCustomListModal from "@/components/features/customList/CreateCustomListModal";
 import CustomListsSection from "@/components/features/customList/CustomListsSection";
 import ProfileHeader from "@/components/features/user/ProfileHeader";
-import { ProfileStats } from "@/components/features/user/ProfileStats";
 import ProfileEditModal from "@/components/features/user/ProfileEditModal";
 
 import { useMember } from "@/context/MemberContext";
@@ -90,57 +89,67 @@ export default function Profile() {
     Promise.all([fetchStats(token, member.id), loadCustomLists(token, member.id, locale)]).catch(console.error);
   }, [member, locale]); // adicionei locale porque loadCustomLists depende dele
 
-  const handleUpdateMember = async (
-    formData: { name: string; bio: string; birthDate: string; gender: string; handle: string },
-    imageFile: File | null
-  ) => {
-    if (!member) return;
+const handleUpdateMember = async (
+  formData: { name: string; bio: string; birthDate: string; gender: string; handle: string },
+  imageFile: File | null
+) => {
+  if (!member) return;
 
-    try {
-      const token = getToken();
-      if (!token) return;
+  try {
+    const token = getToken();
+    if (!token) return;
 
-      if (imageFile) {
-        const formDataImage = new FormData();
-        formDataImage.append("file", imageFile);
+    if (imageFile) {
+      const formDataImage = new FormData();
+      formDataImage.append("file", imageFile);
 
-        const uploadUrl = `${apiBase}/api/images/upload/${member.id}`;
+      const uploadUrl = `${apiBase}/api/images/upload/${member.id}`;
 
-        const res = await fetch(uploadUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`, // NÃO setar Content-Type aqui
-          },
-          body: formDataImage,
-        });
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // NÃO setar Content-Type aqui
+        },
+        body: formDataImage,
+      });
 
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(`Upload failed: ${res.status} ${text || res.statusText}`);
-        }
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Upload failed: ${res.status} ${text || res.statusText}`);
       }
-
-      const payload = {
-        id: member.id,
-        name: formData.name,
-        email: member.email,
-        bio: formData.bio,
-        birthDate: formData.birthDate,
-        gender: formData.gender,
-        handle: normalizeHandle(formData.handle) || suggestHandle(member),
-      };
-
-      const updated = await updateMember(member.id.toString(), payload);
-      setMember(updated);
-
-      toast.success(t("success_updating_profile"));
-      setActiveModal(null);
-    } catch (err) {
-      console.error("Erro ao atualizar perfil:", err);
-      toast.error(t("error_updating_profile"));
     }
-  };
 
+    const payload = {
+      id: member.id,
+      name: formData.name,
+      email: member.email,
+      bio: formData.bio,
+      birthDate: formData.birthDate,
+      gender: formData.gender,
+      handle: normalizeHandle(formData.handle) || suggestHandle(member),
+    };
+
+    const updated = await updateMember(member.id.toString(), payload);
+    setMember(updated);
+
+    toast.success(t("success_updating_profile"));
+    setActiveModal(null);
+  } catch (err: any) {
+    // evita mostrar todo o JSON feio do backend
+    const errorMessage = (err?.message || "").toString();
+
+    // filtra apenas mensagens de handle já usado
+    if (errorMessage.includes("Esse @ já está sendo utilizado")) {
+      toast.error(t("usuarioJaEmUso"));
+      return;
+    }
+
+    // aqui evita logar o JSON completo
+    console.error("Erro ao atualizar perfil:", errorMessage);
+
+    toast.error(t("error_updating_profile"));
+  }
+};
 
   return (
     <ProtectedRoute>

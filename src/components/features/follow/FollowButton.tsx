@@ -6,6 +6,7 @@ import { unfollowUser } from "@/services/followers/unfollowUser";
 import { isFollowing } from "@/services/followers/isFollowing";
 import { useMember } from "@/context/MemberContext";
 import { getToken } from "@/lib/api";
+import { useTranslations } from "next-intl";
 
 interface FollowButtonProps {
   targetId: string;
@@ -14,6 +15,7 @@ interface FollowButtonProps {
 }
 
 export const FollowButton = ({ targetId, onFollow, onUnfollow }: FollowButtonProps) => {
+  const t = useTranslations("followButton");
   const { member } = useMember();
   const [isFollowed, setIsFollowed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ export const FollowButton = ({ targetId, onFollow, onUnfollow }: FollowButtonPro
         const result = await isFollowing(member.id.toString(), targetId, token);
         setIsFollowed(result);
       } catch (err) {
-        console.error("Erro ao verificar follow:", err);
+        console.error(t("errorCheckingFollow"), err);
         setIsFollowed(false);
       } finally {
         setLoading(false);
@@ -40,11 +42,11 @@ export const FollowButton = ({ targetId, onFollow, onUnfollow }: FollowButtonPro
     };
 
     checkFollow();
-  }, [member, targetId]);
+  }, [member, targetId, t]);
 
   const handleToggleFollow = async () => {
     const token = getToken();
-    if (!member?.id || !token) return alert("Faça login para seguir usuários.");
+    if (!member?.id || !token) return alert(t("loginRequired"));
 
     try {
       if (isFollowed) {
@@ -57,13 +59,13 @@ export const FollowButton = ({ targetId, onFollow, onUnfollow }: FollowButtonPro
         onFollow?.();
       }
     } catch (err) {
-      console.error("Erro ao seguir/deixar de seguir:", err);
+      console.error(t("errorFollowUnfollow"), err);
     }
   };
 
   if (loading || isFollowed === null) return (
     <button className="bg-gray-700 text-white px-4 py-1 rounded cursor-not-allowed">
-      Carregando...
+      {t("loading")}
     </button>
   );
 
@@ -72,7 +74,7 @@ export const FollowButton = ({ targetId, onFollow, onUnfollow }: FollowButtonPro
       onClick={handleToggleFollow}
       className="bg-[var(--color-darkgreen)] hover:brightness-110 text-white px-4 py-1 rounded"
     >
-      {isFollowed ? "Deixar de seguir" : "Seguir"}
+      {isFollowed ? t("unfollow") : t("follow")}
     </button>
   );
 };
