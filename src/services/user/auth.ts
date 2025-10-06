@@ -26,12 +26,13 @@ async function postJson<T = any>(path: string, body: unknown): Promise<T> {
     : await res.text().catch(() => "");
 
   if (!res.ok) {
-    const msg =
-      (typeof payload === "string" && payload) ||
-      (payload && (payload.message || payload.error)) ||
-      `HTTP ${res.status}`;
-    throw new Error(msg);
+    const error: any = {
+      status: res.status,
+      payload,
+    };
+    throw error;
   }
+
 
   return (payload as T) ?? ({} as T);
 }

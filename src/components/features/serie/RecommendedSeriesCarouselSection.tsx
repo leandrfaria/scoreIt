@@ -5,12 +5,10 @@ import { Series } from "@/types/Series";
 import { SeriesCarousel } from "@/components/features/serie/SeriesCarousel";
 import { useMember } from "@/context/MemberContext";
 import { fetchSeriesRecommendations } from "@/services/recommendations/recommendations";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 type Props = {
-  /** Título exibido acima do carrossel (opcional) */
   title?: string;
-  /** Intervalo de auto-scroll em ms (opcional) */
   autoScrollInterval?: number;
 };
 
@@ -19,6 +17,7 @@ export default function RecommendedSeriesCarouselSection({
   autoScrollInterval = 6000,
 }: Props) {
   const t = useTranslations("recomendadoSeries");
+  const locale = useLocale(); // pega idioma do Next.js
   const { member } = useMember();
   const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +31,8 @@ export default function RecommendedSeriesCarouselSection({
           setSeries([]);
           return;
         }
-        const list = await fetchSeriesRecommendations(member.id);
+        // Passa o locale para o backend
+        const list = await fetchSeriesRecommendations(member.id, locale);
         if (!controller.signal.aborted) setSeries(list);
       } catch (e) {
         if (!controller.signal.aborted) {
@@ -46,7 +46,7 @@ export default function RecommendedSeriesCarouselSection({
 
     load();
     return () => controller.abort();
-  }, [member?.id, t]);
+  }, [member?.id, t, locale]); // adiciona locale como dependência
 
   if (!member?.id) {
     return (

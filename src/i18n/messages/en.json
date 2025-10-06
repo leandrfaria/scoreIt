@@ -36,7 +36,7 @@
   "mudar_email": "Want to change your email?",
   "ReenviaEmail": "Resend confirmation email",
   "confirmaEmail": "Done! We sent a confirmation email to: {email} Confirm your account to access the site. (If you can't find it, please check your spam/junk folder.)",
-  "falhaCadastro": "Registration failed",
+  "falhaCadastro": "Registration failed! Email or Username are already in use",
   "NaoPossivelCadastro": "It was not possible to complete your registration",
   "telaInicial": "Rate movies, music and series!",
   "sobreTitulo": "About ScoreIt",

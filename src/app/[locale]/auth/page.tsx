@@ -137,7 +137,7 @@ const handleSignup = async (e: React.FormEvent) => {
   if (isSubmitting) return;
   setMsgSign("");
 
-  // ===== Validações =====
+  // ===== Validações locais =====
   if (!nameRegex.test(name)) {
     toast.error(t("invalid_name"));
     return;
@@ -163,10 +163,12 @@ const handleSignup = async (e: React.FormEvent) => {
     return;
   }
 
+  // transforma dd/mm/aaaa -> yyyy-mm-dd
   const [d, m, y] = date.split("/");
   const birthDate = `${y}-${m}-${d}`;
 
   setIsSubmitting(true);
+
   try {
     const resp = await registerUser({
       name: name.trim(),
@@ -184,31 +186,27 @@ const handleSignup = async (e: React.FormEvent) => {
       setSignupDone(true);
     }
   } catch (err: any) {
-    const errorMessage = (err?.message || t("falhaCadastro")) as string;
+    const msg = err?.message || "";
 
-    // detector robusto para saber se é problema com handle/username
-    const isHandleError = /(@|nome de usu[aá]rio|username|usu[aá]rio|já está sendo utilizado|já está sendo usado|esse @|já em uso)/i.test(
-      errorMessage
-    );
+    // ===== Detecta erros específicos do backend =====
+    const isHandleDup = /handle|usu[aá]rio|username/i.test(msg) && /(já está sendo usado|já existe)/i.test(msg);
+    const isEmailDup = /email/i.test(msg) && /(já está sendo usado|já existe)/i.test(msg);
 
-    if (isHandleError) {
-      // exibe toast de "usuário já em uso" (use sua chave de tradução)
+    if (isHandleDup) {
       toast.error(t("usuarioJaEmUso"));
-      // coloca o foco no campo handle pra consertarem rápido
-      const el = document.getElementById("handle") as HTMLElement | null;
+      const el = document.getElementById("handle");
+      if (el) el.focus();
+    } else if (isEmailDup) {
+      toast.error(t("cadastro_erro")); // ou criar nova chave tipo "emailJaEmUso"
+      const el = document.getElementById("emailSign");
       if (el) el.focus();
     } else {
-      toast.error(t("usuarioJaEmUso"));
+      toast.error(t("falhaCadastro"));
     }
-
-    setMsgSign(errorMessage);
   } finally {
     setIsSubmitting(false);
   }
-
 };
-
-
 
   // ====== segmented (corrigido com 'left' ao invés de translate) ======
   const Segmented = () => {

@@ -5,7 +5,7 @@ import { Movie } from "@/types/Movie";
 import { MovieCarousel } from "@/components/features/movie/MovieCarousel";
 import { useMember } from "@/context/MemberContext";
 import { fetchMovieRecommendations } from "@/services/recommendations/recommendations";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 type Props = {
   /** Título exibido acima do carrossel (opcional) */
@@ -19,6 +19,7 @@ export default function RecommendedMoviesCarouselSection({
   autoScrollInterval = 6000,
 }: Props) {
   const t = useTranslations("recomendados");
+  const locale = useLocale(); // pega o idioma atual do Next.js
   const { member } = useMember();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,8 @@ export default function RecommendedMoviesCarouselSection({
           setMovies([]);
           return;
         }
-        const list = await fetchMovieRecommendations(member.id);
+        // Passa o locale para o backend
+        const list = await fetchMovieRecommendations(member.id, locale);
         if (!controller.signal.aborted) setMovies(list);
       } catch (e) {
         if (!controller.signal.aborted) {
@@ -46,7 +48,7 @@ export default function RecommendedMoviesCarouselSection({
 
     load();
     return () => controller.abort();
-  }, [member?.id, t]);
+  }, [member?.id, t, locale]);
 
   if (!member?.id) {
     return (

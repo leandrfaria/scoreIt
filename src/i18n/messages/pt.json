@@ -36,7 +36,7 @@
   "mudar_email": "Deseja trocar de Email?",
   "ReenviaEmail": "Reenviar e-mail de confirmação",
   "confirmaEmail": "Pronto! Enviamos um e-mail de confirmação para: {email} Confirme sua conta para entrar no site. (Se não encontrar, verifique também as pastas spam/lixo eletrônico.)",
-  "falhaCadastro": "Falha no cadastro",
+  "falhaCadastro": "Falha no cadastro! Email ou User já estão sendo utilizados",
   "NaoPossivelCadastro": "Não foi possível concluir seu cadastro",
   "telaInicial": "Avalie filmes, músicas e séries!",
   "sobreTitulo": "Sobre o ScoreIt",
