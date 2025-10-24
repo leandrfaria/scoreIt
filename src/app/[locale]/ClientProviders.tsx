@@ -1,4 +1,4 @@
-// ClientProviders.tsx
+// src/app/[locale]/ClientProviders.tsx
 "use client";
 
 import { MemberProvider } from "@/context/MemberContext";
@@ -6,11 +6,12 @@ import { AuthProvider } from "@/context/AuthContext";
 import { TabProvider } from "@/context/TabContext";
 import { NextIntlClientProvider } from "next-intl";
 import { Toaster } from "react-hot-toast";
-import dynamic from "next/dynamic";
 import { type Locale } from "@/i18n/routing";
-
-// Carregar o Header normalmente sem SSR false
 import { Header } from "@/components/layout/Header/Header";
+
+// ADIÇÃO:
+import dynamic from "next/dynamic";
+const ChatWidget = dynamic(() => import("@/components/ai/ChatWidget"), { ssr: false });
 
 export default function ClientProviders({
   locale,
@@ -38,6 +39,7 @@ export default function ClientProviders({
                 style: { background: "#333", color: "#fff" },
               }}
             />
+            <ChatWidget />
             {children}
           </TabProvider>
         </AuthProvider>
