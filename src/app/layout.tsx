@@ -13,7 +13,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html>
       <body>
-        {/* MemberProvider precisa estar acima do AuthProvider porque Auth usa useMember() */}
         <MemberProvider>
           <AuthProvider>
             {children}

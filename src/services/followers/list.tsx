@@ -17,6 +17,8 @@ function normalizeMember(u: any): Member {
     gender: String(u?.gender ?? ""),
     bio: String(u?.bio ?? ""),
     profileImageUrl: typeof u?.profileImageUrl === "string" ? u.profileImageUrl : "",
+    enabled: Boolean(u?.enabled ?? false),
+    role: u?.role ?? undefined,
   };
 }
 
