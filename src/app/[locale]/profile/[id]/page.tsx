@@ -21,7 +21,8 @@ import { fetchMemberLists } from "@/services/customList/list";
 import { FollowButton } from "@/components/features/follow/FollowButton";
 import { ProfileStats } from "@/components/features/user/ProfileStats";
 import BadgesWall from "@/components/features/badge/BadgesWall";
-import { getToken } from "@/lib/api";
+import { getToken, apiFetch } from "@/lib/api";
+import toast from "react-hot-toast";
 
 function normalizeHandle(v: string) {
   return (v || "").replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
@@ -55,6 +56,9 @@ export default function PublicProfilePage() {
   const [customLists, setCustomLists] = useState<CustomList[]>([]);
   const [isListsOpen, setIsListsOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<CustomList | null>(null);
+
+  // report modal state
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // Buscar dados do usuário pelo handle
   useEffect(() => {
@@ -135,6 +139,7 @@ export default function PublicProfilePage() {
             following={following}
             setFollowers={setFollowers}
             loggedMember={loggedMember}
+            onOpenReport={() => setIsReportOpen(true)}
           />
         </div>
       </Container>
@@ -186,6 +191,14 @@ export default function PublicProfilePage() {
           member={otherMember}
         />
       )}
+
+    {isReportOpen && otherMember && (
+      <ReportModal
+        onClose={() => setIsReportOpen(false)}
+        reported={otherMember}
+        reporter={loggedMember}
+      />
+    )}
     </main>
   );
 }
@@ -197,6 +210,7 @@ interface ProfileHeaderProps {
   following: number;
   setFollowers: React.Dispatch<React.SetStateAction<number>>;
   loggedMember?: Member | null;
+  onOpenReport?: () => void;
 }
 
 const ProfileHeader = ({
@@ -206,10 +220,12 @@ const ProfileHeader = ({
   following,
   setFollowers,
   loggedMember,
+  onOpenReport,
 }: ProfileHeaderProps) => {
   const displayHandle = `@${normalizeHandle(member.handle || "") || suggestHandle(member)}`;
 
   const showFollowButton = loggedMember?.id && loggedMember.id !== member.id;
+  const showReportButton = showFollowButton && !!onOpenReport;
 
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -233,15 +249,25 @@ const ProfileHeader = ({
           <p className="text-gray-400 text-sm max-w-md">{member.bio || t("no_bio")}</p>
         </div>
 
-        {showFollowButton && (
-          <div className="sm:ml-auto">
+        <div className="flex items-center gap-2 sm:ml-auto">
+          {showFollowButton && (
             <FollowButton
               targetId={member.id.toString()}
               onFollow={() => setFollowers((prev) => prev + 1)}
               onUnfollow={() => setFollowers((prev) => Math.max(prev - 1, 0))}
             />
-          </div>
-        )}
+          )}
+
+          {showReportButton && (
+            <button
+              onClick={() => onOpenReport && onOpenReport()}
+              className="ml-2 px-3 py-1 bg-red-700 rounded hover:bg-red-600 text-white"
+              title="Registrar denúncia sobre este usuário"
+            >
+              Registrar denúncia
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="w-full md:w-auto mt-4 md:mt-0">
@@ -251,6 +277,102 @@ const ProfileHeader = ({
           following={following}
           memberId={member.id.toString()}
         />
+      </div>
+    </div>
+  );
+};
+interface ReportModalProps {
+  onClose: () => void;
+  reported: Member;
+  reporter?: Member | null;
+}
+
+const ReportModal = ({ onClose, reported, reporter }: ReportModalProps) => {
+  const [reason, setReason] = useState<string>(""); // agora textarea único
+  const [submitting, setSubmitting] = useState(false);
+
+  const submitReport = async () => {
+    if (!reason.trim()) {
+      toast.error("Escreva a denúncia antes de enviar.");
+      return;
+    }
+    if (!reporter?.id) {
+      toast.error("Usuário não autenticado.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Monta query string conforme sua API requisita
+      const params = new URLSearchParams();
+      params.set("reporterId", String(reporter.id));
+      params.set("reportedId", String(reported.id));
+      params.set("reason", reason.trim());
+
+      const path = `/reports?${params.toString()}`;
+
+      // Chamada usando query params — método POST (se sua API aceitar GET, troque para "GET")
+      await apiFetch(path, {
+        method: "POST",
+        auth: true,
+      });
+
+      toast.success("Denúncia registrada. Obrigado.");
+      onClose();
+      setReason("");
+    } catch (err) {
+      console.error("Erro ao enviar denúncia:", err);
+      toast.error("Erro ao registrar denúncia.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={() => !submitting && onClose()} />
+
+      <div className="relative w-full max-w-lg bg-zinc-900 p-6 rounded-xl shadow-2xl ring-1 ring-white/10 text-white">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Registrar denúncia</h3>
+          <button
+            onClick={() => !submitting && onClose()}
+            className="text-white/80 hover:text-white"
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p className="text-sm mb-4">
+          Você está prestes a registrar uma denúncia sobre <strong>{reported.name}</strong>.
+        </p>
+
+        <label className="block mb-2 text-sm">Descreva a denúncia</label>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={6}
+          placeholder="Escreva aqui a sua denúncia (o que aconteceu, links, evidências, etc.)"
+          className="w-full mb-4 rounded px-3 py-2 bg-zinc-800 text-white resize-none"
+        />
+
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => !submitting && onClose()}
+            className="px-3 py-1 border border-gray-600 text-gray-200 rounded-lg hover:bg-white/5"
+            disabled={submitting}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={submitReport}
+            className="px-4 py-1 bg-red-700 rounded hover:bg-red-600 text-white"
+            disabled={submitting}
+          >
+            {submitting ? "Enviando..." : "Enviar denúncia"}
+          </button>
+        </div>
       </div>
     </div>
   );

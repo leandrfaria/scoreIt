@@ -64,6 +64,9 @@ export default function UserMenu() {
     );
   }
 
+  // verifica se é admin (considera variações de case e casos com múltiplas roles em string)
+  const isAdmin = !!member?.role && String(member.role).toUpperCase().includes("ADMIN");
+
   return (
     <>
       <DropdownMenu>
@@ -93,9 +96,15 @@ export default function UserMenu() {
           </DropdownMenuItem>
 
           <DropdownMenuItem asChild>
-            <Link href={`/${locale}/feed`} className="block px-2 py-1 hover:bg-gray-900 rounded text-white">
-              Feed
-            </Link>
+            {isAdmin ? (
+              <Link href={`/${locale}/admin`} className="block px-2 py-1 hover:bg-gray-900 rounded text-white">
+                Administração
+              </Link>
+            ) : (
+              <Link href={`/${locale}/feed`} className="block px-2 py-1 hover:bg-gray-900 rounded text-white">
+                Feed
+              </Link>
+            )}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
