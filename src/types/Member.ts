@@ -7,4 +7,6 @@ export interface Member {
   gender: string;
   bio: string;
   profileImageUrl: string;
+  role?: string;
+  enabled: boolean;
 }

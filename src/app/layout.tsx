@@ -1,6 +1,8 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import "@/app/globals.css";
+import { MemberProvider } from "@/context/MemberContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "ScoreIt",
@@ -10,7 +12,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html>
-      <body>{children}</body>
+      <body>
+        {/* MemberProvider precisa estar acima do AuthProvider porque Auth usa useMember() */}
+        <MemberProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </MemberProvider>
+      </body>
     </html>
   );
 }

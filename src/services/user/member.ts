@@ -1,9 +1,22 @@
 import { apiBase, apiFetch, getToken } from "@/lib/api";
-import { jwtDecode, JwtPayload } from "jwt-decode";
+import {jwtDecode} from "jwt-decode";
+import type { JwtPayload } from "jwt-decode";
 import { Member } from "@/types/Member";
 
 interface CustomJwtPayload extends JwtPayload {
   id?: string | number;
+  role?: string;
+  roles?: any;
+  authorities?: any;
+  name?: string;
+  sub?: string;
+  email?: string;
+  birthDate?: string;
+  handle?: string;
+  gender?: string;
+  bio?: string;
+  profileImageUrl?: string;
+  enabled?: boolean;
 }
 
 function cleanHandle(v: unknown): string {
@@ -11,17 +24,36 @@ function cleanHandle(v: unknown): string {
   return raw.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9._]/g, "");
 }
 
+function extractRoleFromAny(u: any): string | undefined {
+  if (!u) return undefined;
+  if (typeof u.role === "string" && u.role) return u.role;
+  if (Array.isArray(u.roles) && u.roles.length) return u.roles[0];
+  if (Array.isArray(u.authorities) && u.authorities.length) {
+    const a = u.authorities[0];
+    if (typeof a === "string") return a;
+    if (a?.authority) return a.authority;
+    if (a?.role) return a.role;
+  }
+  return undefined;
+}
+
 function toMember(u: any): Member {
   const idNum = Number(u?.id ?? 0);
+  const rawRole = extractRoleFromAny(u);
+  const role = rawRole ? (String(rawRole).toUpperCase().startsWith("ROLE_") ? String(rawRole) : `ROLE_${String(rawRole).toUpperCase()}`) : undefined;
+
   return {
     id: Number.isFinite(idNum) ? idNum : 0,
     name: String(u?.name ?? ""),
     birthDate: String(u?.birthDate ?? ""),
-    email: String(u?.email ?? ""),
+    email: String(u?.email ?? u?.sub ?? ""),
     handle: cleanHandle(u?.handle),
     gender: String(u?.gender ?? ""),
     bio: String(u?.bio ?? ""),
     profileImageUrl: typeof u?.profileImageUrl === "string" ? u.profileImageUrl : "",
+    // ✅ agora incluímos role e enabled
+    role,
+    enabled: typeof u?.enabled === "boolean" ? u.enabled : true,
   };
 }
 
@@ -66,7 +98,6 @@ export async function fetchMemberById(
   return toMember(data);
 }
 
-
 export async function fetchMemberByHandle(
   handle: string,
   opts?: { signal?: AbortSignal }
@@ -83,7 +114,6 @@ export async function fetchMemberByHandle(
   // Retorna o primeiro usuário encontrado
   return toMember(data[0]);
 }
-
 
 /**
  * ✅ Novo: retorna **apenas o membro logado** (ou null), sem pegar `data[0]`.
