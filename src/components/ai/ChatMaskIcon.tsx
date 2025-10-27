@@ -1,3 +1,4 @@
+// src/components/ai/ChatMaskIcon.tsx
 "use client";
 
 import React from "react";
@@ -15,25 +16,53 @@ export default function ChatMaskIcon({
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="maskGrad" x1="0" y1="0" x2="64" y2="64">
+        <linearGradient id="batGrad" x1="0" y1="0" x2="64" y2="64">
           <stop offset="0" stopColor="var(--color-mediumgreen)" />
           <stop offset="1" stopColor="var(--color-lightgreen)" />
         </linearGradient>
       </defs>
+
+      {/* Forma geral da máscara com "orelhas" */}
       <path
-        d="M8 22c0-3 2.5-6 7-6 7 0 10.5 4 17 4s10-4 17-4c4.5 0 7 3 7 6 0 17-11 26-24 26S8 39 8 22Z"
-        stroke="rgba(255,255,255,0.8)"
+        d="
+          M12 28
+          C12 18, 18 10, 22 6
+          L26 14
+          C30 12, 34 12, 38 14
+          L42 6
+          C46 10, 52 18, 52 28
+          C52 44, 42 54, 32 54
+          C22 54, 12 44, 12 28 Z
+        "
+        fill="url(#batGrad)"
+        stroke="rgba(255,255,255,0.85)"
         strokeWidth="2"
-        fill="url(#maskGrad)"
+        strokeLinejoin="round"
+      />
+
+      {/* olhos */}
+      <path
+        d="M22 32 c3 -3 7 -3 10 0 c-3 1 -7 1 -10 0 Z"
+        fill="black"
+        opacity="0.7"
       />
       <path
-        d="M18 30c3 0 5-2 8-2s5 2 8 2 5-2 8-2 5 2 6 4"
+        d="M42 32 c-3 -3 -7 -3 -10 0 c3 1 7 1 10 0 Z"
+        fill="black"
+        opacity="0.7"
+      />
+
+      {/* recorte da área dos olhos (brilho) */}
+      <ellipse cx="26" cy="32" rx="3.2" ry="2" fill="white" opacity="0.65" />
+      <ellipse cx="38" cy="32" rx="3.2" ry="2" fill="white" opacity="0.65" />
+
+      {/* sombra inferior sutil */}
+      <path
+        d="M20 46 C26 50, 38 50, 44 46"
         stroke="rgba(0,0,0,0.35)"
         strokeWidth="2"
         strokeLinecap="round"
       />
-      <circle cx="25" cy="30" r="3" fill="black" opacity="0.6" />
-      <circle cx="39" cy="30" r="3" fill="black" opacity="0.6" />
     </svg>
   );
 }

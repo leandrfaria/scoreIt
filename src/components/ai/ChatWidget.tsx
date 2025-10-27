@@ -5,17 +5,25 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatWindow from "./ChatWindow";
 import ChatMaskIcon from "./ChatMaskIcon";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function ChatWidget() {
+  const { isLoggedIn } = useAuthContext();
   const [open, setOpen] = useState(false);
   const scrollYRef = useRef(0);
 
-  // trava/destrava o scroll ao abrir/fechar modal
+  // status de habilitação do widget
+  const enabled = isLoggedIn === true;
+
+  // trava/destrava o scroll ao abrir/fechar modal (só quando habilitado)
   useEffect(() => {
+    if (!enabled) return;
     const body = document.body;
+
     if (open) {
       scrollYRef.current = window.scrollY;
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
       body.style.paddingRight = `${scrollbarWidth}px`;
       body.style.position = "fixed";
       body.style.top = `-${scrollYRef.current}px`;
@@ -33,6 +41,7 @@ export default function ChatWidget() {
       body.style.removeProperty("padding-right");
       window.scrollTo(0, scrollYRef.current);
     }
+
     return () => {
       body.style.removeProperty("position");
       body.style.removeProperty("top");
@@ -42,17 +51,23 @@ export default function ChatWidget() {
       body.style.removeProperty("overflow");
       body.style.removeProperty("padding-right");
     };
-  }, [open]);
+  }, [open, enabled]);
 
-  // fechar com ESC
+  // fechar com ESC (só quando habilitado e aberto)
   useEffect(() => {
-    if (!open) return;
+    if (!enabled || !open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, enabled]);
+
+  // depois de registrar todos os hooks, decide renderização
+  if (!enabled) {
+    // mantém ordem de hooks estável; apenas não renderiza UI
+    return null;
+  }
 
   return (
     <>
@@ -71,7 +86,6 @@ export default function ChatWidget() {
       <AnimatePresence>
         {open && (
           <>
-            {/* overlay */}
             <motion.div
               className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm"
               initial={{ opacity: 0 }}
@@ -79,7 +93,6 @@ export default function ChatWidget() {
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
             />
-            {/* container */}
             <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-2 sm:p-4 lg:p-8 pointer-events-none">
               <motion.div
                 className="pointer-events-auto w-full sm:w-[640px] max-w-[96vw] rounded-2xl border border-white/10
@@ -89,7 +102,6 @@ export default function ChatWidget() {
                 exit={{ opacity: 0, y: 40, scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 220, damping: 22 }}
               >
-                {/* header */}
                 <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <ChatMaskIcon className="w-6 h-6" />
@@ -106,7 +118,6 @@ export default function ChatWidget() {
                   </button>
                 </div>
 
-                {/* body */}
                 <div className="p-3 sm:p-4">
                   <ChatWindow />
                 </div>
