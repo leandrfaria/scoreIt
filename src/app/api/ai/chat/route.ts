@@ -6,6 +6,12 @@ export const runtime = "edge";
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? "";
 const MODEL = "llama-3.3-70b-versatile";
 
+export async function GET() {
+  return new Response(JSON.stringify({ ok: true, hasKey: !!GROQ_API_KEY }), {
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+  });
+}
+
 export async function POST(req: NextRequest) {
   if (!GROQ_API_KEY) {
     return new Response("Falta GROQ_API_KEY no ambiente (.env.local).", { status: 500 });
@@ -29,7 +35,7 @@ export async function POST(req: NextRequest) {
       {
         role: "system",
         content:
-          "Você é a IA do ScoreIt. Responda na linguagem da pergunta, de forma clara e direta. Foco em filmes, séries e músicas. Se tiver incerteza, explique como verificaria (ex.: catálogos oficiais, ScoreIt API).",
+          "Você é a IA do ScoreIt. Responda na linguagem da pergunta, de forma clara, direta e bem escrita (sem erros). Foque em filmes, séries e músicas. Se houver incerteza, explique como verificaria (ex.: catálogos oficiais, ScoreIt API). Quando fizer listas, use bullets curtos.",
       },
       ...messages.map((m: any) => ({ role: m.role, content: m.content })),
     ];
@@ -48,7 +54,6 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    // Se a Groq retornar erro, devolvemos o texto e o status exato para debugar
     if (!groqRes.ok) {
       const errText = await groqRes.text();
       return new Response(`Groq error (${groqRes.status}): ${errText}`, {
@@ -63,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     const ct = groqRes.headers.get("content-type") || "";
 
-    // 🔶 Fallback: se veio JSON (sem stream SSE), transforma em texto puro
+    // Fallback: sem stream SSE (veio JSON)
     if (ct.includes("application/json")) {
       const full = await groqRes.json();
       const content =
@@ -77,34 +82,56 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ✅ Fluxo normal (SSE): extrai os deltas e envia como stream de texto
+    // ✅ Fluxo normal (SSE) COM BUFFER DE LINHAS
     const stream = new ReadableStream({
       start(controller) {
         const reader = groqRes.body!.getReader();
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
+        const textDecoder = new TextDecoder();
+        const textEncoder = new TextEncoder();
+
+        let buffer = ""; // <- acumula linhas quebradas entre chunks
 
         const pump = async (): Promise<void> => {
           const { done, value } = await reader.read();
           if (done) {
+            // processa eventual resto de buffer
+            if (buffer.trim().startsWith("data:")) {
+              const payload = buffer.trim().replace(/^data:\s*/, "");
+              if (payload !== "[DONE]") {
+                try {
+                  const json = JSON.parse(payload);
+                  const token = json.choices?.[0]?.delta?.content ?? "";
+                  if (token) controller.enqueue(textEncoder.encode(token));
+                } catch { /* ignora */ }
+              }
+            }
             controller.close();
             return;
           }
-          const chunk = decoder.decode(value, { stream: true });
 
-          for (const line of chunk.split("\n")) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith("data:")) continue;
-            const payload = trimmed.replace(/^data:\s*/, "");
+          // acumula chunk no buffer
+          buffer += textDecoder.decode(value, { stream: true });
+
+          // quebra somente em linhas completas; guarda o resto
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? ""; // última pode estar incompleta
+
+          for (const raw of lines) {
+            const line = raw.trim();
+            if (!line.startsWith("data:")) continue;
+            const payload = line.replace(/^data:\s*/, "");
             if (payload === "[DONE]") continue;
+
             try {
               const json = JSON.parse(payload);
               const token = json.choices?.[0]?.delta?.content ?? "";
-              if (token) controller.enqueue(encoder.encode(token));
+              if (token) controller.enqueue(textEncoder.encode(token));
             } catch {
-              // ignora keep-alive
+              // se por algum motivo veio incompleto mesmo após split, reanexa ao buffer
+              buffer = payload ? buffer + payload : buffer;
             }
           }
+
           await pump();
         };
 
