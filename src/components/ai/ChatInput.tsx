@@ -1,7 +1,7 @@
-// src/components/ai/ChatInput.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function ChatInput({
   onSend,
@@ -10,6 +10,7 @@ export default function ChatInput({
   onSend: (t: string) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("ChatInput");
   const [text, setText] = useState("");
   const taRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -42,7 +43,7 @@ export default function ChatInput({
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Pergunte algo… (Shift+Enter = nova linha)"
+        placeholder={t("placeholder")}
         className="
           flex-1 rounded-lg bg-neutral-800 px-3 py-2 text-sm outline-none
           focus:ring-2 focus:ring-[color:var(--color-mediumgreen)]
@@ -61,7 +62,7 @@ export default function ChatInput({
           hover:brightness-110 disabled:opacity-50
         "
       >
-        Enviar
+        {t("sendButton")}
       </button>
     </div>
   );
