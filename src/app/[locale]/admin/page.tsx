@@ -179,16 +179,37 @@ export default function AdminPage() {
     setEditData({ name: m.name || "", email: m.email || "", enabled: !!m.enabled });
   };
   const cancelEdit = () => setEditingId(null);
-  const saveEdit = async (id: number) => {
-    try {
-      const updated = await updateMemberAdmin(id, editData);
-      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...updated } : m)));
-      setEditingId(null);
-      toast.success(t("toasts.memberUpdated"));
-    } catch {
-      toast.error(t("errors.updateMember"));
-    }
-  };
+const saveEdit = async (id: number) => {
+  try {
+    const updated = await updateMemberAdmin(id, editData);
+
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, ...(updated || { name: editData.name, email: editData.email, enabled: editData.enabled }) } : m
+      )
+    );
+
+    setEditingId(null);
+
+    const nameToShow = (updated && updated.name) || editData.name || "—";
+
+    // pega o padrão de tradução
+    const pattern = t("toasts.memberUpdated");
+
+    // se o provider não fez a interpolação, fazemos manualmente (mantemos aspas simples como você pediu)
+    const message = pattern.includes("{name}")
+      ? pattern.replace("{name}", nameToShow)
+      : // caso a função `t` aceite interpolação corretamente, ainda passamos o value como fallback
+        t("toasts.memberUpdated", { name: nameToShow });
+
+    toast.success(message);
+  } catch (err) {
+    console.error(err);
+    toast.error(t("errors.updateMember"));
+  }
+};
+
+
 
   // pagination helpers
   const goToPage = (p: number) => {
@@ -211,7 +232,7 @@ export default function AdminPage() {
             {t("actions.prev")}
           </button>
 
-          <div className="hidden sm:flex gap-1">
+          <div className="flex gap-1">
             {pages.map((p) => (
               <button key={p} onClick={() => goToPage(p)} className={`px-3 py-1 rounded ${p === page ? 'bg-emerald-800 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-emerald-200'}`}>
                 {p + 1}
@@ -260,41 +281,69 @@ export default function AdminPage() {
                 <div className="text-sm text-emerald-300/80">{t("sections.membersSubtitle")}</div>
               </div>
 
-              {/* Mobile list (kept) */}
+              {/* Mobile list (fixed to allow inline editing) */}
               <div className="md:hidden flex flex-col gap-4">
                 {members.map((m) => {
                   const notEditable = isNotEditable(m);
                   const adminAcc = isAdminAccount(m);
+                  const isEditing = editingId === m.id;
                   return (
                     <div key={m.id} className="bg-gradient-to-br from-zinc-900/70 to-zinc-800/40 p-4 rounded-lg border border-emerald-700/40">
                       <div className="flex justify-between items-start gap-3">
                         <div className="flex items-center gap-3">
                           <Avatar imageUrl={m.profileImageUrl} name={m.name} size={48} />
                           <div>
-                            <div className="font-semibold text-emerald-100">{m.name || "-"}</div>
-                            <div className="text-xs text-emerald-300">{m.email}</div>
+                            {isEditing ? (
+                              <input
+                                value={editData.name}
+                                onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))}
+                                className="w-full rounded px-2 py-1 text-white bg-emerald-900/60 placeholder:text-emerald-300"
+                                placeholder={t("table.name")}
+                              />
+                            ) : (
+                              <div className="font-semibold text-emerald-100">{m.name || "-"}</div>
+                            )}
+
+                            {isEditing ? (
+                              <input
+                                value={editData.email}
+                                onChange={(e) => setEditData((p) => ({ ...p, email: e.target.value }))}
+                                className="w-full mt-1 rounded px-2 py-1 text-emerald-300 bg-emerald-900/20 placeholder:text-emerald-400 text-sm"
+                                placeholder={t("table.email")}
+                              />
+                            ) : (
+                              <div className="text-xs text-emerald-300">{m.email}</div>
+                            )}
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <div className={`inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded ${m.enabled ? 'bg-emerald-800/60 text-emerald-100' : 'bg-rose-800/60 text-rose-100'}`}>
-                            {m.enabled ? t("labels.active") : t("labels.inactive")}
-                          </div>
+                          {isEditing ? (
+                            <div className={`inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded ${editData.enabled ? 'bg-emerald-800/60 text-emerald-100' : 'bg-rose-800/60 text-rose-100'}`}>
+                              {editData.enabled ? t("labels.active") : t("labels.inactive")}
+                            </div>
+                          ) : (
+                            <div className={`inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded ${m.enabled ? 'bg-emerald-800/60 text-emerald-100' : 'bg-rose-800/60 text-rose-100'}`}>
+                              {m.enabled ? t("labels.active") : t("labels.inactive")}
+                            </div>
+                          )}
+
                           <div className="text-xs text-emerald-300 mt-1">{formatRole(m.role)}</div>
                         </div>
                       </div>
 
                       <div className="mt-3 text-sm space-y-2">
-                        <div>
-                          <div className="text-xs text-emerald-300">{t("labels.bio")}</div>
-                          <div className="text-emerald-100">{m.bio || '—'}</div>
-                        </div>
-
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {editingId === m.id ? (
+                          {isEditing ? (
                             <>
                               <button onClick={() => saveEdit(m.id)} className="px-3 py-1 bg-emerald-700 rounded hover:bg-emerald-600">{t("actions.save")}</button>
                               <button onClick={cancelEdit} className="px-3 py-1 bg-zinc-800 rounded hover:bg-zinc-700">{t("actions.cancel")}</button>
+
+                              {/* small control for enabled when editing */}
+                              <label className="flex items-center gap-2 ml-2 text-sm">
+                                <input type="checkbox" checked={editData.enabled} onChange={(e) => setEditData({ ...editData, enabled: e.target.checked })} />
+                                <span className="text-xs">{t("table.active")}</span>
+                              </label>
                             </>
                           ) : (
                             <>
@@ -395,9 +444,10 @@ export default function AdminPage() {
                   </tbody>
                 </table>
 
-                {/* PAGINATION CONTROLS */}
-                {renderPagination()}
               </div>
+
+              {/* PAGINATION CONTROLS (moved here so it appears on mobile + desktop) */}
+              {renderPagination()}
 
             </div>
 

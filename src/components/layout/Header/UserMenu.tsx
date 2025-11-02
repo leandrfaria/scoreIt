@@ -18,6 +18,7 @@ import { getToken } from "@/lib/api";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function UserMenu() {
+  // hooks: sempre no topo, sem condicionais
   const { isLoggedIn, logout } = useAuthContext();
   const { member } = useMember();
   const locale = useLocale();
@@ -25,6 +26,13 @@ export default function UserMenu() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
 
+  // mover o useCallback aqui, junto com os outros hooks
+  const toggleTheme = useCallback(() => {
+    const next = resolvedTheme === "dark" ? "light" : "dark";
+    setTheme(next); // salva preferência explícita
+  }, [resolvedTheme, setTheme]);
+
+  // returns condicionais depois dos hooks
   if (isLoggedIn === null) return null;
 
   const handleLogout = () => {
@@ -55,11 +63,6 @@ export default function UserMenu() {
       console.error("Erro ao deletar usuário:", error);
     }
   };
-
-  const toggleTheme = useCallback(() => {
-    const next = resolvedTheme === "dark" ? "light" : "dark";
-    setTheme(next); // salva preferência explícita
-  }, [resolvedTheme, setTheme]);
 
   if (!isLoggedIn) {
     return (
@@ -169,7 +172,7 @@ export default function UserMenu() {
                 className={`${itemBase} hover:opacity-80`}
                 style={{ color: "var(--text)" }}
               >
-                Administração
+                Admin
               </Link>
             ) : (
               <Link
