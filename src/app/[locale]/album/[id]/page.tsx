@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { FaHeart } from "react-icons/fa";
+import { FaHeart, FaStar } from "react-icons/fa"; // ⭐ adicionado FaStar para mostrar a média
 import { FiHeart } from "react-icons/fi";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -17,6 +17,8 @@ import { addFavouriteAlbum } from "@/services/album/add_fav_album";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import RatingModal from "@/components/features/review/RatingModal";
 import ReviewSection from "@/components/features/review/ReviewSection";
+import { fetchAverageRating } from "@/services/review/average"; // ⭐ média ScoreIt
+import { onReviewChanged } from "@/lib/events"; // ⭐ para atualizar em tempo real
 
 /** Fallbacks em PT caso a chave de i18n não exista */
 const FALLBACK_PT: Record<string, string> = {
@@ -42,14 +44,11 @@ function useSafeT() {
   return useCallback(
     (key: string, values?: Record<string, unknown>) => {
       try {
-        // tenta via next-intl
         const result = (tRaw as unknown as (k: string, v?: any) => string)(key, values);
         return result;
       } catch {
-        // fallback PT
         const template = FALLBACK_PT[key] ?? key;
         if (!values) return template;
-        // simples interpolação {chave}
         return template.replace(/\{(\w+)\}/g, (_, k) => String(values[k] ?? ""));
       }
     },
@@ -69,6 +68,9 @@ export default function AlbumPage() {
   const [refreshReviews, setRefreshReviews] = useState(false);
   const mountedRef = useRef(true);
 
+  // ⭐ média ScoreIt (igual ao AlbumCard)
+  const [scoreitAverage, setScoreitAverage] = useState<number | null>(null);
+
   // Carrega dados do álbum
   useEffect(() => {
     mountedRef.current = true;
@@ -78,8 +80,6 @@ export default function AlbumPage() {
       try {
         const result = await fetchAlbumById(id, controller.signal);
         if (!mountedRef.current) return;
-        if (!result) {
-        }
         setAlbum(result);
       } catch (err: any) {
         if (err?.name !== "AbortError") {
@@ -93,6 +93,66 @@ export default function AlbumPage() {
       controller.abort();
     };
   }, [id, locale, T]);
+
+  // ✅ carregar e manter a média do ScoreIt em sincronia
+  useEffect(() => {
+    if (!id) return;
+    let controller = new AbortController();
+
+    const loadAverage = async () => {
+      const signal = controller.signal;
+      try {
+        const avg = await fetchAverageRating("ALBUM", id, { signal });
+        if (!signal.aborted) setScoreitAverage(avg);
+      } catch {
+        /* silencioso */
+      }
+    };
+
+    // 1) inicial
+    loadAverage();
+
+    // 2) ao focar a aba
+    const onFocus = () => {
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    };
+    window.addEventListener("focus", onFocus);
+
+    // 3) “tempo real” quando avaliarem este álbum
+    const off = onReviewChanged(({ mediaType, mediaId }) => {
+      if (mediaType !== "ALBUM") return;
+      if (String(mediaId) !== String(id)) return;
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    });
+
+    // 4) polling a cada 5min (fallback)
+    const intervalId = setInterval(() => {
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      off();
+      clearInterval(intervalId);
+      controller.abort();
+    };
+  }, [id]);
+
+  // refetch da média quando a seção de reviews pedir refresh (pós-avaliação)
+  useEffect(() => {
+    if (!refreshReviews || !id) return;
+    const controller = new AbortController();
+    fetchAverageRating("ALBUM", id, { signal: controller.signal })
+      .then((avg) => setScoreitAverage(avg))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [refreshReviews, id]);
 
   // Checa favorito
   useEffect(() => {
@@ -159,6 +219,8 @@ export default function AlbumPage() {
     );
   }
 
+  const ratingText = scoreitAverage != null ? scoreitAverage.toFixed(1) : "—"; // ⭐ mesma lógica do card (sem i18n extra)
+
   return (
     <main className="relative w-full min-h-screen text-white overflow-hidden">
       {album.imageUrl && (
@@ -178,7 +240,13 @@ export default function AlbumPage() {
       <div className="flex flex-col justify-end h-screen max-w-6xl mx-auto px-8 pb-24 space-y-5">
         <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight">{album.name}</h1>
 
+        {/* ⭐ adicionada a nota do ScoreIt ao lado das infos básicas */}
         <div className="flex items-center gap-4 text-sm text-gray-300 flex-wrap">
+          <span className="flex items-center gap-1 text-yellow-400">
+            <FaStar />
+            <span className="text-lg font-medium">{ratingText}</span>
+          </span>
+
           {album.artist && <span className="uppercase">{album.artist}</span>}
           {year !== null && <span>{year}</span>}
           <span>{T("tracksCount", { count: album.total_tracks ?? 0 })}</span>
@@ -215,7 +283,7 @@ export default function AlbumPage() {
         onClose={() => setShowModal(false)}
         mediaId={album.id}
         mediaType="album"
-        onSuccess={() => setRefreshReviews((prev) => !prev)}
+        onSuccess={() => setRefreshReviews((prev) => !prev)} // mantém reviews e média sincronizadas
       />
 
       <ReviewSection mediaId={String(album.id)} refreshTrigger={refreshReviews} />

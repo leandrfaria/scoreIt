@@ -13,8 +13,10 @@ import { addFavouriteMovie } from "@/services/movie/add_fav_movie";
 import { removeFavouriteMedia } from "@/services/user/remove_fav";
 import toast from "react-hot-toast";
 import RatingModal from "@/components/features/review/RatingModal";
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from "next-intl";
 import ReviewSection from "@/components/features/review/ReviewSection";
+import { fetchAverageRating } from "@/services/review/average";
+import { onReviewChanged } from "@/lib/events";
 
 export default function MoviePage() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +24,10 @@ export default function MoviePage() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [refreshReviews, setRefreshReviews] = useState(false);
+
+  // ✅ média do ScoreIt (igual ao card)
+  const [scoreitAverage, setScoreitAverage] = useState<number | null>(null);
+
   const { member } = useMember();
   const locale = useLocale();
   const t = useTranslations("Movies");
@@ -44,6 +50,63 @@ export default function MoviePage() {
     checkFavorite();
   }, [member, id, locale]);
 
+  // 🚀 carregar e manter a média do ScoreIt em sincronia (como no card)
+  useEffect(() => {
+    if (!id) return;
+    let controller = new AbortController();
+
+    const loadAverage = async () => {
+      const signal = controller.signal;
+      try {
+        const avg = await fetchAverageRating("MOVIE", Number(id), { signal });
+        if (!signal.aborted) setScoreitAverage(avg);
+      } catch {
+        /* silencioso */
+      }
+    };
+
+    loadAverage();
+
+    const onFocus = () => {
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    };
+    window.addEventListener("focus", onFocus);
+
+    const off = onReviewChanged(({ mediaType, mediaId }) => {
+      if (mediaType !== "MOVIE") return;
+      if (String(mediaId) !== String(id)) return;
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    });
+
+    // opcional: refresh a cada 5 minutos como no card
+    const intervalId = setInterval(() => {
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      off();
+      clearInterval(intervalId);
+      controller.abort();
+    };
+  }, [id]);
+
+  // quando a modal de avaliação confirmar, refaz a média
+  useEffect(() => {
+    if (!refreshReviews || !id) return;
+    const controller = new AbortController();
+    fetchAverageRating("MOVIE", Number(id), { signal: controller.signal })
+      .then((avg) => setScoreitAverage(avg))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [refreshReviews, id]);
+
   const handleFavoriteToggle = async () => {
     if (!member || !movie) return;
 
@@ -65,6 +128,12 @@ export default function MoviePage() {
   if (!movie) return <p className="text-white p-10">{t("loadingMovie")}</p>;
 
   const year = movie.release_date ? new Date(movie.release_date).getFullYear() : t("unknown");
+  const ratingText =
+    scoreitAverage != null
+      ? scoreitAverage.toFixed(1)
+      : movie.vote_average != null
+      ? Number(movie.vote_average).toFixed(1)
+      : "—";
 
   return (
     <>
@@ -88,11 +157,14 @@ export default function MoviePage() {
           <div className="flex items-center gap-4 text-sm text-gray-300">
             <div className="flex items-center gap-1 text-yellow-400">
               <FaStar />
-              <span className="text-lg font-medium">{movie.vote_average.toFixed(1)}</span>
+              {/* ⭐ agora usa a média do ScoreIt */}
+              <span className="text-lg font-medium">{ratingText}</span>
             </div>
             <span className="uppercase">
               {movie.genres?.[0]
-                ? (typeof movie.genres[0] === "string" ? movie.genres[0] : movie.genres[0].name)
+                ? typeof movie.genres[0] === "string"
+                  ? movie.genres[0]
+                  : movie.genres[0].name
                 : t("unknown")}
             </span>
             <span>{year}</span>

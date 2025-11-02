@@ -4,6 +4,7 @@ import { getMessages, setRequestLocale } from "next-intl/server";
 import { routing, type Locale } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 import "@/app/globals.css";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export default async function LocaleLayout({
   children,
@@ -23,9 +24,11 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <ClientProviders locale={validLocale} messages={messages}>
-      {children}
-    </ClientProviders>
+    <ThemeProvider>
+      <ClientProviders locale={validLocale} messages={messages}>
+        {children}
+      </ClientProviders>
+    </ThemeProvider>
   );
 }
 

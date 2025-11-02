@@ -1,4 +1,4 @@
-// src/app/(your-path)/series/[id]/page.tsx  (ou onde estiver o seu SeriePage)
+// src/app/(your-path)/series/[id]/page.tsx
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -18,6 +18,10 @@ import { apiFetch, AUTH_TOKEN_KEY } from "@/lib/api";
 import { useLocale, useTranslations } from "next-intl";
 import { mapNextIntlToTMDB, isTMDBLocale } from "@/i18n/localeMapping";
 
+// ⭐ imports para a média ScoreIt (igual ao Card)
+import { fetchAverageRating } from "@/services/review/average";
+import { onReviewChanged } from "@/lib/events";
+
 export default function SeriePage() {
   const { id } = useParams<{ id: string }>();
   const [serie, setSerie] = useState<Series | null>(null);
@@ -25,8 +29,11 @@ export default function SeriePage() {
   const [showModal, setShowModal] = useState(false);
   const [refreshReviews, setRefreshReviews] = useState(false);
   const { member } = useMember();
-  const locale = useLocale(); // pode ser 'en' ou 'pt' dependendo da config do next-intl
+  const locale = useLocale();
   const t = useTranslations("Series");
+
+  // ⭐ média do ScoreIt (igual ao SeriesCard)
+  const [scoreitAverage, setScoreitAverage] = useState<number | null>(null);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -36,7 +43,7 @@ export default function SeriePage() {
     };
   }, []);
 
-  // Converte locais do next-intl / curtos para o formato TMDB (ex: 'en' -> 'en-US', 'pt' -> 'pt-BR')
+  // Converte locais do next-intl / curtos para o formato TMDB
   const toTMDBLocale = (loc?: string | null): string => {
     const DEFAULT = "en-US";
     if (!loc || typeof loc !== "string") return DEFAULT;
@@ -47,9 +54,7 @@ export default function SeriePage() {
       const mapped = mapNextIntlToTMDB(trimmed);
       if (mapped && isTMDBLocale(mapped)) return mapped;
       if (mapped && typeof mapped === "string") return mapped;
-    } catch (e) {
-      // ignore
-    }
+    } catch {}
     const two = trimmed.slice(0, 2).toLowerCase();
     if (two === "pt") return "pt-BR";
     if (two === "en") return "en-US";
@@ -57,6 +62,7 @@ export default function SeriePage() {
     return DEFAULT;
   };
 
+  // Carregar detalhes da série
   useEffect(() => {
     if (!id) return;
     const ac = new AbortController();
@@ -67,12 +73,10 @@ export default function SeriePage() {
 
       try {
         const hasToken =
-          typeof window !== "undefined" &&
-          !!localStorage.getItem(AUTH_TOKEN_KEY);
+          typeof window !== "undefined" && !!localStorage.getItem(AUTH_TOKEN_KEY);
 
         if (hasToken) {
           try {
-            // tenta com auth
             const data = await apiFetch(`/series/${id}/details${qs}`, {
               method: "GET",
               auth: true,
@@ -90,16 +94,14 @@ export default function SeriePage() {
               typeof e?.message === "string" &&
               e.message.toUpperCase().includes("NO_TOKEN");
             if (isAbort) return;
-            // se 401/403/NO_TOKEN, tenta sem auth (tratado abaixo)
             if (!(status === 401 || status === 403 || noToken)) {
               console.error("Erro ao buscar série (com auth):", e);
             }
-            // continua para a tentativa sem auth
           }
         }
 
+        // tenta sem auth
         try {
-          // tenta sem auth
           const data = await apiFetch(`/series/${id}/details${qs}`, {
             method: "GET",
             auth: false,
@@ -132,13 +134,74 @@ export default function SeriePage() {
     };
   }, [id, locale]);
 
+  // ⭐ Carregar e manter a média do ScoreIt sincronizada (como no Card)
+  useEffect(() => {
+    if (!id) return;
+    let controller = new AbortController();
+
+    const loadAverage = async () => {
+      const signal = controller.signal;
+      try {
+        // No card foi usado "SERIE"
+        const avg = await fetchAverageRating("SERIE", Number(id), { signal });
+        if (!signal.aborted) setScoreitAverage(avg);
+      } catch {
+        /* silencioso */
+      }
+    };
+
+    // 1) inicial
+    loadAverage();
+
+    // 2) ao focar a aba
+    const onFocus = () => {
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    };
+    window.addEventListener("focus", onFocus);
+
+    // 3) “tempo real” quando avaliarem esta série (SERIE/SERIES)
+    const off = onReviewChanged(({ mediaType, mediaId }) => {
+      if (mediaType !== "SERIE" && mediaType !== "SERIES") return;
+      if (String(mediaId) !== String(id)) return;
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    });
+
+    // 4) polling a cada 5min (fallback)
+    const intervalId = setInterval(() => {
+      controller.abort();
+      controller = new AbortController();
+      loadAverage();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      off();
+      clearInterval(intervalId);
+      controller.abort();
+    };
+  }, [id]);
+
+  // Refazer média após enviar avaliação (trigger vindo do RatingModal/ReviewSection)
+  useEffect(() => {
+    if (!refreshReviews || !id) return;
+    const controller = new AbortController();
+    fetchAverageRating("SERIE", Number(id), { signal: controller.signal })
+      .then((avg) => setScoreitAverage(avg))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [refreshReviews, id]);
+
+  // Checar favorito
   useEffect(() => {
     let cancelled = false;
 
     const checkFavorite = async () => {
       try {
         if (member && id) {
-          // aqui mantemos o locale original do next-intl — seu backend deve normalizar
           const fav = await isFavoritedMedia(member.id, Number(id), locale);
           if (!cancelled) setIsFavorited(fav);
         }
@@ -183,6 +246,12 @@ export default function SeriePage() {
     ? new Date(serie.release_date).getFullYear()
     : t("unknown");
 
+  // ⭐ usa a média do ScoreIt; se ainda não carregou, mostra "—"
+  const ratingText =
+    scoreitAverage != null
+      ? scoreitAverage.toFixed(1)
+      : "—";
+
   return (
     <main className="relative w-full min-h-screen text-white">
       {serie.backdropUrl && (
@@ -204,9 +273,8 @@ export default function SeriePage() {
         <div className="flex items-center gap-4 text-sm text-gray-300">
           <div className="flex items-center gap-1 text-yellow-400">
             <FaStar />
-            <span className="text-lg font-medium">
-              {Number(serie.vote_average || 0).toFixed(1)}
-            </span>
+            {/* ⭐ agora exibe a média do ScoreIt */}
+            <span className="text-lg font-medium">{ratingText}</span>
           </div>
           <span className="uppercase">{serie.genres?.[0] || t("unknown")}</span>
           <span>{year}</span>
@@ -247,7 +315,7 @@ export default function SeriePage() {
           onClose={() => setShowModal(false)}
           mediaId={serie.id}
           mediaType="series"
-          onSuccess={() => setRefreshReviews((prev) => !prev)}
+          onSuccess={() => setRefreshReviews((prev) => !prev)} // 🔁 força refresh da média/reviews
         />
       )}
 

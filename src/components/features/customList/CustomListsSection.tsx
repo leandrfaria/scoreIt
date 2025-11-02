@@ -97,6 +97,7 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
             aria-label={t("openList", { listName: list.listName })}
             title={list.listName}
             role="listitem"
+            data-list-id={list.id} /* id permanece disponível no DOM, mas não é exibido */
           >
             <div className="h-20 sm:h-24 md:h-28 bg-[var(--color-darkgreen)]/60 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-[var(--color-darkgreen)]/80 via-[var(--color-mediumgreen)]/30 to-transparent" />
@@ -112,8 +113,8 @@ export default function CustomListsSection({ lists, onSelect }: Props) {
                 <p className="text-xs italic text-white/40">{t("noDescription")}</p>
               )}
 
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-white/50">id: {list.id}</span>
+              {/* rodapé sem exibir o id */}
+              <div className="mt-3 flex items-center justify-end">
                 <span
                   className="
                     inline-flex items-center gap-1 text-[10px] sm:text-xs

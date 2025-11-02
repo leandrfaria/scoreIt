@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 import { MemberProvider } from "@/context/MemberContext";
 import { AuthProvider } from "@/context/AuthContext";
+import ThemeHydration from "@/app/ThemeHydration";
 
 export const metadata: Metadata = {
   title: "ScoreIt",
@@ -11,12 +12,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html>
+    <html suppressHydrationWarning>
+      <head>
+        <ThemeHydration />
+      </head>
       <body>
         <MemberProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
         </MemberProvider>
       </body>
     </html>

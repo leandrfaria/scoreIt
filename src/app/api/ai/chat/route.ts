@@ -8,38 +8,174 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY ?? "";
 const SERPER_API_KEY = process.env.SERPER_API_KEY ?? "";
 const MODEL = "llama-3.3-70b-versatile";
 
-// ====== AJUDA: detectar quando precisa web ======
+// ====== LIMPA PREFIXOS (web:/now:) DO TEXTO DO USUÁRIO ======
+function stripManualPrefixes(text: string): string {
+  let t = text.trim();
+  if (t.toLowerCase().startsWith("web:")) t = t.slice(4).trim();
+  if (t.toLowerCase().startsWith("now:")) t = t.slice(4).trim();
+  return t;
+}
+
+// ====== HEURÍSTICA: decidir quando procurar na web ======
+// — mais robusta, com foco em atualidade e fatos variáveis
 function needsWebSearch(userText: string): boolean {
   const t = userText.toLowerCase().trim();
 
   // força manual via prefixos
   if (t.startsWith("web:") || t.startsWith("now:")) return true;
 
-  // heurística básica para fatos/atualidades/datas
+  // palavras/estruturas que geralmente pedem fato mutável/recente
   const triggers = [
     "quando", "que dia", "data", "lançamento", "estreia", "estreou",
-    "saiu", "vai sair", "hoje", "agora", "recentemente",
-    "ganhou", "oscar", "prêmio", "bilheteria", "notícia",
-    "temporada", "episódio", "elenco", "escalação", "trilha sonora",
-    "setlist", "turnê", "tour", "álbum", "single", "chart", "parada", "spotify",
+    "saiu", "vai sair", "confirmado", "anunciado",
+    "hoje", "agora", "ontem", "últimas", "recentemente", "atual",
+    "ganhou", "oscar", "prêmio", "bilheteria", "recorde",
+    "notícia", "rumor", "vazou", "revelado", "trailer",
+    "temporada nova", "episódio novo", "setlist", "turnê", "tour",
+    "álbum", "single", "chart", "parada", "spotify", "apple music", "billboard",
   ];
-  return triggers.some((k) => t.includes(k));
+  if (triggers.some((k) => t.includes(k))) return true;
+
+  // se mencionar explícito “fonte”, “link”, “site”, também vale
+  if (/\b(fontes?|links?|sites?)\b/.test(t)) return true;
+
+  return false;
 }
 
-// ====== CHAMADA SERPER (Google Search API) ======
-async function serperSearch(query: string) {
+// ====== WEB SEARCH REFINADO (Serper.dev) ======
+//
+// Melhorias:
+// - escolhe automaticamente entre /search (geral) e /news (se "agora"/"notícia"/prefixo now:)
+// - aplica filtro de recência (tbs: qdr:d|w|m|y) quando fizer sentido
+// - siteFilters padrão para priorizar fontes de entretenimento confiáveis
+// - respeita se o usuário já colocou "site:" no query (não força filtros)
+// - dedup por hostname+path e reordenação por “confiabilidade” do domínio
+// - formatação concisa (título + hostname + data + snippet + URL)
+
+type SerperSearchKind = "search" | "news";
+
+function classifyWebEndpoint(originalUserText: string): SerperSearchKind {
+  const t = originalUserText.toLowerCase();
+  const forceNews = t.startsWith("now:") || /\b(hoje|agora|últimas|notícia|noticias|anunciado|confirmado)\b/.test(t);
+  return forceNews ? "news" : "search";
+}
+
+// converte “hoje/ontem/última semana/mês/ano” em tbs (time-based search)
+// d=day, w=week, m=month, y=year
+function inferTbs(userText: string): string | undefined {
+  const t = userText.toLowerCase();
+
+  if (/\bhoje|agora\b/.test(t)) return "qdr:d";
+  if (/\bontem|últim[ao]s?\s*2?\s*dias?\b/.test(t)) return "qdr:d";
+  if (/\b(esta|desta)\s*semana|últim[ao]s?\s*7\s*dias|semana\b/.test(t)) return "qdr:w";
+  if (/\b(este|deste)\s*m[eê]s|últim[ao]s?\s*30\s*dias|m[eê]s\b/.test(t)) return "qdr:m";
+  if (/\b(este|deste)\s*ano|ano\b/.test(t)) return "qdr:y";
+
+  // se mencionou “lançamento”, “estreia”, “temporada nova”, aplicar pelo menos qdr:y
+  if (/(lançamento|estreia|temporada nova|temporada)/.test(t)) return "qdr:y";
+
+  return undefined;
+}
+
+function hasExplicitSiteOperator(q: string): boolean {
+  return /\bsite:/.test(q);
+}
+
+const TRUST_WEIGHTS: Record<string, number> = {
+  // Música
+  "billboard.com": 9, "pitchfork.com": 8, "rollingstone.com": 8,
+  "music.apple.com": 8, "spotify.com": 8, "genius.com": 7,
+  // Cinema/TV
+  "imdb.com": 9, "themoviedb.org": 9, "rottentomatoes.com": 8,
+  "variety.com": 8, "hollywoodreporter.com": 8, "deadline.com": 8,
+  "screenrant.com": 6, "collider.com": 6,
+  // Generalistas de referência
+  "wikipedia.org": 7, "bbc.com": 8, "reuters.com": 9, "apnews.com": 8,
+};
+
+function hostnameOf(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
+}
+
+function canonicalPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.hostname.replace(/^www\./, "")}${u.pathname.replace(/\/+$/, "")}`;
+  } catch { return url; }
+}
+
+type WebItem = { title: string; link: string; snippet?: string; date?: string; pos: number };
+
+function normalizeSerperResults(kind: SerperSearchKind, json: any): WebItem[] {
+  const items: WebItem[] = [];
+  const arr = kind === "news" ? json?.news : json?.organic;
+  if (!Array.isArray(arr)) return items;
+
+  let pos = 0;
+  for (const r of arr.slice(0, 12)) {
+    const title = r.title || r.link || "(sem título)";
+    const link = r.link || r.url || r.source || "";
+    if (!link) continue;
+    const snippet = r.snippet || r.snippets?.[0] || r.description || "";
+    const date = r.date || r.datePublished || r.dateUtc || r.age || undefined;
+    items.push({ title, link, snippet, date, pos: pos++ });
+  }
+  return items;
+}
+
+function dedupeAndRescore(items: WebItem[]): WebItem[] {
+  const seen = new Set<string>();
+  const out: WebItem[] = [];
+  for (const it of items) {
+    const key = canonicalPath(it.link);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      out.push(it);
+    }
+  }
+
+  // score por confiança do domínio + posição original
+  return out
+    .map((it) => {
+      const host = hostnameOf(it.link);
+      const trust = TRUST_WEIGHTS[host] ?? 5; // default
+      const score = trust * 100 - it.pos;     // mais confiança + mais alto no ranking original
+      return { it, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map((x) => x.it);
+}
+
+async function serperSmartSearch(originalUserText: string, cleanedQuery: string) {
   if (!SERPER_API_KEY) return null;
 
-  const body = {
-    q: query,
-    gl: "br",             // país (pt-BR)
-    hl: "pt-br",          // idioma resultados
-    num: 8,               // 4–8 é um bom equilíbrio
-    // siteFilters opcional: prioriza fontes específicas
-    // siteFilters: ["themoviedb.org","imdb.com","rottentomatoes.com","wikipedia.org","spotify.com","music.apple.com"]
+  const kind = classifyWebEndpoint(originalUserText);
+  const tbs = inferTbs(originalUserText);
+
+  const body: Record<string, any> = {
+    q: cleanedQuery,
+    gl: "br",
+    hl: "pt-br",
+    num: 10,
+    autocorrect: true,
   };
 
-  const res = await fetch("https://google.serper.dev/search", {
+  if (tbs) body.tbs = tbs;
+
+  // se o usuário não fixou "site:", priorize fontes confiáveis
+  if (!hasExplicitSiteOperator(cleanedQuery)) {
+    body.siteFilters = [
+      "themoviedb.org","imdb.com","rottentomatoes.com",
+      "variety.com","hollywoodreporter.com","deadline.com",
+      "wikipedia.org","spotify.com","music.apple.com","billboard.com","pitchfork.com",
+    ];
+  }
+
+  const endpoint = kind === "news" ? "news" : "search";
+  const url = `https://google.serper.dev/${endpoint}`;
+
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "X-API-KEY": SERPER_API_KEY,
@@ -50,56 +186,49 @@ async function serperSearch(query: string) {
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`Serper error (${res.status}): ${txt}`);
+    throw new Error(`Serper ${endpoint} error (${res.status}): ${txt}`);
   }
 
   const json = await res.json();
-  return json;
+  const normalized = dedupeAndRescore(normalizeSerperResults(kind, json));
+
+  // answerBox / knowledgeGraph — quando existir, colamos no topo como “resumo”
+  const extras: string[] = [];
+  if (json.answerBox?.answer) {
+    extras.push(`> **Resposta direta:** ${json.answerBox.answer}`);
+  } else if (json.answerBox?.snippet) {
+    extras.push(`> **Resumo:** ${json.answerBox.snippet}`);
+  }
+  if (json.knowledgeGraph?.title) {
+    const kg = json.knowledgeGraph;
+    const desc = kg.description ? ` — ${kg.description}` : "";
+    extras.push(`> **Knowledge Graph:** ${kg.title}${desc}`);
+  }
+
+  return { items: normalized, extras };
 }
 
-// ====== FORMATA O CONTEXTO PRO LLM ======
-function buildWebContext(serp: any) {
-  if (!serp) return "";
+function buildWebContext(smart: Awaited<ReturnType<typeof serperSmartSearch>>) {
+  if (!smart || !smart.items?.length) return "";
 
-  // answerBox / knowledgeGraph quando existirem
-  const extraBits: string[] = [];
-  if (serp.answerBox?.answer) {
-    extraBits.push(`Resposta direta: ${serp.answerBox.answer}`);
-  }
-  if (serp.knowledgeGraph?.title) {
-    const kg = serp.knowledgeGraph;
-    const desc = kg.description ? ` — ${kg.description}` : "";
-    extraBits.push(`Knowledge: ${kg.title}${desc}`);
-  }
-
-  // orgânicos
   const lines: string[] = [];
-  const org = Array.isArray(serp.organic) ? serp.organic.slice(0, 8) : [];
-  for (const r of org) {
-    const title = r.title || "(sem título)";
-    const link = r.link || r.url || "";
-    const snippet = r.snippet || r.snippets?.[0] || "";
-    const date = r.date ? ` [${r.date}]` : "";
-    lines.push(`- ${title}${date}\n  ${snippet}\n  ${link}`);
+  const top = smart.items;
+
+  for (const r of top) {
+    const host = hostnameOf(r.link);
+    const date = r.date ? ` — ${r.date}` : "";
+    const snippet = r.snippet ? `\n  ${r.snippet}` : "";
+    lines.push(`- [${r.title}](${r.link}) *(${host}${date})*${snippet}`);
   }
 
-  const header = [
-    "### Fonte: Web search (Serper.dev)",
-    ...(extraBits.length ? ["", ...extraBits] : []),
+  const block = [
+    "### Fonte: Web (Serper.dev)",
+    ...(smart.extras?.length ? ["", ...smart.extras] : []),
     "",
-    "Resultados:",
     ...lines,
   ].join("\n");
 
-  return header;
-}
-
-// ====== LIMPA PREFIXOS (web:/now:) DO TEXTO DO USUÁRIO ======
-function stripManualPrefixes(text: string): string {
-  let t = text.trim();
-  if (t.toLowerCase().startsWith("web:")) t = t.slice(4).trim();
-  if (t.toLowerCase().startsWith("now:")) t = t.slice(4).trim();
-  return t;
+  return block;
 }
 
 export async function GET() {
@@ -138,13 +267,13 @@ export async function POST(req: NextRequest) {
     const originalUserText: string = typeof lastUser?.content === "string" ? lastUser.content : "";
     const cleanedUserText = stripManualPrefixes(originalUserText);
 
-    // ====== (Opcional) BUSCA NA WEB ======
+    // ====== (Opcional) BUSCA NA WEB (refinada) ======
     let webContext = "";
     const shouldSearch = SERPER_API_KEY && originalUserText && needsWebSearch(originalUserText);
     if (shouldSearch) {
       try {
-        const serp = await serperSearch(cleanedUserText);
-        webContext = buildWebContext(serp);
+        const smart = await serperSmartSearch(originalUserText, cleanedUserText);
+        webContext = buildWebContext(smart);
       } catch (err: any) {
         // não derruba a resposta da IA; só inclui aviso no contexto
         webContext = `### Web search falhou\nMotivo: ${(err?.message || "erro desconhecido")}\n`;
@@ -156,16 +285,13 @@ export async function POST(req: NextRequest) {
       {
         role: "system",
         content:
-          "Você é a IA do ScoreIt. Responda na linguagem da pergunta, de forma clara, direta e bem escrita (sem erros). Foque em filmes, séries e músicas. Se houver incerteza, explique como verificaria (ex.: catálogos oficiais, ScoreIt API). Quando fizer listas, use bullets curtos.",
+          "Você é a IA do ScoreIt. Responda na linguagem da pergunta, de forma clara, direta e bem escrita (sem erros). Foque em filmes, séries e músicas. Se houver incerteza, explique como verificaria (ex.: catálogos oficiais, ScoreIt API). Quando fizer listas, use bullets curtos. Se houver bloco 'Fonte: Web', use-o como base factual e cite as URLs já listadas.",
       },
-      // injeta contexto factual se existir
       ...(webContext
         ? [
             {
               role: "system" as const,
-              content:
-                "Contexto factual obtido agora da web. Use isso como base, cite fontes pelo nome e, quando fizer sentido, inclua as URLs.\n\n" +
-                webContext,
+              content: webContext,
             },
           ]
         : []),

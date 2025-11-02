@@ -6,10 +6,48 @@
   --color-lightgreen: #93B1A6;
 }
 
+/* =========================
+   BASE POR VARIÁVEIS DE TEMA
+   ========================= */
+:root {
+  --bg: #0b1114;          /* fundo padrão verde escuro */
+  --text: #ffffff;
+  --muted: #a0a6ad;
+  --border: #2a3136;
+  --surface: #0f171a;
+  --surface-2: #101417;
+  --overlay: rgba(0,0,0,0.6);
+}
+
+/* =========================
+   MODO PRETO TOTAL
+   ========================= */
+html[data-theme="dark"] {
+  --bg: #000000;          /* preto total */
+  --text: #ffffff;
+  --muted: #b7c1c9;
+  --border: #222;
+  --surface: #0a0a0a;
+  --surface-2: #111;
+  --overlay: rgba(0,0,0,0.7);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
 
 body {
-  background-color: #02070A;
-  color: white;
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color .25s ease, color .25s ease;
 }
 
 /* Scroll invisível mas funcional */
@@ -25,15 +63,21 @@ body {
 /* Estilização de opções do select */
 .styled-select option {
   padding: 8px;
-  border-bottom: 1px solid #333;
-  background-color: #1a1a1a;
-  color: white;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
 }
-
 .styled-select option:last-child {
   border-bottom: none;
 }
 
-.opacidade{
-  background-color: rgba(2,7,10,0.8);
+/* Opacidade / overlay */
+.opacidade {
+  background-color: var(--overlay);
 }
+
+/* Helpers utilitários */
+.bg-surface { background-color: var(--surface); }
+.bg-surface-2 { background-color: var(--surface-2); }
+.text-muted { color: var(--muted); }
+.border-theme { border-color: var(--border); }
