@@ -22,6 +22,28 @@ function stripTimeLocal(d: Date | null): Date | null {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
+/**
+ * Parseia strings/Date e garante que "date-only" (YYYY-MM-DD) seja criado como meia-noite
+ * no timezone local (evita shift causado por Date('YYYY-MM-DD') ser tratado como UTC).
+ */
+function parseDateLocal(iso: string | Date | null): Date | null {
+  if (!iso) return null;
+  if (iso instanceof Date) return iso;
+  const s = String(iso).trim();
+  // date-only pattern YYYY-MM-DD
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const year = Number(m[1]);
+    const month = Number(m[2]);
+    const day = Number(m[3]);
+    return new Date(year, month - 1, day); // meia-noite local
+  }
+  // fallback: deixa o Date interpretar (ex.: ISO com hora/offset)
+  const parsed = new Date(s);
+  if (isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
 interface EditReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -42,8 +64,8 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
   const descId = useId();
 
   const initialDate = useMemo(() => {
-    const d = new Date(review.watchDate);
-    return stripTimeLocal(isNaN(d.getTime()) ? new Date() : d);
+    const parsed = parseDateLocal(review.watchDate) || new Date();
+    return stripTimeLocal(isNaN(parsed.getTime()) ? new Date() : parsed);
   }, [review.watchDate]);
 
   const [score, setScore] = useState(review.score);
@@ -54,8 +76,8 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
 
   useEffect(() => {
     setScore(review.score);
-    const d = new Date(review.watchDate);
-    setWatchDate(stripTimeLocal(isNaN(d.getTime()) ? new Date() : d));
+    const parsed = parseDateLocal(review.watchDate) || new Date();
+    setWatchDate(stripTimeLocal(isNaN(parsed.getTime()) ? new Date() : parsed));
     setMemberReview(review.memberReview || "");
     setSpoiler(review.spoiler);
   }, [review]);
@@ -63,7 +85,7 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
   const isDateValid = (date: Date | null) => {
     if (!date) return false;
     const now = new Date();
-    const minDate = new Date("2020-01-01T00:00:00");
+    const minDate = new Date(2020, 0, 1); // local, sem timezone ambíguo
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     return d <= today && d >= minDate;
@@ -79,9 +101,10 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
       memberReview: memberReview.trim(),
       spoiler,
     };
+    const origParsed = parseDateLocal(review.watchDate) || new Date();
     const orig = {
       score: review.score,
-      watchDate: formatDateYMD(stripTimeLocal(new Date(review.watchDate)) || new Date()),
+      watchDate: formatDateYMD(stripTimeLocal(origParsed) || new Date()),
       memberReview: (review.memberReview || "").trim(),
       spoiler: review.spoiler,
     };
@@ -158,7 +181,7 @@ export default function EditReviewModal({ isOpen, onClose, review, onSuccess }: 
               calendarClassName="react-datepicker"
               popperClassName="z-50"
               maxDate={new Date()}
-              minDate={new Date("2020-01-01")}
+              minDate={new Date(2020, 0, 1)}
               placeholderText={t("selectDate")}
               showTimeSelect={false}
             />

@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 import { FaStar, FaTrash, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { deleteReview } from "@/services/review/delete_review";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 type ReviewProfileCardProps = {
   title: string;
   posterUrl: string;
-  date: string; // "YYYY-MM-DD"
+  date: string;
   rating: number;
   comment?: string;
   canEdit?: boolean;
@@ -19,27 +19,18 @@ type ReviewProfileCardProps = {
 
 const FALLBACK_POSTER = "/fallback.jpg";
 
-function formatYMDToPtBR(ymd: string) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd?.trim() ?? "");
-  if (!m) {
-    const d = new Date(ymd);
-    return isNaN(d.getTime()) ? ymd : d.toLocaleDateString();
-  }
-  const [, y, mo, d] = m;
-  return `${d}/${mo}/${y}`;
-}
-
 export default function ReviewProfileCard({
   title,
   posterUrl,
   date,
   rating,
   comment,
-  canEdit,
+  canEdit = false, // valor padrão false
   onDelete,
   reviewId,
 }: ReviewProfileCardProps) {
-  const t = useTranslations("ReviewProfileCard"); // <-- internacionalização
+  const t = useTranslations("ReviewProfileCard");
+  const locale = useLocale();
   const [showConfirm, setShowConfirm] = useState(false);
   const [posterSrc, setPosterSrc] = useState(posterUrl || FALLBACK_POSTER);
   const [deleting, setDeleting] = useState(false);
@@ -75,7 +66,37 @@ export default function ReviewProfileCard({
     return stars;
   };
 
-  const formattedDate = formatYMDToPtBR(date);
+  const formatDate = (iso: string | Date) => {
+    if (!iso) return "N/A";
+
+    // Se já for Date, usa direto com locale
+    if (iso instanceof Date) return iso.toLocaleDateString(locale);
+
+    // Tenta extrair partes YYYY-MM-DD (aceita também ISO com T/Z)
+    const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      const year = Number(m[1]);
+      const month = Number(m[2]); // 1..12
+      const day = Number(m[3]);
+
+      // cria data no horário local sem efeitos de fuso
+      const d = new Date(year, month - 1, day);
+
+      // formata com o locale atual (pt-BR -> dd/mm; en-US -> mm/dd)
+      return d.toLocaleDateString(locale);
+    }
+
+    // fallback: deixa o motor lidar com a string
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString(locale);
+    } catch {
+      return String(iso);
+    }
+  };
+
+
+  const formattedDate = formatDate(date);
   const hasComment = !!comment?.trim();
 
   return (

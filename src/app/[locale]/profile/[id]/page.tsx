@@ -1,3 +1,5 @@
+// File: app/(routes)/[id]/page.tsx (PublicProfilePage) - i18n updated
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -69,6 +71,7 @@ export default function PublicProfilePage() {
         setOtherMember(data);
       } catch (error) {
         console.error(t("errorFetchingProfile"), error);
+        toast.error(t("errorFetchingProfile"));
       } finally {
         setLoading(false);
       }
@@ -92,6 +95,7 @@ export default function PublicProfilePage() {
         setFollowing(followingCount);
       } catch (err) {
         console.error(t("errorFetchingCounts"), err);
+        toast.error(t("errorFetchingCounts"));
       }
     };
     run();
@@ -116,6 +120,7 @@ export default function PublicProfilePage() {
         setCustomLists(lists);
       } catch (err) {
         console.error(t("errorFetchingCustomLists"), err);
+        toast.error(t("errorFetchingCustomLists"));
       }
     };
     run();
@@ -192,13 +197,13 @@ export default function PublicProfilePage() {
         />
       )}
 
-    {isReportOpen && otherMember && (
-      <ReportModal
-        onClose={() => setIsReportOpen(false)}
-        reported={otherMember}
-        reporter={loggedMember}
-      />
-    )}
+      {isReportOpen && otherMember && (
+        <ReportModal
+          onClose={() => setIsReportOpen(false)}
+          reported={otherMember}
+          reporter={loggedMember}
+        />
+      )}
     </main>
   );
 }
@@ -242,9 +247,7 @@ const ProfileHeader = ({
         <div className="flex-1 flex flex-col text-white space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg font-medium">{member.name}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
-              {displayHandle}
-            </span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">{displayHandle}</span>
           </div>
           <p className="text-gray-400 text-sm max-w-md">{member.bio || t("no_bio")}</p>
         </div>
@@ -262,21 +265,16 @@ const ProfileHeader = ({
             <button
               onClick={() => onOpenReport && onOpenReport()}
               className="ml-2 px-3 py-1 bg-red-700 rounded hover:bg-red-600 text-white"
-              title="Registrar denúncia sobre este usuário"
+              title={t("report_reportButtonTitle")}
             >
-              Registrar denúncia
+              {t("report_openButton")}
             </button>
           )}
         </div>
       </div>
 
       <div className="w-full md:w-auto mt-4 md:mt-0">
-        <ProfileStats
-          t={t}
-          followers={followers}
-          following={following}
-          memberId={member.id.toString()}
-        />
+        <ProfileStats t={t} followers={followers} following={following} memberId={member.id.toString()} />
       </div>
     </div>
   );
@@ -288,16 +286,17 @@ interface ReportModalProps {
 }
 
 const ReportModal = ({ onClose, reported, reporter }: ReportModalProps) => {
+  const t = useTranslations("profile");
   const [reason, setReason] = useState<string>(""); // agora textarea único
   const [submitting, setSubmitting] = useState(false);
 
   const submitReport = async () => {
     if (!reason.trim()) {
-      toast.error("Escreva a denúncia antes de enviar.");
+      toast.error(t("report_errors_empty"));
       return;
     }
     if (!reporter?.id) {
-      toast.error("Usuário não autenticado.");
+      toast.error(t("report_errors_unauthenticated"));
       return;
     }
 
@@ -317,12 +316,12 @@ const ReportModal = ({ onClose, reported, reporter }: ReportModalProps) => {
         auth: true,
       });
 
-      toast.success("Denúncia registrada. Obrigado.");
+      toast.success(t("report_success"));
       onClose();
       setReason("");
     } catch (err) {
       console.error("Erro ao enviar denúncia:", err);
-      toast.error("Erro ao registrar denúncia.");
+      toast.error(t("report_errors_submit"));
     } finally {
       setSubmitting(false);
     }
@@ -334,26 +333,21 @@ const ReportModal = ({ onClose, reported, reporter }: ReportModalProps) => {
 
       <div className="relative w-full max-w-lg bg-zinc-900 p-6 rounded-xl shadow-2xl ring-1 ring-white/10 text-white">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Registrar denúncia</h3>
-          <button
-            onClick={() => !submitting && onClose()}
-            className="text-white/80 hover:text-white"
-            aria-label="Fechar"
-          >
+          <h3 className="text-lg font-semibold">{t("report_title")}</h3>
+          <button onClick={() => !submitting && onClose()} className="text-white/80 hover:text-white" aria-label={t("report_closeAria")}>
             ✕
           </button>
         </div>
 
         <p className="text-sm mb-4">
-          Você está prestes a registrar uma denúncia sobre <strong>{reported.name}</strong>.
+          {t("report_intro", { name: reported?.name ?? "" })}
         </p>
-
-        <label className="block mb-2 text-sm">Descreva a denúncia</label>
+        <label className="block mb-2 text-sm">{t("report_label")}</label>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={6}
-          placeholder="Escreva aqui a sua denúncia (o que aconteceu, links, evidências, etc.)"
+          placeholder={t("report_placeholder")}
           className="w-full mb-4 rounded px-3 py-2 bg-zinc-800 text-white resize-none"
         />
 
@@ -363,14 +357,10 @@ const ReportModal = ({ onClose, reported, reporter }: ReportModalProps) => {
             className="px-3 py-1 border border-gray-600 text-gray-200 rounded-lg hover:bg-white/5"
             disabled={submitting}
           >
-            Cancelar
+            {t("report_cancel")}
           </button>
-          <button
-            onClick={submitReport}
-            className="px-4 py-1 bg-red-700 rounded hover:bg-red-600 text-white"
-            disabled={submitting}
-          >
-            {submitting ? "Enviando..." : "Enviar denúncia"}
+          <button onClick={submitReport} className="px-4 py-1 bg-red-700 rounded hover:bg-red-600 text-white" disabled={submitting}>
+            {submitting ? t("report_sending") : t("report_submit")}
           </button>
         </div>
       </div>

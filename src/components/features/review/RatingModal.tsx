@@ -9,7 +9,7 @@ import "@/styles/react-datepicker-dark.css";
 import { postReview } from "@/services/review/post_review";
 import { useMember } from "@/context/MemberContext";
 import toast from "react-hot-toast";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 /** Garante "YYYY-MM-DD" (sem horário/UTC) */
 function formatDateYMD(date: Date) {
@@ -37,6 +37,7 @@ export default function RatingModal({
   onSuccess?: () => void;
 }) {
   const t = useTranslations("RatingModal");
+  const locale = useLocale();
   const titleId = useId();
   const descId = useId();
   const { member } = useMember();
@@ -110,6 +111,9 @@ export default function RatingModal({
     }
   };
 
+  // 🔹 Define o formato de data conforme idioma
+  const dateFormat = locale.startsWith("pt") ? "dd/MM/yyyy" : "MM/dd/yyyy";
+
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50" aria-labelledby={titleId} aria-describedby={descId}>
       <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
@@ -149,7 +153,7 @@ export default function RatingModal({
             <DatePicker
               selected={watchDate}
               onChange={(date) => setWatchDate(stripTimeLocal(date))}
-              dateFormat="dd/MM/yyyy"
+              dateFormat={dateFormat}
               placeholderText={t("selectDate")}
               className="bg-zinc-800 text-white p-2 rounded border border-white/10 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-lightgreen)]"
               calendarClassName="react-datepicker"

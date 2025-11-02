@@ -8,7 +8,7 @@ import { createComment, deleteComment } from "@/services/Comment/Comment";
 import { useMember } from "@/context/MemberContext";
 import { fetchMemberById } from "@/services/user/member";
 import toast from "react-hot-toast";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 import pessoaGenerica from "./pessoaGenerica.svg"; // seu SVG importado
 
@@ -25,6 +25,7 @@ export default function CommentItem({
 }) {
   const { member } = useMember();
   const t = useTranslations("CommentItem");
+  const locale = useLocale(); // pega o idioma atual
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showReply, setShowReply] = useState(false);
@@ -32,23 +33,23 @@ export default function CommentItem({
   const [deleteToastOpen, setDeleteToastOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
-// --- Função para formatar data no formato DD/MM/YYYY HH:MM sem aplicar fuso horário ---
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return "";
+  // --- Função para formatar data com internacionalização ---
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
 
-  // espera formato "YYYY-MM-DDTHH:MM:SS" ou "YYYY-MM-DDTHH:MM:SS.sss"
-  const [datePart, timePart] = dateStr.split("T");
-  if (!timePart) return datePart;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
 
-  const [year, month, day] = datePart.split("-");
-  const [hour, minute] = timePart.split(":");
+    const useEn = String(locale || "").toLowerCase().startsWith("en");
 
-  return `${day}/${month}/${year} ${hour}:${minute}`;
-};
-
-
-
-  
+    return new Intl.DateTimeFormat(useEn ? "en-US" : "pt-BR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  };
 
   // carrega avatar (mantém avatar/nome mesmo se comentário for deletado)
   useEffect(() => {

@@ -98,7 +98,7 @@ export default function UserMenu() {
           <DropdownMenuItem asChild>
             {isAdmin ? (
               <Link href={`/${locale}/admin`} className="block px-2 py-1 hover:bg-gray-900 rounded text-white">
-                Administração
+                Admin
               </Link>
             ) : (
               <Link href={`/${locale}/feed`} className="block px-2 py-1 hover:bg-gray-900 rounded text-white">
