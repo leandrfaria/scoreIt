@@ -47,7 +47,6 @@ export const fetchMediaById = async (
 
   // Se não foi passado um locale, tenta extrair da URL
   let effectiveLocale = locale || getLocaleFromPath();
-  console.log("[fetchMediaById] Locale detectado:", effectiveLocale);
 
   try {
     switch (mediaType) {

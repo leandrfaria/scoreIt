@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { deleteReview } from "@/services/review/delete_review";
 import { useMember } from "@/context/MemberContext";
 import CommentsSection from "@/components/features/comment/CommentSection";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 type ReviewProps = {
   name: string;
@@ -37,6 +37,7 @@ export default function ReviewCard({
 }: ReviewProps) {
   const { member } = useMember();
   const t = useTranslations("ReviewCard");
+  const locale = useLocale();
 
   const [avatarSrc, setAvatarSrc] = useState(avatar || FALLBACK_AVATAR);
   const [deleting, setDeleting] = useState(false);
@@ -75,6 +76,40 @@ export default function ReviewCard({
     return stars;
   };
 
+  // formata a data conforme o idioma, evitando shift por timezone em "date-only"
+  const formatDate = (iso: string | Date) => {
+    if (!iso) return "N/A";
+    const options: Intl.DateTimeFormatOptions = {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    };
+
+    // se já for Date, formata direto
+    if (iso instanceof Date) {
+      if (isNaN(iso.getTime())) return "N/A";
+      return new Intl.DateTimeFormat(locale || undefined, options).format(iso);
+    }
+
+    const s = String(iso).trim();
+
+    // caso 1: date-only "YYYY-MM-DD" -> criar Date no timezone LOCAL (sem shift)
+    const dateOnly = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnly) {
+      const year = Number(dateOnly[1]);
+      const month = Number(dateOnly[2]); // 1..12
+      const day = Number(dateOnly[3]);
+      const d = new Date(year, month - 1, day); // cria meia-noite LOCAL
+      return new Intl.DateTimeFormat(locale || undefined, options).format(d);
+    }
+
+    // caso 2 (fallback): string com hora/offset ou outro formato ISO -> deixamos o Date interpretar
+    const parsed = new Date(s);
+    if (isNaN(parsed.getTime())) return "N/A";
+    return new Intl.DateTimeFormat(locale || undefined, options).format(parsed);
+  };
+
+
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", showCommentsModal);
   }, [showCommentsModal]);
@@ -112,7 +147,7 @@ export default function ReviewCard({
           />
           <div>
             <p className="text-white font-semibold">{name}</p>
-            <p className="text-sm text-gray-400">{new Date(date).toLocaleDateString()}</p>
+            <p className="text-sm text-gray-400">{formatDate(date)}</p>
           </div>
         </div>
 

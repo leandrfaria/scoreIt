@@ -18,10 +18,7 @@ export async function toggleMemberRole(id: number | string, opts?: Opts): Promis
   return await apiFetch(`/admin/members/${id}/role`, { method: "PATCH", auth: true, signal: opts?.signal });
 }
 
-/**
- * Lista membros paginada.
- * Retorno: depende do backend (Page<Member>). Normalmente será um objeto com { content: Member[], totalElements, totalPages, ... }.
- */
+
 export async function listAllMembers(
   page = 0,
   size = 10,

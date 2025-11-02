@@ -1,4 +1,3 @@
-// src/components/features/review/ReviewsCarouselSection.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -44,7 +43,7 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
   const requestSeqRef = useRef<number>(0);
 
   const userIdToUse = useMemo(
-    () => memberId || (member?.id ? String(member.id) : ""),
+    () => memberId || member?.id?.toString() || "",
     [memberId, member?.id]
   );
 
@@ -106,7 +105,6 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
         if (r.status === "fulfilled" && r.value) valid.push(r.value);
       }
 
-      // pode continuar ordenando pela data de criação da review (ok)
       valid.sort((a, b) => new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime());
 
       if (mountedRef.current && mySeq === requestSeqRef.current) setReviews(valid);
@@ -173,28 +171,17 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
             </div>
           ))}
         </div>
-
-        <div className="flex justify-center mt-5 gap-6">
-          <button disabled className="p-1 text-white/60 cursor-not-allowed" aria-label="Anterior">
-            <IconArrowLeft className="h-5 w-5" />
-          </button>
-          <button disabled className="p-1 text-white/60 cursor-not-allowed" aria-label="Próximo">
-            <IconArrowRight className="h-5 w-5" />
-          </button>
-        </div>
       </section>
     );
   }
 
   if (err) return <div className="text-red-400 py-6 text-center">{err}</div>;
-
-  if (reviews.length === 0) {
+  if (reviews.length === 0)
     return (
       <div className="text-center py-8 text-gray-400">
         <p className="text-sm">Nenhuma avaliação feita ainda.</p>
       </div>
     );
-  }
 
   return (
     <section className="w-full py-4">
@@ -215,10 +202,10 @@ export default function ReviewsCarouselSection({ memberId }: Props) {
             <ReviewProfileCard
               title={review.title}
               posterUrl={review.posterUrl}
-              date={review.watchDate}       
+              date={review.watchDate}
               rating={review.score}
               comment={review.memberReview}
-              canEdit={!!member && member.id === review.memberId}
+              canEdit={member?.id === review.memberId} // seguro
               reviewId={review.id}
               onDelete={fetchReviews}
             />

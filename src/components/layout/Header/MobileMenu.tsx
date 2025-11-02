@@ -126,6 +126,9 @@ export default function MobileMenu() {
     }
   };
 
+  // Helper: check if logged member is admin
+  const isAdmin = !!member && String(member.role || "").toUpperCase().includes("ADMIN");
+
   return (
     <>
       <button
@@ -201,9 +204,7 @@ export default function MobileMenu() {
             )}
 
             <div className="flex items-center justify-between">
-              <span className="text-white text-sm font-medium">
-                {t("changeLanguage")}
-              </span>
+              <span className="text-white text-sm font-medium">{t("changeLanguage")}</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => changeLanguage("pt")}
@@ -245,9 +246,7 @@ export default function MobileMenu() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium text-sm truncate">
-                      {member?.name || t("user")}
-                    </p>
+                    <p className="text-white font-medium text-sm truncate">{member?.name || t("user")}</p>
                   </div>
                 </div>
 
@@ -259,13 +258,24 @@ export default function MobileMenu() {
                   {t("perfil")}
                 </Link>
 
-                <Link
-                  href={`/${locale}/feed`}
-                  className="block px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
-                  onClick={() => setOpen(false)}
-                >
-                  {t("feed")}
-                </Link>
+                {/* show admin link instead of feed for admins */}
+                {isAdmin ? (
+                  <Link
+                    href={`/${locale}/admin`}
+                    className="block px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
+                    onClick={() => setOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/${locale}/feed`}
+                    className="block px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
+                    onClick={() => setOpen(false)}
+                  >
+                    {t("feed")}
+                  </Link>
+                )}
 
                 <div className="border-t border-gray-700 pt-2">
                   <button

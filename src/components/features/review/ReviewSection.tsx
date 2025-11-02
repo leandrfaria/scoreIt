@@ -213,7 +213,8 @@ export default function ReviewSection({
                 comment={review.memberReview}
                 spoiler={review.spoiler}
                 onEdit={() => setEditingReview(review)}
-                canEdit={!!member && Number(review.memberId) === Number(member.id)}
+                canEdit={member?.id === review.memberId}
+
                 reviewId={review.id}
                 onDelete={forceReload}
               />

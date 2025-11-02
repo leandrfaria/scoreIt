@@ -73,39 +73,53 @@
     "poster_aleatorio_alt": "Random poster"
   },
   "profile": {
-    "title": "User Profile",
-    "edit_profile": "Edit Profile",
-    "no_bio": "No bio available",
-    "movies": "Movies",
-    "followers": "Followers",
-    "following": "Following",
-    "listas": "Your Lists",
-    "CriarLista": "+ Create List",
-    "error_updating_profile": "Error updating profile. Please try again.",
-    "success_updating_profile": "Profile updated successfully.",
-    "edit_profile_title": "Edit Profile",
-    "name": "Name",
-    "bio": "Bio",
-    "save": "Save",
-    "cancel": "Cancel",
-    "error_uploading_image": "Error uploading profile image",
-    "loading": "Loading...",
-    "userNotFound": "User not found.",
-    "favorites": "Favorites",
-    "recentReviews": "Recent reviews",
-    "customLists": "Custom lists",
-    "badgesWall": "Badges Wall",
-    "profileImageAlt": "Profile picture",
-    "errorFetchingProfile": "Error fetching profile",
-    "errorFetchingCounts": "Error fetching counts",
-    "errorFetchingCustomLists": "Error fetching custom lists",
-    "recent_reviews": "Recent Reviews",
-    "custom_lists": "Custom Lists",
-    "create_list": "+ Create List",
-    "badges_wall": "Badges Wall",
-    "error_loading_lists": "Error loading lists",
-    "usuarioJaEmUso": "This username is already being used!"
-  },
+  "title": "User Profile",
+  "edit_profile": "Edit Profile",
+  "no_bio": "No bio available",
+  "movies": "Movies",
+  "followers": "Followers",
+  "following": "Following",
+  "listas": "Your Lists",
+  "CriarLista": "+ Create List",
+  "error_updating_profile": "Error updating profile. Please try again.",
+  "success_updating_profile": "Profile updated successfully.",
+  "edit_profile_title": "Edit Profile",
+  "name": "Name",
+  "bio": "Bio",
+  "save": "Save",
+  "cancel": "Cancel",
+  "error_uploading_image": "Error uploading profile image",
+  "loading": "Loading...",
+  "userNotFound": "User not found.",
+  "favorites": "Favorites",
+  "recentReviews": "Recent reviews",
+  "customLists": "Custom lists",
+  "badgesWall": "Badges Wall",
+  "profileImageAlt": "Profile picture",
+  "errorFetchingProfile": "Error fetching profile",
+  "errorFetchingCounts": "Error fetching counts",
+  "errorFetchingCustomLists": "Error fetching custom lists",
+  "recent_reviews": "Recent Reviews",
+  "custom_lists": "Custom Lists",
+  "create_list": "+ Create List",
+  "badges_wall": "Badges Wall",
+  "error_loading_lists": "Error loading lists",
+  "usuarioJaEmUso": "This username is already being used!",
+  "report_title": "Report user",
+  "report_intro": "You are about to report {name}.",
+  "report_label": "Describe the report",
+  "report_placeholder": "Write your report here (what happened, links, evidence, etc.)",
+  "report_cancel": "Cancel",
+  "report_submit": "Submit report",
+  "report_sending": "Sending...",
+  "report_success": "Report submitted. Thank you.",
+  "report_errors_empty": "Please write the report before submitting.",
+  "report_errors_unauthenticated": "User not authenticated.",
+  "report_errors_submit": "Error submitting report_",
+  "report_openButton": "Report",
+  "report_reportButtonTitle": "Report this user",
+  "report_closeAria": "Close report form"
+},
   "home": {
     "verificando_login": "Checking login...",
     "todos_filmes": "All Movies",
@@ -541,6 +555,7 @@
     "noUsersFound": "No users found",
     "openMenu": "Open menu",
     "perfil": "Profile",
+    "adm": "Admin",
     "feed": "Feed",
     "login": "Login",
     "logout": "Logout",
@@ -644,56 +659,111 @@
     "errorCheckingFollow": "Error checking follow status:",
     "errorFollowUnfollow": "Error following/unfollowing:"
   },
-  "admin":{
-  "adminPanel": "Admin Panel",
-  "welcome": "Welcome",
-  "members": "Members",
-  "reports": "Reports",
-  "id": "ID",
-  "name": "Name",
-  "email": "Email",
-  "role": "Role",
-  "active": "Active",
-  "inactive": "Inactive",
-  "actions": "Actions",
-  "edit": "Edit",
-  "save": "Save",
-  "cancel": "Cancel",
-  "activate": "Activate",
-  "deactivate": "Deactivate",
-  "promote": "Promote",
-  "demote": "Demote",
-  "loading": "Loading...",
-  "accessDenied": "Access Denied",
-  "currentRole": "Current Role",
-  "notAllowed": "Action not allowed",
-  "memberActivated": "Member activated successfully",
-  "memberDeactivated": "Member deactivated successfully",
-  "memberPromoted": "Member promoted to admin",
-  "memberDemoted": "Member demoted",
-  "errorLoadingData": "Error loading data",
-  "errorUpdateMemberStatus": "Error updating member status",
-  "errorUpdateMemberRole": "Error updating member role",
-  "cannotEditProfile": "Cannot edit this profile",
-  "memberUpdated": "Member updated successfully",
-  "errorUpdateMember": "Error updating member",
-  "author": "Author",
-  "reported": "Reported",
-  "reason": "Reason",
-  "status": "Status",
-  "reportDetails": "Report details",
-  "pending": "Pending",
-  "resolved": "Resolved",
-  "rejected": "Rejected",
-  "delete": "Delete",
-  "close": "Close",
-  "unknown": "Unknown",
-  "view": "View",
-  "reportStatusUpdated": "Report status updated!",
-  "reportDeleted": "Report deleted successfully",
-  "errorUpdateReportStatus": "Error updating report status",
-  "errorDeleteReport": "Error deleting report"
-}
-
-
+  "AdminCharts": {
+    "accessDenied": {
+      "title": "Access denied",
+      "description": "Only administrators can access the charts."
+    },
+    "backToAdmin": "Back to admin",
+    "popularMedia": {
+      "title": "Most popular media",
+      "subtitle": "Interactions / hits (top 10)",
+      "items": "Items: {count}"
+    },
+    "reviewsByDate": {
+      "title": "Reviews by date",
+      "subtitle": "Distribution of reviews",
+      "total": "Total: {total}"
+    },
+    "usersGrowth": {
+      "title": "Users growth",
+      "subtitle": "Latest recorded points",
+      "total": "Total: {total}"
+    },
+    "mediaType": {
+      "movie": "Movie",
+      "series": "Series",
+      "album": "Album",
+      "other": "Media"
+    },
+    "loading": "Loading data...",
+    "errors": {
+      "loadCharts": "Error loading chart data"
+    }
+  },
+  "ProtectedRoute": {
+    "loading": "Loading...",
+    "accessDenied": {
+      "title": "Access denied",
+      "description": "You do not have permission to access this page."
+    }
+  },
+  "AdminPage": {
+    "title": "Admin Panel",
+    "labels": {
+      "membersCount": "{count} members",
+      "reportsCount": "{count} reports",
+      "active": "Active",
+      "inactive": "Inactive",
+      "bio": "Bio",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "actions": {
+      "charts": "Charts",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "enable": "Enable",
+      "disable": "Disable",
+      "promote": "Promote",
+      "demote": "Demote",
+      "view": "View"
+    },
+    "sections": {
+      "members": "Members",
+      "membersSubtitle": "Overview — quick actions",
+      "reports": "Reports",
+      "reportsSubtitle": "Latest received reports"
+    },
+    "table": {
+      "id": "ID",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "active": "Active",
+      "actions": "Actions"
+    },
+    "messages": {
+      "noReports": "No reports found"
+    },
+    "modal": {
+      "title": "Report #{id}",
+      "status": "Status:",
+      "author": "Author",
+      "reported": "Reported",
+      "reason": "Reason",
+      "createdAt": "Created at",
+      "markResolved": "Mark as resolved",
+      "delete": "Delete"
+    },
+    "toasts": {
+      "memberStatusUpdated": "Member status updated.",
+      "memberRoleUpdated": "Member role updated.",
+      "reportStatusUpdated": "Report status updated.",
+      "reportDeleted": "Report removed.",
+      "memberUpdated": "Member updated."
+    },
+    "errors": {
+      "loadAdminData": "Error loading admin data",
+      "operationNotAllowed": "Operation not allowed for this user.",
+      "operationNotAllowedForAdmin": "Operation not allowed for another ADMIN.",
+      "updateMemberStatus": "Error updating member status",
+      "updateMemberRole": "Error updating member role",
+      "updateReportStatus": "Error updating report status",
+      "deleteReport": "Error deleting report",
+      "cannotEditProfile": "This profile cannot be edited.",
+      "updateMember": "Error updating member"
+    }
+  }
 }
