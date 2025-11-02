@@ -1,4 +1,3 @@
-// File: app/admin/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -71,11 +70,18 @@ export default function AdminPage() {
   const t = useTranslations("AdminPage");
   const { member } = useMember();
 
+  // pagination settings: 5 per page as requested
+  const [page, setPage] = useState<number>(0);
+  const pageSize = 5;
+
   const [members, setMembers] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<{ name: string; email: string; enabled: boolean }>({ name: "", email: "", enabled: false });
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
+
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalElements, setTotalElements] = useState<number>(0);
 
   // helpers
   const isAdminAccount = (m: any) => !!m?.role && String(m.role).toUpperCase().includes("ADMIN");
@@ -83,12 +89,22 @@ export default function AdminPage() {
   const isNotEditable = (m: any) => isAdminAccount(m) || isCurrentUser(m);
   const formatRole = (r: any) => String(r || "").replace(/^ROLE_/i, "").toUpperCase();
 
-  // dados iniciais
+  // dados iniciais — agora re-fetch quando page mudar
   useEffect(() => {
     (async () => {
       try {
-        const membersRes = await listAllMembers(0, 20);
-        setMembers(membersRes?.content || membersRes || []);
+        const membersRes: any = await listAllMembers(page, pageSize);
+
+        // suporta resposta paginada (content + totalPages + totalElements) ou array simples
+        if (Array.isArray(membersRes)) {
+          setMembers(membersRes);
+          setTotalElements(membersRes.length);
+          setTotalPages(Math.max(1, Math.ceil(membersRes.length / pageSize)));
+        } else {
+          setMembers(membersRes?.content || []);
+          setTotalElements(typeof membersRes?.totalElements === 'number' ? membersRes.totalElements : (membersRes?.content?.length ?? 0));
+          setTotalPages(typeof membersRes?.totalPages === 'number' ? membersRes.totalPages : Math.max(1, Math.ceil((membersRes?.totalElements ?? (membersRes?.content?.length ?? 0)) / pageSize)));
+        }
 
         const reportsRes = await getAllReportsWithReportedMember();
         setReports(reportsRes || []);
@@ -97,7 +113,7 @@ export default function AdminPage() {
         console.error(err);
       }
     })();
-  }, [t]);
+  }, [t, page]);
 
   // Ações membros e denúncias
   const handleEnableDisableMember = async (id: number) => {
@@ -118,10 +134,19 @@ export default function AdminPage() {
     if (isNotEditable(target)) return toast.error(t("errors.operationNotAllowed"));
     try {
       await toggleMemberRole(id);
-      const membersRes = await listAllMembers(0, 20);
-      setMembers(membersRes?.content || membersRes || []);
+      // refetch current page after role change to get updated roles and ensure consistency
+      const membersRes: any = await listAllMembers(page, pageSize);
+      if (Array.isArray(membersRes)) {
+        setMembers(membersRes);
+        setTotalElements(membersRes.length);
+        setTotalPages(Math.max(1, Math.ceil(membersRes.length / pageSize)));
+      } else {
+        setMembers(membersRes?.content || []);
+        setTotalElements(typeof membersRes?.totalElements === 'number' ? membersRes.totalElements : (membersRes?.content?.length ?? 0));
+        setTotalPages(typeof membersRes?.totalPages === 'number' ? membersRes.totalPages : Math.max(1, Math.ceil((membersRes?.totalElements ?? (membersRes?.content?.length ?? 0)) / pageSize)));
+      }
       toast.success(t("toasts.memberRoleUpdated", { name: target?.name }));
-    } catch {
+    } catch (e) {
       toast.error(t("errors.updateMemberRole"));
     }
   };
@@ -165,6 +190,43 @@ export default function AdminPage() {
     }
   };
 
+  // pagination helpers
+  const goToPage = (p: number) => {
+    if (p < 0) p = 0;
+    if (p >= totalPages) p = totalPages - 1;
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    const pages: number[] = [];
+    for (let i = 0; i < totalPages; i++) pages.push(i);
+
+    return (
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-emerald-300">{t("labels.showingRange", { from: page * pageSize + 1, to: Math.min((page + 1) * pageSize, totalElements), total: totalElements })}</div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => goToPage(page - 1)} disabled={page === 0} className={`px-3 py-1 rounded ${page === 0 ? 'bg-zinc-800/40 text-emerald-500 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-600'}`}>
+            {t("actions.prev")}
+          </button>
+
+          <div className="hidden sm:flex gap-1">
+            {pages.map((p) => (
+              <button key={p} onClick={() => goToPage(p)} className={`px-3 py-1 rounded ${p === page ? 'bg-emerald-800 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-emerald-200'}`}>
+                {p + 1}
+              </button>
+            ))}
+          </div>
+
+          <button onClick={() => goToPage(page + 1)} disabled={page === totalPages - 1} className={`px-3 py-1 rounded ${page === totalPages - 1 ? 'bg-zinc-800/40 text-emerald-500 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-600'}`}>
+            {t("actions.next")}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <ProtectedRoute>
       <Container>
@@ -172,13 +234,13 @@ export default function AdminPage() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-emerald-100">{t("title")}</h1>
+              <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-emerald-100">{t("actions.title")}</h1>
             </div>
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 bg-zinc-900/40 border border-emerald-700 px-3 py-2 rounded-lg">
                 <IconUser className="h-5 w-5 text-emerald-200" />
-                <div className="text-sm text-emerald-200">{t("labels.membersCount", { count: members.length })}</div>
+                <div className="text-sm text-emerald-200">{t("labels.membersCount", { count: totalElements })}</div>
               </div>
               <div className="flex items-center gap-2 bg-zinc-900/40 border border-amber-500 px-3 py-2 rounded-lg">
                 <IconReport className="h-5 w-5 text-amber-200" />
@@ -332,7 +394,11 @@ export default function AdminPage() {
                     })}
                   </tbody>
                 </table>
+
+                {/* PAGINATION CONTROLS */}
+                {renderPagination()}
               </div>
+
             </div>
 
             {/* Reports side card */}
@@ -406,7 +472,7 @@ export default function AdminPage() {
 
                 {selectedReport.createdAt && (
                   <div className="text-xs text-gray-400 mb-4">
-                    {t("modal.createdAt")}:{" "}
+                    {t("modal.createdAt")}: {" "}
                     {new Intl.DateTimeFormat("en-US", {
                       month: "2-digit",
                       day: "2-digit",

@@ -1,4 +1,3 @@
-// src/components/ai/ChatWidget.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -6,8 +5,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import ChatWindow from "./ChatWindow";
 import ChatMaskIcon from "./ChatMaskIcon";
 import { useAuthContext } from "@/context/AuthContext";
+import { useTranslations } from "next-intl";
 
 export default function ChatWidget() {
+  const t = useTranslations("ChatWidget");
   const { isLoggedIn } = useAuthContext();
   const [open, setOpen] = useState(false);
   const scrollYRef = useRef(0);
@@ -77,8 +78,7 @@ export default function ChatWidget() {
         className="fixed z-[60] bottom-5 right-5 sm:bottom-6 sm:right-6 rounded-full p-3 shadow-xl
                    bg-[color:var(--color-darkgreen)] ring-1 ring-white/10 hover:brightness-110 transition
                    grid place-items-center"
-        aria-label="Abrir chat do ScoreIt"
-      >
+        aria-label={t("openAria")}>
         <ChatMaskIcon className="w-7 h-7" />
       </button>
 
@@ -106,15 +106,15 @@ export default function ChatWidget() {
                   <div className="flex items-center gap-2">
                     <ChatMaskIcon className="w-6 h-6" />
                     <h3 className="text-base sm:text-lg font-semibold">
-                      ScoreIt · Chat IA
+                      {t("headerTitle")}
                     </h3>
                   </div>
                   <button
                     onClick={() => setOpen(false)}
                     className="px-3 py-1.5 rounded-lg text-sm bg-white/5 ring-1 ring-white/10 hover:bg-white/10"
-                    aria-label="Fechar chat"
+                    aria-label={t("closeAria")}
                   >
-                    Fechar
+                    {t("closeButton")}
                   </button>
                 </div>
 

@@ -1,4 +1,3 @@
-// src/components/ai/ChatWindow.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -6,15 +5,10 @@ import MessageBubble from "./MessageBubble";
 import { sendChat } from "./client";
 import { ChatMessage } from "./schema";
 import { useMember } from "@/context/MemberContext";
-
-const WELCOME: ChatMessage = {
-  id: "sys-welcome",
-  role: "assistant",
-  content:
-    "Oi! Eu sou a IA do ScoreIt. Pergunte sobre filmes, séries e músicas.",
-};
+import { useTranslations } from "next-intl";
 
 export default function ChatWindow() {
+  const t = useTranslations("ChatWindow");
   const { member } = useMember();
 
   // chave por usuário (isola histórico entre perfis)
@@ -22,6 +16,12 @@ export default function ChatWindow() {
     () => `scoreit:ai:chat:${member?.id ?? "user"}`,
     [member?.id]
   );
+
+  const WELCOME: ChatMessage = {
+    id: "sys-welcome",
+    role: "assistant",
+    content: t("welcome"),
+  };
 
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [loading, setLoading] = useState(false);
@@ -104,8 +104,7 @@ export default function ChatWindow() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content:
-            "Não consegui falar com a IA agora. Tenta novamente em alguns segundos.",
+          content: t("errors.unavailable"),
         },
       ]);
     } finally {
@@ -131,12 +130,12 @@ export default function ChatWindow() {
     >
       {/* header compacto no mobile */}
       <div className="sm:hidden flex items-center justify-between px-3 py-2 border-b border-white/10 bg-neutral-900">
-        <span className="text-xs text-white/70">Conversa</span>
+        <span className="text-xs text-white/70">{t("headerTitle")}</span>
         <button
           onClick={handleClear}
           className="text-[11px] px-2 py-1 rounded bg-white/5 ring-1 ring-white/10 hover:bg-white/10"
         >
-          Limpar
+          {t("clearButton")}
         </button>
       </div>
 
@@ -148,7 +147,7 @@ export default function ChatWindow() {
           <MessageBubble key={m.id} msg={m} />
         ))}
         {loading && (
-          <div className="text-xs text-neutral-400 animate-pulse">Digitando…</div>
+          <div className="text-xs text-neutral-400 animate-pulse">{t("typing")}</div>
         )}
       </div>
 
