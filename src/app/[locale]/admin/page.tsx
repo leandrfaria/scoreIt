@@ -89,6 +89,35 @@ export default function AdminPage() {
   const isNotEditable = (m: any) => isAdminAccount(m) || isCurrentUser(m);
   const formatRole = (r: any) => String(r || "").replace(/^ROLE_/i, "").toUpperCase();
 
+  // util: safe replacement that covers '{name}' and {name}
+  function safeReplacePlaceholders(raw: string, vars: Record<string, string | number | boolean> = {}) {
+    let out = raw;
+    for (const k of Object.keys(vars)) {
+      const val = String(vars[k]);
+      // captura {name}, '{name}', "{name}" e possivelmente com espaços: { name }
+      const re = new RegExp(`(['"]?)\\{\\s*${k}\\s*\\}\\1`, "g");
+      out = out.replace(re, val);
+      // fallback: caso ainda exista sem as aspas
+      out = out.replace(new RegExp(`\\{\\s*${k}\\s*\\}`, "g"), val);
+    }
+    return out;
+  }
+
+  // util: tenta t(key, vars) e, se necessário, faz fallback por raw + replace
+  function formatToast(key: string, vars?: Record<string, string | number | boolean>) {
+    try {
+      const formatted = (t as any)(key, vars as any);
+      if (/\{[^}]+\}/.test(String(formatted))) {
+        const raw = typeof (t as any).raw === "function" ? (t as any).raw(key) : String(formatted);
+        return safeReplacePlaceholders(raw, vars);
+      }
+      return String(formatted);
+    } catch (err) {
+      const raw = typeof (t as any).raw === "function" ? (t as any).raw(key) : key;
+      return safeReplacePlaceholders(String(raw), vars);
+    }
+  }
+
   // dados iniciais — agora re-fetch quando page mudar
   useEffect(() => {
     (async () => {
@@ -115,41 +144,62 @@ export default function AdminPage() {
     })();
   }, [t, page]);
 
-  // Ações membros e denúncias
-  const handleEnableDisableMember = async (id: number) => {
-    const target = members.find((m) => m.id === id);
-    if (isNotEditable(target)) return toast.error(t("errors.operationNotAllowed"));
-    try {
-      await toggleMemberStatus(id);
-      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m)));
-      toast.success(t("toasts.memberStatusUpdated", { name: target?.name, status: target?.enabled ? t("labels.disabled") : t("labels.enabled") }));
-    } catch {
-      toast.error(t("errors.updateMemberStatus"));
-    }
-  };
+const handleEnableDisableMember = async (id: number) => {
+  const target = members.find((m) => m.id === id);
+  if (!target) return toast.error(t("errors.operationNotAllowed"));
+  if (isNotEditable(target)) return toast.error(t("errors.operationNotAllowed"));
 
-  const handlePromoteDemoteMember = async (id: number) => {
-    const target = members.find((m) => m.id === id);
-    if (isAdminAccount(target)) return toast.error(t("errors.operationNotAllowedForAdmin"));
-    if (isNotEditable(target)) return toast.error(t("errors.operationNotAllowed"));
-    try {
-      await toggleMemberRole(id);
-      // refetch current page after role change to get updated roles and ensure consistency
-      const membersRes: any = await listAllMembers(page, pageSize);
-      if (Array.isArray(membersRes)) {
-        setMembers(membersRes);
-        setTotalElements(membersRes.length);
-        setTotalPages(Math.max(1, Math.ceil(membersRes.length / pageSize)));
-      } else {
-        setMembers(membersRes?.content || []);
-        setTotalElements(typeof membersRes?.totalElements === 'number' ? membersRes.totalElements : (membersRes?.content?.length ?? 0));
-        setTotalPages(typeof membersRes?.totalPages === 'number' ? membersRes.totalPages : Math.max(1, Math.ceil((membersRes?.totalElements ?? (membersRes?.content?.length ?? 0)) / pageSize)));
-      }
-      toast.success(t("toasts.memberRoleUpdated", { name: target?.name }));
-    } catch (e) {
-      toast.error(t("errors.updateMemberRole"));
+  try {
+    await toggleMemberStatus(id);
+
+    // Atualiza localmente
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m)));
+
+    // Dados para interpolação
+    const nameToShow = target.name || "—";
+    const newEnabled = !target.enabled;
+    const statusLabel = newEnabled ? t("labels.enabled") : t("labels.disabled");
+
+    toast.success(
+      formatToast("toasts.memberStatusUpdated", { name: nameToShow, status: statusLabel })
+    );
+  } catch {
+    toast.error(t("errors.updateMemberStatus"));
+  }
+};
+
+
+
+const handlePromoteDemoteMember = async (id: number) => {
+  const target = members.find((m) => m.id === id);
+  if (!target) return toast.error(t("errors.operationNotAllowed"));
+  if (isAdminAccount(target)) return toast.error(t("errors.operationNotAllowedForAdmin"));
+  if (isNotEditable(target)) return toast.error(t("errors.operationNotAllowed"));
+
+  try {
+    await toggleMemberRole(id);
+
+    // refetch para manter consistência (igual ao seu código)
+    const membersRes: any = await listAllMembers(page, pageSize);
+    if (Array.isArray(membersRes)) {
+      setMembers(membersRes);
+      setTotalElements(membersRes.length);
+      setTotalPages(Math.max(1, Math.ceil(membersRes.length / pageSize)));
+    } else {
+      setMembers(membersRes?.content || []);
+      setTotalElements(typeof membersRes?.totalElements === 'number' ? membersRes.totalElements : (membersRes?.content?.length ?? 0));
+      setTotalPages(typeof membersRes?.totalPages === 'number' ? membersRes.totalPages : Math.max(1, Math.ceil((membersRes?.totalElements ?? (membersRes?.content?.length ?? 0)) / pageSize)));
     }
-  };
+
+    // montar mensagem com fallback unificado
+    const nameToShow = target?.name || "—";
+    toast.success(formatToast("toasts.memberRoleUpdated", { name: nameToShow }));
+  } catch (e) {
+    toast.error(t("errors.updateMemberRole"));
+  }
+};
+
+
 
   const handleReportStatus = async (id: number, status: string) => {
     try {
@@ -193,16 +243,8 @@ const saveEdit = async (id: number) => {
 
     const nameToShow = (updated && updated.name) || editData.name || "—";
 
-    // pega o padrão de tradução
-    const pattern = t("toasts.memberUpdated");
-
-    // se o provider não fez a interpolação, fazemos manualmente (mantemos aspas simples como você pediu)
-    const message = pattern.includes("{name}")
-      ? pattern.replace("{name}", nameToShow)
-      : // caso a função `t` aceite interpolação corretamente, ainda passamos o value como fallback
-        t("toasts.memberUpdated", { name: nameToShow });
-
-    toast.success(message);
+    // usa o utilitário formatToast (fallback unificado)
+    toast.success(formatToast("toasts.memberUpdated", { name: nameToShow }));
   } catch (err) {
     console.error(err);
     toast.error(t("errors.updateMember"));
