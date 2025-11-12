@@ -74,7 +74,6 @@ function SeriesCardBase({
   const t = useTranslations("SeriesCard");
   const { member } = useMember();
 
-  // 🔑 Agora o L usa t()
   const L = {
     addToList: t("addToList"),
     selectList: t("selectList"),
@@ -359,8 +358,9 @@ function SeriesCardBase({
                 role="dialog"
                 aria-modal="true"
               >
-                <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/10" />
-                <div className="p-3 sm:p-4 lg:p-6">
+                {/* ring atrás para não cruzar a barra de ações */}
+                <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/10 z-0" />
+                <div className="relative z-10 p-3 sm:p-4 lg:p-6">
                   {/* Fechar */}
                   <div className="flex justify-end">
                     <button
@@ -413,8 +413,8 @@ function SeriesCardBase({
                     </div>
 
                     {/* DIREITA */}
-                    <div className="relative flex flex-col pb-28 lg:pb-24 min-h-[unset] lg:min-h-[540px]">
-                      {/* Título + gêneros + nota (mesma “barra” do MovieCard) */}
+                    <div className="relative flex flex-col min-h-[unset] lg:min-h-[540px]">
+                      {/* Título + gêneros + nota */}
                       <div className="flex items-stretch gap-3 sm:gap-4">
                         <div className="flex-1 flex flex-col gap-1.5 sm:gap-2">
                           <h3 className="text-[22px] sm:text-[24px] lg:text-[28px] font-extrabold leading-tight tracking-tight text-white">
@@ -437,81 +437,86 @@ function SeriesCardBase({
                         </div>
                       </div>
 
-                      {/* Descrição */}
-                      <div className="mt-3 sm:mt-4 flex-1 overflow-auto min-h-[200px] sm:min-h-[240px] max-h-[55vh] lg:max-h-[420px]">
+                      {/* Descrição (com espaço pro rodapé sticky) */}
+                      <div className="mt-3 sm:mt-4 flex-1 overflow-auto min-h-[200px] sm:min-h-[240px] max-h-[55vh] lg:max-h-[420px] pb-4 sm:pb-6">
                         <p className="text-[14px] sm:text-[15px] leading-relaxed text-white/90">
                           {overview?.trim() || t("noDescription")}
                         </p>
                       </div>
 
-                      {/* Ações fixas no canto inferior direito */}
-                      <div className="absolute bottom-0 right-0 flex items-center gap-2 sm:gap-3 p-2">
-                        {/* Add to list (painel flutuante) */}
-                        <div className="relative">
+                      {/* Rodapé STICKY (não atravessa nada e respeita safe-area) */}
+                      <div className="sticky bottom-0 -mx-3 sm:-mx-4 lg:mx-0 z-10">
+                        <div
+                          className="flex items-center justify-end gap-2 sm:gap-3 p-2 sm:p-3 bg-[rgba(8,12,16,0.92)] backdrop-blur-xl border-t border-white/10 rounded-b-2xl"
+                          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}
+                        >
+                          {/* Add to list (painel flutuante) */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowAddPanel((s) => !s)}
+                              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
+                              aria-label={L.addToList}
+                              title={L.addToList}
+                            >
+                              <MdPlaylistAdd className="w-6 h-6 text-white/90" />
+                            </button>
+
+                            {showAddPanel && (
+                              <div className="absolute right-0 bottom-12 w-64 sm:w-72 rounded-xl bg-[rgba(8,12,16,0.95)] ring-1 ring-white/10 shadow-2xl p-3 z-20 backdrop-blur">
+                                <div className="flex gap-2">
+                                  <select
+                                    value={selectedList}
+                                    onChange={(e) => setSelectedList(e.target.value)}
+                                    className="bg-white/5 text-white px-3 py-2 rounded-lg text-sm flex-1 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                                    disabled={customLists.length === 0}
+                                  >
+                                    <option value="">{L.selectList}</option>
+                                    {customLists.map((l) => (
+                                      <option key={l}>{l}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={handleAddToList}
+                                    disabled={isAdding || !selectedList}
+                                    className="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 transition text-sm font-semibold disabled:opacity-50"
+                                  >
+                                    {isAdding ? L.adding : L.add}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Favorito */}
                           <button
-                            onClick={() => setShowAddPanel((s) => !s)}
+                            onClick={handleFavorite}
                             className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
-                            aria-label={L.addToList}
-                            title={L.addToList}
+                            aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
+                            title={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
                           >
-                            <MdPlaylistAdd className="w-6 h-6 text-white/90" />
+                            {isFavorited ? (
+                              <FaHeart className="text-red-500 w-5 h-5" />
+                            ) : (
+                              <FiHeart className="text-white/90 w-5 h-5" />
+                            )}
                           </button>
 
-                          {showAddPanel && (
-                            <div className="absolute right-0 bottom-12 w-64 sm:w-72 rounded-xl bg-[rgba(8,12,16,0.95)] ring-1 ring-white/10 shadow-2xl p-3 z-10 backdrop-blur">
-                              <div className="flex gap-2">
-                                <select
-                                  value={selectedList}
-                                  onChange={(e) => setSelectedList(e.target.value)}
-                                  className="bg-white/5 text-white px-3 py-2 rounded-lg text-sm flex-1 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
-                                  disabled={customLists.length === 0}
-                                >
-                                  <option value="">{L.selectList}</option>
-                                  {customLists.map((l) => (
-                                    <option key={l}>{l}</option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={handleAddToList}
-                                  disabled={isAdding || !selectedList}
-                                  className="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 transition text-sm font-semibold disabled:opacity-50"
-                                >
-                                  {isAdding ? L.adding : L.add}
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                          {/* Avaliar */}
+                          <button
+                            onClick={() => setIsRatingOpen(true)}
+                            className="px-4 sm:px-5 py-2 rounded-lg bg-[var(--color-darkgreen)] hover:brightness-110 transition text-sm font-semibold shadow-md"
+                          >
+                            {L.rate}
+                          </button>
+
+                          {/* Detalhes */}
+                          <button
+                            onClick={handleViewDetails}
+                            className="px-4 sm:px-5 py-2 rounded-lg bg-transparent ring-1 ring-white/15 hover:ring-white/30 hover:bg-white/5 transition text-sm"
+                          >
+                            {t("viewDetails")}
+                          </button>
                         </div>
-
-                        {/* Favorito */}
-                        <button
-                          onClick={handleFavorite}
-                          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
-                          aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
-                          title={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
-                        >
-                          {isFavorited ? (
-                            <FaHeart className="text-red-500 w-5 h-5" />
-                          ) : (
-                            <FiHeart className="text-white/90 w-5 h-5" />
-                          )}
-                        </button>
-
-                        {/* Avaliar (usa mesma modal, tipo 'series') */}
-                        <button
-                          onClick={() => setIsRatingOpen(true)}
-                          className="px-4 sm:px-5 py-2 rounded-lg bg-[var(--color-darkgreen)] hover:brightness-110 transition text-sm font-semibold shadow-md"
-                        >
-                          {L.rate}
-                        </button>
-
-                        {/* Detalhes */}
-                        <button
-                          onClick={handleViewDetails}
-                          className="px-4 sm:px-5 py-2 rounded-lg bg-transparent ring-1 ring-white/15 hover:ring-white/30 hover:bg-white/5 transition text-sm"
-                        >
-                          {t("viewDetails")}
-                        </button>
                       </div>
                     </div>
                   </div>

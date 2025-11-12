@@ -78,7 +78,6 @@ function MovieCardBase({
   const t = useTranslations("MovieCard");
   const { member } = useMember();
 
-  // ✅ Objeto de traduções agora dentro do componente
   const L = {
     addToList: t("addToList"),
     selectList: t("selectList"),
@@ -303,8 +302,9 @@ function MovieCardBase({
                 style={{ maxHeight: "94vh", overflowY: "auto" }}
                 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }}
               >
-                <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/10" />
-                <div className="p-3 sm:p-4 lg:p-6">
+                {/* joga a ring para trás pra não cruzar os botões */}
+                <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/10 z-0" />
+                <div className="relative z-10 p-3 sm:p-4 lg:p-6">
                   {/* Fechar */}
                   <div className="flex justify-end">
                     <button
@@ -318,14 +318,14 @@ function MovieCardBase({
 
                   {/* layout 1 coluna no mobile / 2 colunas no desktop */}
                   <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:gap-6 lg:[grid-template-columns:360px_1fr]">
-                    {/* MOBILE: backdrop como banner (mostrando imagem inteira) */}
+                    {/* MOBILE: backdrop como banner */}
                     <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-black/30 ring-1 ring-white/10 shadow-xl lg:hidden">
                       {(backdropBest || posterBest) ? (
                         <Image
                           src={(backdropBest || posterBest)!}
                           alt={`${title} backdrop`}
                           fill
-                          className="object-contain"   
+                          className="object-contain"
                           sizes="100vw"
                           placeholder="blur"
                           blurDataURL={BLUR_DATA_URL}
@@ -356,7 +356,7 @@ function MovieCardBase({
                     </div>
 
                     {/* DIREITA */}
-                    <div className="relative flex flex-col pb-28 lg:pb-24 min-h-[unset] lg:min-h-[540px]">
+                    <div className="relative flex flex-col min-h-[unset] lg:min-h-[540px]">
                       {/* Título + gênero + nota */}
                       <div className="flex items-stretch gap-3 sm:gap-4">
                         <div className="flex-1 flex flex-col gap-1.5 sm:gap-2">
@@ -378,78 +378,84 @@ function MovieCardBase({
                         </div>
                       </div>
 
-                      {/* Descrição */}
-                      <div className="mt-3 sm:mt-4 flex-1 overflow-auto min-h-[200px] sm:min-h-[240px] max-h-[55vh] lg:max-h-[420px]">
+                      {/* Descrição (dá espaço inferior pra barra sticky) */}
+                      <div className="mt-3 sm:mt-4 flex-1 overflow-auto min-h-[200px] sm:min-h-[240px] max-h-[55vh] lg:max-h-[420px] pb-4 sm:pb-6">
                         <p className="text-[14px] sm:text-[15px] leading-relaxed text-white/90">
                           {overview?.trim() || t("noDescription")}
                         </p>
                       </div>
 
-                      {/* Botões fixos */}
-                      <div className="absolute bottom-0 right-0 flex items-center gap-2 sm:gap-3 p-2">
-                        {/* b1: adicionar lista */}
-                        <div className="relative">
+                      {/* Rodapé STICKY: não atravessa a ring e respeita a safe-area */}
+                      <div className="sticky bottom-0 -mx-3 sm:-mx-4 lg:mx-0 z-10">
+                        <div
+                          className="flex items-center justify-end gap-2 sm:gap-3 p-2 sm:p-3 bg-[rgba(8,12,16,0.92)] backdrop-blur-xl border-t border-white/10 rounded-b-2xl"
+                          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}
+                        >
+                          {/* b1: adicionar lista */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowAddPanel((s) => !s)}
+                              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
+                              aria-label={L.addToList}
+                              title={L.addToList}
+                            >
+                              <MdPlaylistAdd className="w-6 h-6 text-white/90" />
+                            </button>
+
+                            {showAddPanel && (
+                              <div className="absolute right-0 bottom-12 w-64 sm:w-72 rounded-xl bg-[rgba(8,12,16,0.95)] ring-1 ring-white/10 shadow-2xl p-3 z-20 backdrop-blur">
+                                <div className="flex gap-2">
+                                  <select
+                                    value={selectedList}
+                                    onChange={(e) => setSelectedList(e.target.value)}
+                                    className="bg-white/5 text-white px-3 py-2 rounded-lg text-sm flex-1 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                                    disabled={customLists.length === 0}
+                                  >
+                                    <option value="">{L.selectList}</option>
+                                    {customLists.map((l) => (
+                                      <option key={l}>{l}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={handleAddToList}
+                                    disabled={isAdding || !selectedList}
+                                    className="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 transition text-sm font-semibold disabled:opacity-50"
+                                  >
+                                    {isAdding ? L.adding : L.add}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* b2: favorito */}
                           <button
-                            onClick={() => setShowAddPanel((s) => !s)}
+                            onClick={handleFavorite}
                             className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
-                            aria-label={L.addToList}
-                            title={L.addToList}
+                            aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
+                            title={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
                           >
-                            <MdPlaylistAdd className="w-6 h-6 text-white/90" />
+                            {isFavorited ? (
+                              <FaHeart className="text-red-500 w-5 h-5" />
+                            ) : (
+                              <FiHeart className="text-white/90 w-5 h-5" />
+                            )}
                           </button>
 
-                          {showAddPanel && (
-                            <div className="absolute right-0 bottom-12 w-64 sm:w-72 rounded-xl bg-[rgba(8,12,16,0.95)] ring-1 ring-white/10 shadow-2xl p-3 z-10 backdrop-blur">
-                              <div className="flex gap-2">
-                                <select
-                                  value={selectedList}
-                                  onChange={(e) => setSelectedList(e.target.value)}
-                                  className="bg-white/5 text-white px-3 py-2 rounded-lg text-sm flex-1 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
-                                  disabled={customLists.length === 0}
-                                >
-                                  <option value="">{L.selectList}</option>
-                                  {customLists.map((l) => (
-                                    <option key={l}>{l}</option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={handleAddToList}
-                                  disabled={isAdding || !selectedList}
-                                  className="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 transition text-sm font-semibold disabled:opacity-50"
-                                >
-                                  {isAdding ? L.adding : L.add}
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                          <button
+                            onClick={() => setIsRatingOpen(true)}
+                            className="px-4 sm:px-5 py-2 rounded-lg bg-[var(--color-darkgreen)] hover:brightness-110 transition text-sm font-semibold shadow-md"
+                          >
+                            {L.rate}
+                          </button>
+
+                          <button
+                            onClick={handleViewDetails}
+                            className="px-4 sm:px-5 py-2 rounded-lg bg-transparent ring-1 ring-white/15 hover:ring-white/30 hover:bg-white/5 transition text-sm"
+                          >
+                            {t("viewDetails")}
+                          </button>
                         </div>
-
-                        {/* b2: favorito */}
-                        <button
-                          onClick={handleFavorite}
-                          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10 hover:ring-white/20 transition grid place-items-center"
-                          aria-label={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
-                          title={isFavorited ? t("removeFromFavorites") : t("addToFavorites")}
-                        >
-                          {isFavorited ? (
-                            <FaHeart className="text-red-500 w-5 h-5" />
-                          ) : (
-                            <FiHeart className="text-white/90 w-5 h-5" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setIsRatingOpen(true)}
-                          className="px-4 sm:px-5 py-2 rounded-lg bg-[var(--color-darkgreen)] hover:brightness-110 transition text-sm font-semibold shadow-md"
-                        >
-                          {L.rate}
-                        </button>
-
-                        <button
-                          onClick={handleViewDetails}
-                          className="px-4 sm:px-5 py-2 rounded-lg bg-transparent ring-1 ring-white/15 hover:ring-white/30 hover:bg-white/5 transition text-sm"
-                        >
-                          {t("viewDetails")}
-                        </button>
                       </div>
                     </div>
                   </div>
